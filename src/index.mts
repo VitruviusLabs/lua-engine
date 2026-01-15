@@ -25,13 +25,12 @@ export const Table = DataType.Table
 
 export
 {
-    std_lib as std_global,
-    nil,
-    make_boolean as boolean,
-    make_number as number,
-    make_string as string,
-    variable_to_string as to_string,
-    Engine, DataType, Variable, NativeFunction,
-    lexer, parser, ast, compile, opcode, runtime,
+	std_lib as std_global,
+	nil,
+	make_boolean as boolean,
+	make_number as number,
+	make_string as string,
+	variable_to_string as to_string,
+	Engine, DataType, Variable, NativeFunction,
+	lexer, parser, ast, compile, opcode, runtime,
 }
-
