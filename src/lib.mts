@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import type { Variable } from './runtime'
-import { Engine } from './engine'
-import { DataType, make_boolean, make_number, make_string, nil } from './runtime'
+import type { Variable } from './runtime.mts'
+import { Engine } from './engine.mts'
+import { DataType, make_boolean, make_number, make_string, nil } from './runtime.mts'
 
 let rand = xoroshiro([0, 0, 0, 0].map(_ => BigInt(Math.floor(Math.random() * 100))))
 
@@ -34,7 +34,7 @@ export function variable_to_string(variable: Variable, tables_done: Variable[] =
         case DataType.String: return variable.string ?? ''
         case DataType.Function: return `<Function ${ variable.function_id ?? 'nil' }>`
         case DataType.NativeFunction: return `<Function ${ variable.native_function?.name ?? 'nil' }>`
-        case DataType.Table: 
+        case DataType.Table:
         {
             if (tables_done.includes(variable))
                 return '...'
@@ -113,7 +113,7 @@ function next(_: Engine, { table }: Variable, index?: Variable): Variable[]
     let next_key: number | string | undefined = keys.next().value
     while (next_key != undefined && next_key != index.number && next_key != index.string)
         next_key = keys.next().value
-    
+
     next_key = keys.next().value
     if (next_key == undefined)
         return [nil]
@@ -639,13 +639,13 @@ function math_randomseed(_: Engine, x?: Variable, y?: Variable): Variable[]
         seed[0] = BigInt(x.number & 0xFFFFFFFF)
         seed[1] = BigInt((x.number << 32) & 0xFFFFFFFF)
     }
-    
+
     if (y?.number != undefined)
     {
         seed[2] = BigInt(y.number & 0xFFFFFFFF)
         seed[3] = BigInt((y.number << 32) & 0xFFFFFFFF)
     }
-    
+
     rand = xoroshiro(seed)
     return [nil]
 }
@@ -766,7 +766,7 @@ export function std_lib(): Map<string, Variable>
             ['tointeger', { data_type: DataType.NativeFunction, native_function: math_tointeger }],
             ['type', { data_type: DataType.NativeFunction, native_function: math_type }],
             ['ult', { data_type: DataType.NativeFunction, native_function: math_ult }],
-            
+
             ['pi', { data_type: DataType.Number, number: Math.PI }],
             ['maxinteger', { data_type: DataType.Number, number: 0xFFFFFFFF }],
             ['mininteger', { data_type: DataType.Number, number: -(0xFFFFFFFF - 1) }],
@@ -777,4 +777,3 @@ export function std_lib(): Map<string, Variable>
     global.set('_G', { data_type: DataType.Table, table: global })
     return global
 }
-

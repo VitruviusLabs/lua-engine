@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import { Engine } from './engine'
+import { Engine } from './engine.mts'
 
 export enum DataType {
     Nil,
@@ -45,4 +45,3 @@ export function make_string(string: string): Variable
 {
     return { data_type: DataType.String, string: string }
 }
-

@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import type { Op } from './opcode'
-import type { NativeFunction, Variable } from './runtime'
+import type { Op } from './opcode.mts'
+import type { NativeFunction, Variable } from './runtime.mts'
 
-import { OpCode, op_code_name } from './opcode'
-import { DataType, nil, make_number, make_boolean, make_string } from './runtime'
-import { TokenStream } from './lexer'
-import { parse } from './parser'
-import { compile } from './compiler'
-import { optimize_chunk } from './optimizer'
-import * as std from './lib'
+import { OpCode, op_code_name } from './opcode.mts'
+import { DataType, nil, make_number, make_boolean, make_string } from './runtime.mts'
+import { TokenStream } from './lexer.mts'
+import { parse } from './parser.mts'
+import { compile } from './compiler.mts'
+import { optimize_chunk } from './optimizer.mts'
+import * as std from './lib.mts'
 
 function index(val: Variable | undefined): string | number | undefined
 {
@@ -206,7 +206,7 @@ export class Engine
             this.stack.push(arg)
         this.stack.push(make_number(args.length))
         this.locals_stack.push(new Map())
-        
+
         const result = this.run()
         const return_values = this.stack
         this.stack = old_stack
@@ -313,7 +313,7 @@ export class Engine
             }
 
             case OpCode.Dup:
-            { 
+            {
                 const count = arg?.number ?? 1
                 const items = this.stack.splice(this.stack.length - count, count)
                 this.stack.push(...items, ...items)
@@ -321,7 +321,7 @@ export class Engine
             }
 
             case OpCode.Swap:
-            { 
+            {
                 const x = this.stack.splice(this.stack.length - 2, 1)
                 this.stack.push(...x)
                 break
@@ -407,7 +407,7 @@ export class Engine
                 const [x, y] = [this.stack.pop(), this.stack.pop()]
                 this.stack.push(make_boolean(is_true(x) && is_true(y)))
                 break
-            } 
+            }
 
             case OpCode.Or:
             {
@@ -609,7 +609,7 @@ export class Engine
         if (this.ip >= this.program.length)
             return
 
-        const op = this.program[this.ip++] 
+        const op = this.program[this.ip++]
         if (options?.trace || options?.trace_instructions)
         {
             const arg = op.arg != undefined ? std.variable_to_string(op.arg) : ''
@@ -625,4 +625,3 @@ export class Engine
     }
 
 }
-

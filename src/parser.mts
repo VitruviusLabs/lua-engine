@@ -6,10 +6,10 @@
 
 import type { Chunk, IfElseBlock } from './ast'
 import type { Expression, Statement, Value } from './ast'
-import type { Token } from './lexer'
+import type { Token } from './lexer.mts'
 
 import { ExpressionKind, StatementKind, ValueKind } from './ast'
-import { TokenKind, TokenStream, token_kind_to_string } from './lexer'
+import { TokenKind, TokenStream, token_kind_to_string } from './lexer.mts'
 
 const UNARY = [
     TokenKind.Not,
@@ -42,7 +42,7 @@ function expect(stream: TokenStream, kind: TokenKind): Token | Error
     const token = stream.peek()
     if (token.kind != kind)
     {
-        return error(token, 
+        return error(token,
             `expected '${ token_kind_to_string(kind) }', ` +
             `got '${ token_kind_to_string(token.kind) }' instead`)
     }
@@ -157,20 +157,20 @@ function parse_value(stream: TokenStream): Value | Error
     const token = stream.peek()
     switch (token.kind)
     {
-        case TokenKind.NumberLiteral: 
-            return { kind: ValueKind.NumberLiteral, token: stream.next(), number: parseFloat(token.data) } 
+        case TokenKind.NumberLiteral:
+            return { kind: ValueKind.NumberLiteral, token: stream.next(), number: parseFloat(token.data) }
         case TokenKind.BooleanLiteral:
-            return { kind: ValueKind.BooleanLiteral, token: stream.next(), boolean: token.data == 'true' } 
+            return { kind: ValueKind.BooleanLiteral, token: stream.next(), boolean: token.data == 'true' }
         case TokenKind.StringLiteral:
-            return { kind: ValueKind.StringLiteral, token: stream.next(), string: token.data } 
+            return { kind: ValueKind.StringLiteral, token: stream.next(), string: token.data }
         case TokenKind.NilLiteral:
-            return { kind: ValueKind.NilLiteral, token: stream.next() } 
+            return { kind: ValueKind.NilLiteral, token: stream.next() }
         case TokenKind.Identifier:
             return { kind: ValueKind.Variable, token: stream.next(), identifier: token.data }
-        
+
         case TokenKind.SquiglyOpen:
             return parse_table(stream)
-        case TokenKind.Function: 
+        case TokenKind.Function:
             return parse_function_value(stream.next(), stream)
 
         default:
@@ -253,7 +253,7 @@ function parse_call(func: Expression, stream: TokenStream): Expression | Error
             break
     }
 
-    const close_brace = expect(stream, TokenKind.CloseBrace) 
+    const close_brace = expect(stream, TokenKind.CloseBrace)
     if (close_brace instanceof Error)
         return close_brace
 
@@ -330,7 +330,7 @@ function parse_access_expression(expression: Expression, stream: TokenStream): E
 
         case TokenKind.OpenSquare:
             return parse_index(expression, stream)
-        
+
         case TokenKind.Dot:
             return parse_dot(expression, stream)
 
@@ -421,7 +421,7 @@ function parse_local_statement(local: Token, values: Expression[]): Statement | 
         names.push(value.token)
     }
 
-    return { 
+    return {
         kind: StatementKind.Local,
         local: {
             token: local,
@@ -536,7 +536,7 @@ function parse_if(stream: TokenStream): Statement | Error
     const then = expect(stream, TokenKind.Then)
     if (then instanceof Error)
         return then
-    
+
     const body = parse(stream, TokenKind.Else, TokenKind.ElseIf, TokenKind.End)
     if (body instanceof Error)
         return body
@@ -548,7 +548,7 @@ function parse_if(stream: TokenStream): Statement | Error
         const condition = parse_expression(stream)
         if (condition instanceof Error)
             return condition
-        
+
         const then = expect(stream, TokenKind.Then)
         if (then instanceof Error)
             return then
@@ -571,7 +571,7 @@ function parse_if(stream: TokenStream): Statement | Error
             return chunk
         else_body = chunk
     }
-    
+
     const end = expect(stream, TokenKind.End)
     if (end instanceof Error)
         return end
@@ -601,7 +601,7 @@ function parse_while(stream: TokenStream): Statement | Error
     const do_token = expect(stream, TokenKind.Do)
     if (do_token instanceof Error)
         return do_token
-    
+
     const body = parse(stream, TokenKind.End)
     if (body instanceof Error)
         return body
@@ -679,7 +679,7 @@ function parse_for(stream: TokenStream): Statement | Error
 
     if (consume(stream, TokenKind.Assign))
         return parse_numeric_for(items[0], stream)
-    
+
     const in_token = expect(stream, TokenKind.In)
     if (in_token instanceof Error)
         return in_token
@@ -725,7 +725,7 @@ function parse_repeat(stream: TokenStream): Statement | Error
     const condition = parse_expression(stream)
     if (condition instanceof Error)
         return condition
-    
+
     return {
         kind: StatementKind.Repeat,
         repeat: {
@@ -741,7 +741,7 @@ function parse_do(stream: TokenStream): Statement | Error
     const do_token = expect(stream, TokenKind.Do)
     if (do_token instanceof Error)
         return do_token
-    
+
     const body = parse(stream, TokenKind.End)
     if (body instanceof Error)
         return body
@@ -863,7 +863,7 @@ function parse_function(stream: TokenStream): Statement | Error
 
     if (consume(stream, TokenKind.Dot))
         return parse_local_function(name, stream)
-    
+
     const function_value = parse_function_value(name, stream)
     if (function_value instanceof Error)
         return function_value
@@ -950,4 +950,3 @@ export function parse(stream: TokenStream, ...end_tokens: TokenKind[]): Chunk | 
 
     return chunk
 }
-

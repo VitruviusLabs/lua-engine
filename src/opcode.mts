@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import type { Variable } from './runtime'
-import type { Debug } from './lexer'
+import type { Variable } from './runtime.mts'
+import type { Debug } from './lexer.mts'
 
 export enum OpCode {
     Load,
@@ -137,4 +137,3 @@ export interface Program {
     code: Op[],
     start: number,
 }
-

@@ -6,14 +6,14 @@
 
 import type { Chunk, Expression, Value } from './ast'
 import type { IfBlock, While, For, NumericFor, Repeat, Do } from './ast'
-import type { Op, Program } from './opcode'
-import type { Token } from './lexer'
+import type { Op, Program } from './opcode.mts'
+import type { Token } from './lexer.mts'
 import type { Assignment, Local, Return } from './ast'
 
 import { StatementKind, ExpressionKind, ValueKind  } from './ast'
-import { OpCode } from './opcode'
-import { DataType } from './runtime'
-import { make_boolean, make_number, make_string, nil } from './runtime'
+import { OpCode } from './opcode.mts'
+import { DataType } from './runtime.mts'
+import { make_boolean, make_number, make_string, nil } from './runtime.mts'
 
 function compile_function(chunk: Chunk, token: Token, parameters: Token[], functions: Op[][]): number
 {
@@ -87,7 +87,7 @@ function compile_value(value: Value | undefined, functions: Op[][]): Op[]
                 debug: debug,
             }]
         }
-        
+
         default:
             throw new Error()
     }
@@ -114,7 +114,7 @@ function compile_call(func: Expression | undefined,
 {
     if (func == undefined || args == undefined)
         throw new Error()
-    
+
     const debug = func.token.debug
     const ops: Op[] = []
     for (const arg of args)
@@ -131,7 +131,7 @@ function compile_index(target: Expression | undefined,
 {
     if (target == undefined || index == undefined)
         throw new Error()
-    
+
     const ops: Op[] = []
     ops.push(...compile_expression(index, functions))
     ops.push(...compile_expression(target, functions))
@@ -230,7 +230,7 @@ function compile_assignment(assignment: Assignment | undefined, functions: Op[][
 {
     if (assignment == undefined)
         throw new Error()
-    
+
     const ops: Op[] = []
     const debug = assignment.token.debug
     ops.push({ code: OpCode.StartStackChange, debug: debug })
@@ -247,13 +247,13 @@ function compile_assignment(assignment: Assignment | undefined, functions: Op[][
             {
                 if (lhs.value?.kind != ValueKind.Variable)
                     throw new Error()
-             
+
                 const identifier = make_string(lhs.value?.identifier ?? '')
                 if (assignment.local)
                     ops.push({ code: OpCode.MakeLocal, arg: identifier, debug: debug })
                 ops.push({ code: OpCode.Store, arg: identifier, debug: debug })
                 break
-            }    
+            }
 
             case ExpressionKind.Index:
             {
@@ -683,4 +683,3 @@ export function compile(chunk: Chunk, extend?: Op[]): Program
         start: start,
     }
 }
-
