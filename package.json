@@ -1,19 +1,46 @@
 {
-  "name": "tslua",
-  "version": "1.0.0",
-  "description": "",
-  "scripts": {
-    "test": "jest"
-  },
-  "files": [
-    "index.ts"
-  ],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/jest": "^29.5.3",
-    "jest": "^29.6.1",
-    "ts-jest": "^29.1.1",
-    "typescript": "^5.1.6"
-  }
+	"$schema": "https://json.schemastore.org/package.json",
+	"name": "lua-engine",
+	"version": "1.0.0",
+	"description": "A TypeScript implementation of a Lua interpreter",
+	"license": "ISC",
+	"author": {
+		"name": "VitruviusLabs"
+	},
+	"contributors": [
+		"Nicolas \"SmashingQuasar\" Lebacq <contact@vitruvius-labs.com>",
+		"Benjamin Blum <benjamin.blum.98@gmail.com>",
+		"Ben Jilks <benjyjilks@gmail.com>"
+	],
+	"keywords": [
+		"lua"
+	],
+	"homepage": "https://github.com/VitruviusLabs/lua-engine#readme",
+	"bugs": "https://github.com/VitruviusLabs/lua-engine/issues",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/VitruviusLabs/lua-engine.git"
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"type": "module",
+	"files": [
+		"src/index.mts"
+	],
+	"scripts": {
+		"ts:check": "tsc -p tsconfig.json --noEmit"
+	},
+	"dependencies": {
+		"@vitruvius-labs/ts-predicate": "^7.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^22.14.1",
+		"tsx": "^4.19.3",
+		"typescript": "^5.8.3"
+	}
 }
