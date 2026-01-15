@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2022, Ben Jilks <benjyjilks@gmail.com>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- */
-
 export enum State {
 	Initial,
 	Identifier,
@@ -83,7 +77,7 @@ export enum TokenKind {
 	Local,
 }
 
-export function token_kind_to_string(kind: TokenKind)
+export function token_kind_to_string(kind: TokenKind): string | undefined
 {
 	switch(kind)
 	{
@@ -136,6 +130,8 @@ export function token_kind_to_string(kind: TokenKind)
 		case TokenKind.Return: return 'return'
 		case TokenKind.Break: return 'break'
 		case TokenKind.Local: return 'local'
+		default:
+			return "unknown token"
 	}
 }
 
@@ -662,14 +658,21 @@ export class TokenStream
 	{
 		if (this.peek_queue.length == 0)
 			this.peek()
-		return <Token> this.peek_queue.shift()
+
+		return this.peek_queue.shift() as Token
 	}
 
 	peek(count = 1): Token
 	{
 		while (this.peek_queue.length < count)
 			this.on_char()
-		return this.peek_queue[count - 1]
+
+		const token = this.peek_queue[count - 1]
+
+		if (token === undefined)
+			throw new Error()
+
+		return token
 	}
 
 }

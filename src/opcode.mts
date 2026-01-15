@@ -1,11 +1,5 @@
-/*
- * Copyright (c) 2022, Ben Jilks <benjyjilks@gmail.com>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- */
-
-import type { Variable } from './runtime.mts'
-import type { Debug } from './lexer.mts'
+import type { Variable } from './runtime.mjs'
+import type { Debug } from './lexer.mjs'
 
 export enum OpCode {
 	Load,

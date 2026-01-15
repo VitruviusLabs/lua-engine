@@ -1,12 +1,7 @@
-/*
- * Copyright (c) 2022, Ben Jilks <benjyjilks@gmail.com>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- */
+import type { Token } from './lexer.mjs'
 
-import type { Token } from './lexer'
-
-export enum ValueKind {
+export enum ValueKind
+{
 	NilLiteral,
 	NumberLiteral,
 	BooleanLiteral,
@@ -16,24 +11,27 @@ export enum ValueKind {
 	Variable,
 }
 
-export interface LuaFunction {
-	parameters: Token[],
+export interface LuaFunction
+{
+	parameters: Array<Token>,
 	body: Chunk,
 }
 
-export interface Value {
+export interface Value
+{
 	kind: ValueKind,
 	token: Token,
 
-	number?: number,
-	boolean?: boolean,
-	string?: string,
-	table?: Map<Expression, Expression>,
-	function?: LuaFunction,
-	identifier?: string,
+	number?: number | undefined,
+	boolean?: boolean | undefined,
+	string?: string | undefined,
+	table?: Map<Expression, Expression> | undefined,
+	function?: LuaFunction | undefined,
+	identifier?: string | undefined,
 }
 
-export enum ExpressionKind {
+export enum ExpressionKind
+{
 	Value,
 	Call,
 	Index,
@@ -68,7 +66,8 @@ export enum ExpressionKind {
 	Length,
 }
 
-export interface Expression {
+export interface Expression
+{
 	kind: ExpressionKind,
 	token: Token,
 
@@ -80,46 +79,53 @@ export interface Expression {
 	arguments?: Expression[],
 }
 
-export interface Assignment {
+export interface Assignment
+{
 	local: boolean,
 	lhs: Expression[],
 	rhs: Expression[],
 	token: Token,
 }
 
-export interface Local {
+export interface Local
+{
 	names: Token[],
 	token: Token,
 }
 
-export interface IfElseBlock {
+export interface ElseIfBlock
+{
 	body: Chunk,
 	condition: Expression,
 	token: Token,
 }
 
-export interface IfBlock {
+export interface IfBlock
+{
 	condition: Expression,
 	body: Chunk,
-	else_if_bodies: IfElseBlock[],
-	else_body?: Chunk,
+	else_if_bodies: ElseIfBlock[],
+	else_body?: Chunk | undefined,
 	token: Token,
 }
 
-export interface While {
+export interface While
+{
 	condition: Expression,
 	body: Chunk,
 	token: Token,
 }
 
-export interface For {
+export interface For
+{
 	items: Token[],
-	itorator: Expression,
+	iterator: Expression,
 	body: Chunk,
 	token: Token,
 }
 
-export interface NumericFor {
+export interface NumericFor
+{
 	index: Token,
 	start: Expression,
 	end: Expression,
@@ -127,23 +133,27 @@ export interface NumericFor {
 	body: Chunk,
 }
 
-export interface Repeat {
+export interface Repeat
+{
 	body: Chunk,
 	condition: Expression,
 	token: Token,
 }
 
-export interface Do {
+export interface Do
+{
 	body: Chunk,
 	token: Token,
 }
 
-export interface Return {
+export interface Return
+{
 	values: Expression[],
 	token: Token,
 }
 
-export enum StatementKind {
+export enum StatementKind
+{
 	Invalid,
 	Empty,
 	Expression,
@@ -159,20 +169,22 @@ export enum StatementKind {
 	Break,
 }
 
-export interface Statement {
+export interface Statement
+{
 	kind: StatementKind,
-	expression?: Expression,
-	assignment?: Assignment,
-	local?: Local,
-	if?: IfBlock,
-	while?: While,
-	for?: For,
-	numeric_for?: NumericFor,
-	repeat?: Repeat,
-	do?: Do,
-	return?: Return,
+	expression?: Expression | undefined,
+	assignment?: Assignment | undefined,
+	local?: Local | undefined,
+	if?: IfBlock | undefined,
+	while?: While | undefined,
+	for?: For | undefined,
+	numeric_for?: NumericFor | undefined,
+	repeat?: Repeat | undefined,
+	do?: Do | undefined,
+	return?: Return | undefined,
 }
 
-export interface Chunk {
+export interface Chunk
+{
 	statements: Statement[],
 }

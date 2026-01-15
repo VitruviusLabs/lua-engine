@@ -1,19 +1,13 @@
-/*
- * Copyright (c) 2022, Ben Jilks <benjyjilks@gmail.com>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- */
+import type { Chunk, Expression, Value } from './ast.mjs'
+import type { IfBlock, While, For, NumericFor, Repeat, Do } from './ast.mjs'
+import type { Op, Program } from './opcode.mjs'
+import type { Token } from './lexer.mjs'
+import type { Assignment, Local, Return } from './ast.mjs'
 
-import type { Chunk, Expression, Value } from './ast'
-import type { IfBlock, While, For, NumericFor, Repeat, Do } from './ast'
-import type { Op, Program } from './opcode.mts'
-import type { Token } from './lexer.mts'
-import type { Assignment, Local, Return } from './ast'
-
-import { StatementKind, ExpressionKind, ValueKind } from './ast'
-import { OpCode } from './opcode.mts'
-import { DataType } from './runtime.mts'
-import { make_boolean, make_number, make_string, nil } from './runtime.mts'
+import { StatementKind, ExpressionKind, ValueKind  } from './ast.mjs'
+import { OpCode } from './opcode.mjs'
+import { DataType } from './runtime.mjs'
+import { make_boolean, make_number, make_string, nil } from './runtime.mjs'
 
 function compile_function(chunk: Chunk, token: Token, parameters: Token[], functions: Op[][]): number
 {
@@ -93,9 +87,11 @@ function compile_value(value: Value | undefined, functions: Op[][]): Op[]
 	}
 }
 
-function compile_operation(expression: Expression,
-							operation: OpCode,
-							functions: Op[][]): Op[]
+function compile_operation(
+	expression: Expression,
+	operation: OpCode,
+	functions: Op[][]
+): Op[]
 {
 	const { lhs, rhs } = expression
 	if (lhs == undefined || rhs == undefined)
@@ -108,9 +104,11 @@ function compile_operation(expression: Expression,
 	return ops
 }
 
-function compile_call(func: Expression | undefined,
-						args: Expression[] | undefined,
-						functions: Op[][]): Op[]
+function compile_call(
+	func: Expression | undefined,
+	args: Expression[] | undefined,
+	functions: Op[][]
+): Op[]
 {
 	if (func == undefined || args == undefined)
 		throw new Error()
@@ -125,9 +123,11 @@ function compile_call(func: Expression | undefined,
 	return ops
 }
 
-function compile_index(target: Expression | undefined,
-						index: Expression | undefined,
-						functions: Op[][]): Op[]
+function compile_index(
+	target: Expression | undefined,
+	index: Expression | undefined,
+	functions: Op[][]
+): Op[]
 {
 	if (target == undefined || index == undefined)
 		throw new Error()
@@ -139,10 +139,11 @@ function compile_index(target: Expression | undefined,
 	return ops
 }
 
-function compile_unary_operation(expression: Expression | undefined,
-								 operation: OpCode,
-								 functions: Op[][]): Op[]
-
+function compile_unary_operation(
+	expression: Expression | undefined,
+	operation: OpCode,
+	functions: Op[][]
+): Op[]
 {
 	if (expression == undefined || expression.expression == undefined)
 		throw new Error()
@@ -414,7 +415,7 @@ function compile_if(if_block: IfBlock | undefined, functions: Op[][]): Op[]
 	return ops
 }
 
-function replace_breaks(code: Op[], offset_from_end: number)
+function replace_breaks(code: Op[], offset_from_end: number): void
 {
 	for (const [i, op] of code.entries())
 	{
@@ -457,7 +458,7 @@ function compile_for(for_block: For | undefined, functions: Op[][]): Op[]
 	const debug = for_block.token.debug
 	ops.push({ code: OpCode.StartBlock, debug: debug })
 	ops.push({ code: OpCode.StartStackChange, debug: debug })
-	ops.push(...compile_expression(for_block.itorator, functions))
+	ops.push(...compile_expression(for_block.iterator, functions))
 	ops.push({ code: OpCode.EndStackChange, arg: make_number(3), debug: debug })
 
 	const after_creating_itorator = ops.length
@@ -643,7 +644,7 @@ function compile_chunk(chunk: Chunk, functions: Op[][]): ChunkResult
 	}
 }
 
-function link(code: Op[], function_id: number, location: number)
+function link(code: Op[], function_id: number, location: number): void
 {
 	for (const op of code)
 	{

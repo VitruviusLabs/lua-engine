@@ -1,14 +1,8 @@
-/*
- * Copyright (c) 2022, Ben Jilks <benjyjilks@gmail.com>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- */
+import type { Variable } from './runtime.mjs'
+import { Engine } from './engine.mjs'
+import { DataType, make_boolean, make_number, make_string, nil } from './runtime.mjs'
 
-import type { Variable } from './runtime.mts'
-import { Engine } from './engine.mts'
-import { DataType, make_boolean, make_number, make_string, nil } from './runtime.mts'
-
-let rand = xoroshiro([0, 0, 0, 0].map(_ => BigInt(Math.floor(Math.random() * 100))))
+let rand = xoroshiro(create_seed())
 
 export function variable_size(value: Variable): number | undefined
 {
@@ -272,9 +266,11 @@ function error(engine: Engine, message: Variable): Variable[]
 let warnings_on = true
 function warn(_: Engine, ...messages: Variable[]): Variable[]
 {
-	if (messages.length == 1)
+	const message = messages[0]
+
+	if (message !== undefined)
 	{
-		switch (messages[0].string)
+		switch (message.string)
 		{
 			case '@on':
 				warnings_on = true
@@ -335,15 +331,37 @@ function string_format(_: Engine, format: Variable, ...args: Variable[]): Variab
 	let result = ''
 	let is_format = false
 	let arg_index = 0
+
 	for (const char of format.string)
 	{
 		if (is_format)
 		{
 			switch (char)
 			{
-				case 'd': result += Math.floor(args[arg_index++].number ?? 0).toString(); break
-				case 'f': result += args[arg_index++].number?.toString(); break
-				case 's': result += variable_to_string(args[arg_index++]); break
+				case 'd':
+				{
+					const arg = args[arg_index]
+					++arg_index
+					result += Math.floor(arg?.number ?? 0).toString()
+					break
+				}
+				case 'f':
+				{
+					const arg = args[arg_index]
+					++arg_index
+					result += arg?.number?.toString()
+					break
+				}
+				case 's':
+				{
+					const arg = args[arg_index]
+					++arg_index
+
+					if (arg !== undefined)
+						result += variable_to_string(arg)
+
+					break
+				}
 				default:
 					result += `%${ char }`
 			}
@@ -611,21 +629,36 @@ function math_random(_: Engine, m?: Variable, n?: Variable): Variable[]
 	return [make_number(Math.floor(rand() % max) + min)]
 }
 
-function xoroshiro(s: bigint[])
+function create_seed(): [bigint, bigint, bigint, bigint]
+{
+	const random_bigint = (): bigint =>
+		BigInt(Math.floor(Math.random() * 100))
+
+	const seed: [bigint, bigint, bigint, bigint] = [
+		random_bigint(),
+		random_bigint(),
+		random_bigint(),
+		random_bigint(),
+	]
+
+	return seed
+}
+
+function xoroshiro(seed: [bigint, bigint, bigint, bigint]): () => number
 {
 	const rotl = (x: bigint, k: bigint) =>
 		BigInt.asUintN(64, (x << k) | (x >> (BigInt(64) - k)))
 
 	return () =>
 	{
-		const result = rotl(BigInt.asUintN(64, s[0] + s[3]), BigInt(23)) + s[0]
-		const t = BigInt.asUintN(64, s[1] << BigInt(17))
-		s[2] ^= s[0]
-		s[3] ^= s[1]
-		s[1] ^= s[2]
-		s[0] ^= s[3]
-		s[2] ^= t
-		s[3] = rotl(s[3], BigInt(45))
+		const result = rotl(BigInt.asUintN(64, seed[0] + seed[3]), BigInt(23)) + seed[0]
+		const t = BigInt.asUintN(64, seed[1] << BigInt(17))
+		seed[2] ^= seed[0]
+		seed[3] ^= seed[1]
+		seed[1] ^= seed[2]
+		seed[0] ^= seed[3]
+		seed[2] ^= t
+		seed[3] = rotl(seed[3], BigInt(45))
 
 		return Number(BigInt.asUintN(64, result) & BigInt(0xFFFFFFFF))
 	}
@@ -633,7 +666,8 @@ function xoroshiro(s: bigint[])
 
 function math_randomseed(_: Engine, x?: Variable, y?: Variable): Variable[]
 {
-	const seed = [0, 0, 0, 0].map(_ => BigInt(Math.floor(Math.random() * 100)))
+	const seed = create_seed()
+
 	if (x?.number != undefined)
 	{
 		seed[0] = BigInt(x.number & 0xFFFFFFFF)
@@ -647,6 +681,7 @@ function math_randomseed(_: Engine, x?: Variable, y?: Variable): Variable[]
 	}
 
 	rand = xoroshiro(seed)
+
 	return [nil]
 }
 

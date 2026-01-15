@@ -1,10 +1,4 @@
-/*
- * Copyright (c) 2022, Ben Jilks <benjyjilks@gmail.com>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- */
-
-import { Engine } from './engine.mts'
+import { Engine } from './engine.mjs'
 
 export enum DataType {
 	Nil,
@@ -16,14 +10,15 @@ export enum DataType {
 	Table,
 }
 
-export type NativeFunction = (engine: Engine, ...args: Variable[]) => Variable[]
+export type NativeFunction = (engine: Engine, ...args: Array<Variable>) => Array<Variable> | Error
+
 export interface Variable {
 	data_type: DataType,
 	boolean?: boolean,
 	number?: number,
 	string?: string,
 	native_function?: NativeFunction,
-	table?: Map<string|number, Variable>,
+	table?: Map<number | string, Variable>,
 
 	function_id?: number,
 	locals?: Map<string, Variable>[],

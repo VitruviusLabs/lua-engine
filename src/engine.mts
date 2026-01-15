@@ -1,19 +1,13 @@
-/*
- * Copyright (c) 2022, Ben Jilks <benjyjilks@gmail.com>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- */
+import type { Op } from './opcode.mjs'
+import type { NativeFunction, Variable } from './runtime.mjs'
 
-import type { Op } from './opcode.mts'
-import type { NativeFunction, Variable } from './runtime.mts'
-
-import { OpCode, op_code_name } from './opcode.mts'
-import { DataType, nil, make_number, make_boolean, make_string } from './runtime.mts'
-import { TokenStream } from './lexer.mts'
-import { parse } from './parser.mts'
-import { compile } from './compiler.mts'
-import { optimize_chunk } from './optimizer.mts'
-import * as std from './lib.mts'
+import { OpCode, op_code_name } from './opcode.mjs'
+import { DataType, nil, make_number, make_boolean, make_string } from './runtime.mjs'
+import { TokenStream } from './lexer.mjs'
+import { parse } from './parser.mjs'
+import { compile } from './compiler.mjs'
+import { optimize_chunk } from './optimizer.mjs'
+import * as std from './lib.mjs'
 
 function index(val: Variable | undefined): string | number | undefined
 {
@@ -102,8 +96,10 @@ export class Engine
 
 	private error: Error | undefined
 
-	constructor(script?: string,
-				globals?: Map<string, Variable>)
+	constructor(
+		script?: string,
+		globals?: Map<string, Variable>
+	)
 	{
 		this.program = []
 		this.globals = globals ?? std.std_lib()
@@ -132,6 +128,8 @@ export class Engine
 		this.program = program.code
 		this.ip = program.start
 		this.start_ip = program.start
+
+		return undefined
 	}
 
 	bytecode(): string[]
@@ -157,7 +155,7 @@ export class Engine
 		return this.globals.get(name)
 	}
 
-	define(name: string, func: NativeFunction)
+	define(name: string, func: NativeFunction): void
 	{
 		this.globals.set(name, {
 			data_type: DataType.NativeFunction,
@@ -165,7 +163,7 @@ export class Engine
 		})
 	}
 
-	define_table(name: string, table: Map<string|number, Variable>)
+	define_table(name: string, table: Map<string|number, Variable>): void
 	{
 		this.globals.set(name, {
 			data_type: DataType.Table,
@@ -173,7 +171,7 @@ export class Engine
 		})
 	}
 
-	reset()
+	reset(): void
 	{
 		this.ip = this.start_ip
 		this.stack = []
@@ -213,6 +211,7 @@ export class Engine
 		this.call_stack = old_call_stack
 		this.locals_stack = old_locals_stack
 		this.ip = old_ip
+
 		if (result instanceof Error)
 			return result
 
@@ -231,6 +230,7 @@ export class Engine
 		while (this.ip < this.program.length)
 		{
 			const result = this.step(options)
+
 			if (result != undefined)
 				return result
 
@@ -239,52 +239,65 @@ export class Engine
 				return undefined
 		}
 
-		return this.stack[0] ?? nil
+		return this.stack_get(0);
 	}
 
 	run(options?: LuaOptions): Variable | Error
 	{
 		const result = this.run_for_steps(1000, options)
+
 		if (result == undefined)
 			return new Error('Program ran for too long')
 		else
 			return result
 	}
 
-	raise_error(message: string)
+	raise_error(message: string): void
 	{
 		const op = this.program.at(this.ip - 1)
 		this.error = this.runtime_error(op, message)
 	}
 
-	private call_native_function(native_function: NativeFunction, ...args: Variable[]): Variable[] | Error
+	private stack_get(index: number): Variable
+	{
+		if (index < 0)
+		{
+			return this.stack[this.stack.length + index] ?? nil;
+		}
+
+		return this.stack[index] ?? nil;
+	}
+
+	private call_native_function(native_function: NativeFunction, ...args: Array<Variable>): Array<Variable> | Error
 	{
 		const results = native_function(this, ...args)
+
 		if (this.error != undefined)
 		{
 			const error = this.error
 			this.error = undefined
+
 			return error
 		}
 
 		return results
 	}
 
-	private operation(op: (x: number, y: number) => number)
+	private operation(op: (x: number, y: number) => number): void
 	{
 		const x = this.stack.pop()?.number ?? 0
 		const y = this.stack.pop()?.number ?? 0
 		this.stack.push(make_number(op(x, y)))
 	}
 
-	private compair(op: (x: number, y: number) => boolean)
+	private compair(op: (x: number, y: number) => boolean): void
 	{
 		const x = this.stack.pop()?.number ?? 0
 		const y = this.stack.pop()?.number ?? 0
 		this.stack.push(make_boolean(op(x, y)))
 	}
 
-	private force_stack_height(expected: number, got: number)
+	private force_stack_height(expected: number, got: number): void
 	{
 		for (let i = got; i < expected; i++)
 			this.stack.push(nil)
@@ -300,7 +313,7 @@ export class Engine
 			return new Error(`${ op.debug.line }:${ op.debug.column }: ${ message }`)
 	}
 
-	private run_instruction(op: Op): undefined | Error
+	private run_instruction(op: Op): Error | undefined
 	{
 		const { code, arg } = op
 		switch(code)
@@ -329,20 +342,23 @@ export class Engine
 
 			case OpCode.IterUpdateState:
 			{
-				this.stack[this.stack.length - 2] = this.stack[this.stack.length - 1]
+				this.stack[this.stack.length - 2] = this.stack_get(-1)
 				break
 			}
 
 			case OpCode.IterNext:
 			{
-				const state = this.stack[this.stack.length - 1]
-				const control = this.stack[this.stack.length - 2]
-				const iter = this.stack[this.stack.length - 3]
-				if (iter.native_function != undefined)
+				const state = this.stack_get(-1)
+				const control = this.stack_get(-2)
+				const iter = this.stack_get(-3)
+
+				if (iter.native_function !== undefined)
 				{
 					const result = this.call_native_function(iter.native_function, control, state)
+
 					if (result instanceof Error)
 						return result
+
 					this.stack.push(...result)
 					break
 				}
@@ -357,7 +373,7 @@ export class Engine
 
 			case OpCode.IterJumpIfDone:
 			{
-				if (this.stack[this.stack.length - 1].data_type == DataType.Nil)
+				if (this.stack_get(-1).data_type == DataType.Nil)
 					this.ip += arg?.number ?? 0
 				break
 			}
@@ -477,7 +493,8 @@ export class Engine
 			case OpCode.StoreIndex:
 			{
 				const count = arg?.number ?? 1
-				const table = this.stack[this.stack.length - count*2 - 1] ?? nil
+				const table = this.stack_get(- count*2 - 1)
+
 				if (table.table == undefined)
 					return this.runtime_error(op, 'Can only index tables')
 
@@ -542,8 +559,10 @@ export class Engine
 						if (func_var.native_function != undefined)
 						{
 							const result = this.call_native_function(func_var.native_function, ...args)
+
 							if (result instanceof Error)
 								return result
+
 							this.stack.push(...result)
 						}
 
@@ -599,9 +618,11 @@ export class Engine
 				break
 			}
 		}
+
+		return undefined
 	}
 
-	step(options?: LuaOptions): undefined | Error
+	step(options?: LuaOptions): Error | undefined
 	{
 		if (this.error != undefined)
 			return this.error
@@ -610,6 +631,10 @@ export class Engine
 			return
 
 		const op = this.program[this.ip++]
+
+		if (op === undefined)
+			return this.runtime_error(op, 'Instruction pointer out of bounds')
+
 		if (options?.trace || options?.trace_instructions)
 		{
 			const arg = op.arg != undefined ? std.variable_to_string(op.arg) : ''
@@ -617,11 +642,14 @@ export class Engine
 		}
 
 		const result = this.run_instruction(op)
+
 		if (result != undefined)
 			return result
 
 		if (options?.trace || options?.trace_stack)
 			console.log(this.ip - 1, ...this.stack.map(x => std.variable_to_string(x)))
+
+		return undefined
 	}
 
 }

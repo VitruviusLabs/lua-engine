@@ -1,13 +1,7 @@
-/*
- * Copyright (c) 2022, Ben Jilks <benjyjilks@gmail.com>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- */
-
-import type { Chunk, Expression } from './ast'
-import type { IfBlock, While, For, NumericFor, Repeat } from './ast'
-import type { Assignment, Value } from './ast'
-import { StatementKind, ExpressionKind, ValueKind } from './ast'
+import type { Chunk, Expression } from './ast.mjs'
+import type { IfBlock, While, For, NumericFor, Repeat } from './ast.mjs'
+import type { Assignment, Value } from './ast.mjs'
+import { StatementKind, ExpressionKind, ValueKind } from './ast.mjs'
 
 const CONSTANT_VALUES = [
 	ValueKind.NilLiteral,
@@ -16,9 +10,11 @@ const CONSTANT_VALUES = [
 	ValueKind.StringLiteral,
 ]
 
-function compule_arithmatic_operation(expression: Expression,
-										operation: (a: number, b: number) => number,
-										constants: Map<string, Value>): Value | undefined
+function compule_arithmetic_operation(
+	expression: Expression,
+	operation: (a: number, b: number) => number,
+	constants: Map<string, Value>
+): Value | undefined
 {
 	const lhs = compute_constant_expression(expression.lhs, constants)
 	const rhs = compute_constant_expression(expression.rhs, constants)
@@ -32,9 +28,11 @@ function compule_arithmatic_operation(expression: Expression,
 	}
 }
 
-function compule_comparison_operation(expression: Expression,
-										operation: (a: number, b: number) => boolean,
-										constants: Map<string, Value>): Value | undefined
+function compule_comparison_operation(
+	expression: Expression,
+	operation: (a: number, b: number) => boolean,
+	constants: Map<string, Value>
+): Value | undefined
 {
 	const lhs = compute_constant_expression(expression.lhs, constants)
 	const rhs = compute_constant_expression(expression.rhs, constants)
@@ -48,9 +46,11 @@ function compule_comparison_operation(expression: Expression,
 	}
 }
 
-function compule_logical_operation(expression: Expression,
-									operation: (a: boolean, b: boolean) => boolean,
-									constants: Map<string, Value>): Value | undefined
+function compule_logical_operation(
+	expression: Expression,
+	operation: (a: boolean, b: boolean) => boolean,
+	constants: Map<string, Value>
+): Value | undefined
 {
 	const lhs = compute_constant_expression(expression.lhs, constants)
 	const rhs = compute_constant_expression(expression.rhs, constants)
@@ -64,8 +64,10 @@ function compule_logical_operation(expression: Expression,
 	}
 }
 
-function compute_constant_expression(expression: Expression | undefined,
-									 constants: Map<string, Value>): Value | undefined
+function compute_constant_expression(
+	expression: Expression | undefined,
+	constants: Map<string, Value>
+): Value | undefined
 {
 	if (expression == undefined)
 		return undefined
@@ -85,20 +87,20 @@ function compute_constant_expression(expression: Expression | undefined,
 			return undefined
 		}
 
-		case ExpressionKind.Addition: return compule_arithmatic_operation(expression, (a, b) => a + b, constants)
-		case ExpressionKind.Subtract: return compule_arithmatic_operation(expression, (a, b) => a - b, constants)
-		case ExpressionKind.Multiplication: return compule_arithmatic_operation(expression, (a, b) => a * b, constants)
-		case ExpressionKind.Division: return compule_arithmatic_operation(expression, (a, b) => a / b, constants)
-		case ExpressionKind.FloorDivision: return compule_arithmatic_operation(expression, (a, b) => Math.floor(a / b), constants)
-		case ExpressionKind.Modulo: return compule_arithmatic_operation(expression, (a, b) => a % b, constants)
-		case ExpressionKind.Exponent: return compule_arithmatic_operation(expression, (a, b) => Math.pow(a, b), constants)
+		case ExpressionKind.Addition: return compule_arithmetic_operation(expression, (a, b) => a + b, constants)
+		case ExpressionKind.Subtract: return compule_arithmetic_operation(expression, (a, b) => a - b, constants)
+		case ExpressionKind.Multiplication: return compule_arithmetic_operation(expression, (a, b) => a * b, constants)
+		case ExpressionKind.Division: return compule_arithmetic_operation(expression, (a, b) => a / b, constants)
+		case ExpressionKind.FloorDivision: return compule_arithmetic_operation(expression, (a, b) => Math.floor(a / b), constants)
+		case ExpressionKind.Modulo: return compule_arithmetic_operation(expression, (a, b) => a % b, constants)
+		case ExpressionKind.Exponent: return compule_arithmetic_operation(expression, (a, b) => Math.pow(a, b), constants)
 		case ExpressionKind.Concat: return undefined
 
-		case ExpressionKind.BitAnd: return compule_arithmatic_operation(expression, (a, b) => a & b, constants)
-		case ExpressionKind.BitOr: return compule_arithmatic_operation(expression, (a, b) => a | b, constants)
-		case ExpressionKind.BitXOr: return compule_arithmatic_operation(expression, (a, b) => a ^ b, constants)
-		case ExpressionKind.BitShiftLeft: return compule_arithmatic_operation(expression, (a, b) => a << b, constants)
-		case ExpressionKind.BitShiftRight: return compule_arithmatic_operation(expression, (a, b) => a >> b, constants)
+		case ExpressionKind.BitAnd: return compule_arithmetic_operation(expression, (a, b) => a & b, constants)
+		case ExpressionKind.BitOr: return compule_arithmetic_operation(expression, (a, b) => a | b, constants)
+		case ExpressionKind.BitXOr: return compule_arithmetic_operation(expression, (a, b) => a ^ b, constants)
+		case ExpressionKind.BitShiftLeft: return compule_arithmetic_operation(expression, (a, b) => a << b, constants)
+		case ExpressionKind.BitShiftRight: return compule_arithmetic_operation(expression, (a, b) => a >> b, constants)
 		case ExpressionKind.BitNot: return undefined
 
 		case ExpressionKind.Equals: return compule_comparison_operation(expression, (a, b) => a == b, constants)
@@ -138,11 +140,16 @@ function compute_constant_expression(expression: Expression | undefined,
 
 		case ExpressionKind.Length:
 			return undefined
+
+		default:
+			return undefined
 	}
 }
 
-function optimize_expression(expression: Expression | undefined,
-							 constants: Map<string, Value>)
+function optimize_expression(
+	expression: Expression | undefined,
+	constants: Map<string, Value>
+): void
 {
 	if (expression == undefined)
 		return
@@ -170,7 +177,7 @@ function optimize_expression(expression: Expression | undefined,
 		optimize_expression(argument, constants)
 }
 
-function mark_local_constants(assignment: Assignment, constants: Map<string, Value>)
+function mark_local_constants(assignment: Assignment, constants: Map<string, Value>): void
 {
 	for (const [index, rhs] of assignment.rhs.entries())
 	{
@@ -178,13 +185,19 @@ function mark_local_constants(assignment: Assignment, constants: Map<string, Val
 			continue
 
 		const lhs = assignment.lhs[index]
+
+		if (lhs === undefined)
+			throw new Error()
+
 		if (lhs.kind != ExpressionKind.Value)
 			continue
+
 		if (lhs.value?.identifier == undefined)
 			continue
 
 		const name = lhs.value.identifier
 		const value = compute_constant_expression(rhs, constants)
+
 		if (value == undefined)
 			continue
 
@@ -192,7 +205,7 @@ function mark_local_constants(assignment: Assignment, constants: Map<string, Val
 	}
 }
 
-function unmark_constants_if_reassigned(assignment: Assignment, constants: Map<string, Value>)
+function unmark_constants_if_reassigned(assignment: Assignment, constants: Map<string, Value>): void
 {
 	for (const lhs of assignment.lhs)
 	{
@@ -206,8 +219,10 @@ function unmark_constants_if_reassigned(assignment: Assignment, constants: Map<s
 	}
 }
 
-function optimize_assignment(assignment: Assignment | undefined,
-							 constants: Map<string, Value>)
+function optimize_assignment(
+	assignment: Assignment | undefined,
+	constants: Map<string, Value>
+): void
 {
 	if (assignment == undefined)
 		return
@@ -221,8 +236,10 @@ function optimize_assignment(assignment: Assignment | undefined,
 		optimize_expression(rhs, constants)
 }
 
-function remove_constant_local_assignments(chunk: Chunk,
-											constants: Map<string, Value>)
+function remove_constant_local_assignments(
+	chunk: Chunk,
+	constants: Map<string, Value>
+): void
 {
 	for (const statement of chunk.statements)
 	{
@@ -246,7 +263,7 @@ function remove_constant_local_assignments(chunk: Chunk,
 		.filter(x => x.assignment == undefined || x.assignment.lhs.length > 0)
 }
 
-function optimize_if(if_block: IfBlock | undefined, constants: Map<string, Value>)
+function optimize_if(if_block: IfBlock | undefined, constants: Map<string, Value>): void
 {
 	if (if_block == undefined)
 		return
@@ -255,7 +272,7 @@ function optimize_if(if_block: IfBlock | undefined, constants: Map<string, Value
 	optimize_chunk(if_block.body, constants)
 }
 
-function optimize_while(while_block: While | undefined, constants: Map<string, Value>)
+function optimize_while(while_block: While | undefined, constants: Map<string, Value>): void
 {
 	if (while_block == undefined)
 		return
@@ -264,16 +281,16 @@ function optimize_while(while_block: While | undefined, constants: Map<string, V
 	optimize_chunk(while_block.body, constants)
 }
 
-function optimize_for(for_block: For | undefined, constants: Map<string, Value>)
+function optimize_for(for_block: For | undefined, constants: Map<string, Value>): void
 {
 	if (for_block == undefined)
 		return
 
-	optimize_expression(for_block.itorator, constants)
+	optimize_expression(for_block.iterator, constants)
 	optimize_chunk(for_block.body, constants)
 }
 
-function optimize_numeric_for(numeric_for_block: NumericFor | undefined, constants: Map<string, Value>)
+function optimize_numeric_for(numeric_for_block: NumericFor | undefined, constants: Map<string, Value>): void
 {
 	if (numeric_for_block == undefined)
 		return
@@ -284,7 +301,7 @@ function optimize_numeric_for(numeric_for_block: NumericFor | undefined, constan
 	optimize_chunk(numeric_for_block.body, constants)
 }
 
-function optimize_repeat(repeat_block: Repeat | undefined, constants: Map<string, Value>)
+function optimize_repeat(repeat_block: Repeat | undefined, constants: Map<string, Value>): void
 {
 	if (repeat_block == undefined)
 		return
@@ -293,7 +310,7 @@ function optimize_repeat(repeat_block: Repeat | undefined, constants: Map<string
 	optimize_chunk(repeat_block.body, constants)
 }
 
-export function optimize_chunk(chunk: Chunk, parent_constants?: Map<string, Value>)
+export function optimize_chunk(chunk: Chunk, parent_constants?: Map<string, Value>): void
 {
 	const constants = new Map(parent_constants)
 	for (const statement of chunk.statements)

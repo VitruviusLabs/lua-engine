@@ -1,15 +1,9 @@
-/*
- * Copyright (c) 2022, Ben Jilks <benjyjilks@gmail.com>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- */
+import type { Chunk, ElseIfBlock } from './ast.mjs'
+import type { Expression, Statement, Value } from './ast.mjs'
+import type { Token } from './lexer.mjs'
 
-import type { Chunk, IfElseBlock } from './ast'
-import type { Expression, Statement, Value } from './ast'
-import type { Token } from './lexer.mts'
-
-import { ExpressionKind, StatementKind, ValueKind } from './ast'
-import { TokenKind, TokenStream, token_kind_to_string } from './lexer.mts'
+import { ExpressionKind, StatementKind, ValueKind } from './ast.mjs'
+import { TokenKind, TokenStream, token_kind_to_string } from './lexer.mjs'
 
 const UNARY = [
 	TokenKind.Not,
@@ -40,6 +34,10 @@ function error(token: Token, message: string): Error
 function expect(stream: TokenStream, kind: TokenKind): Token | Error
 {
 	const token = stream.peek()
+
+	if (token === undefined)
+		throw new Error()
+
 	if (token.kind != kind)
 	{
 		return error(token,
@@ -53,6 +51,10 @@ function expect(stream: TokenStream, kind: TokenKind): Token | Error
 function consume(stream: TokenStream, kind: TokenKind): boolean
 {
 	const token = stream.peek()
+
+	if (token === undefined)
+		throw new Error()
+
 	if (token.kind != kind)
 		return false
 
@@ -76,6 +78,7 @@ function parse_table_key(stream: TokenStream): Expression | Error
 	}
 
 	const value = parse_value(stream)
+
 	if (value instanceof Error)
 		return value
 
@@ -101,6 +104,7 @@ function parse_table(stream: TokenStream): Value | Error
 
 	const elements: Map<Expression, Expression> = new Map()
 	let current_numeric_key = 1
+
 	while (stream.peek().kind != TokenKind.SquiglyClose)
 	{
 		const element = parse_table_key(stream)
@@ -373,24 +377,34 @@ function operation_type_to_expression_kind(
 	}
 }
 
-function parse_operation(stream: TokenStream,
-						 order: number): Expression | Error
+function parse_operation(
+	stream: TokenStream,
+	order: number
+): Expression | Error
 {
 	if (order >= ORDERS.length)
 		return parse_value_expression(stream)
 
 	let lhs = parse_operation(stream, order + 1)
+
 	if (lhs instanceof Error)
 		return lhs
 
-	while (ORDERS[order].includes(stream.peek().kind))
+	const orders_order = ORDERS[order]
+
+	if (orders_order === undefined)
+		throw new Error()
+
+	while (orders_order.includes(stream.peek().kind))
 	{
 		const operation_type = stream.next()
 		const rhs = parse_operation(stream, order + 1)
+
 		if (rhs instanceof Error)
 			return rhs
 
 		const expression_kind = operation_type_to_expression_kind(operation_type.kind)
+
 		lhs = {
 			kind: expression_kind,
 			token: operation_type,
@@ -445,10 +459,11 @@ function parse_assign_or_expression(stream: TokenStream): Statement | Error
 	const assign = expect(stream, TokenKind.Assign)
 	if (assign instanceof Error)
 	{
-		if (!(local instanceof Error))
-			return parse_local_statement(local, lhs)
-		else
+		if (local instanceof Error)
+			// @TODO: Investigate as lhs[0] seems to always be undefined
 			return { kind: StatementKind.Expression, expression: lhs[0] }
+
+		return parse_local_statement(local, lhs)
 	}
 
 	const rhs: Expression[] = []
@@ -541,7 +556,7 @@ function parse_if(stream: TokenStream): Statement | Error
 	if (body instanceof Error)
 		return body
 
-	const else_if_bodies: IfElseBlock[] = []
+	const else_if_bodies: ElseIfBlock[] = []
 	let else_body: Chunk | undefined = undefined
 	while (consume(stream, TokenKind.ElseIf))
 	{
@@ -678,15 +693,22 @@ function parse_for(stream: TokenStream): Statement | Error
 	}
 
 	if (consume(stream, TokenKind.Assign))
-		return parse_numeric_for(items[0], stream)
+	{
+		const token = items[0];
+
+		if (token === undefined)
+			throw new Error()
+
+		return parse_numeric_for(token, stream)
+	}
 
 	const in_token = expect(stream, TokenKind.In)
 	if (in_token instanceof Error)
 		return in_token
 
-	const itorator = parse_expression(stream)
-	if (itorator instanceof Error)
-		return itorator
+	const iterator = parse_expression(stream)
+	if (iterator instanceof Error)
+		return iterator
 
 	const do_token = expect(stream, TokenKind.Do)
 	if (do_token instanceof Error)
@@ -697,11 +719,12 @@ function parse_for(stream: TokenStream): Statement | Error
 		return body
 
 	consume(stream, TokenKind.End)
+
 	return {
 		kind: StatementKind.For,
 		for: {
 			items: items,
-			itorator: itorator,
+			iterator: iterator,
 			body: body,
 			token: for_token,
 		},
@@ -926,7 +949,13 @@ function parse_statement(stream: TokenStream, end_tokens: TokenKind[]): Statemen
 		default:
 			if (end_tokens.includes(token.kind))
 				return undefined
-			return error(token, `Missing '${ token_kind_to_string(end_tokens[0]) }', ` +
+
+			const first_end_token = end_tokens[0]
+
+			if (first_end_token === undefined)
+				throw new Error()
+
+			return error(token, `Missing '${ token_kind_to_string(first_end_token) }', ` +
 								`got '${ token_kind_to_string(token.kind) }' instead`)
 	}
 }
