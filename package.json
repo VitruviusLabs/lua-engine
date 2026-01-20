@@ -1,9 +1,9 @@
 {
 	"$schema": "https://json.schemastore.org/package.json",
 	"name": "lua-engine",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"description": "A TypeScript implementation of a Lua interpreter",
-	"license": "ISC",
+	"license": "BSD-2-Clause",
 	"author": {
 		"name": "VitruviusLabs"
 	},
@@ -29,18 +29,42 @@
 		"node": ">=18.0.0"
 	},
 	"type": "module",
+	"exports": {
+		".": {
+			"import": "./build/esm/_index.mjs",
+			"types": "./build/types/_index.d.mts"
+		}
+	},
 	"files": [
-		"src/index.mts"
+		"build"
 	],
 	"scripts": {
-		"ts:check": "tsc -p tsconfig.json --noEmit"
+		"clean": "rm -rf reports coverage build dist lib .eslintcache",
+		"compile": "tsc -p tsconfig.build.json",
+		"build": "pnpm clean && pnpm compile",
+		"eslint:check": "eslint",
+		"eslint:fix": "eslint --fix",
+		"ts:check": "tsc -p tsconfig.json --noEmit",
+		"spell:check": "cspell -c ./.vscode/cspell.json .",
+		"ci:lint": "pnpm eslint:check",
+		"ci:ts:check": "pnpm ts:check",
+		"ci:spell:check": "pnpm spell:check",
+		"ci:publish": "pnpm publish --access public",
+		"ci:publish:dry": "pnpm publish --access public --dry-run --no-git-checks",
+		"ci:build": "pnpm build"
 	},
 	"dependencies": {
 		"@vitruvius-labs/ts-predicate": "^7.0.0"
 	},
 	"devDependencies": {
-		"@types/node": "^22.14.1",
+		"@stylistic/eslint-plugin": "^5.7.0",
+		"@types/node": "^25.0.9",
+		"@swc/core": "^1.11.21",
+		"cspell": "^9.6.0",
+		"eslint": "^9.25.0",
+		"eslint-plugin-perfectionist": "^5.3.1",
 		"tsx": "^4.19.3",
-		"typescript": "^5.8.3"
+		"typescript": "^5.8.3",
+		"typescript-eslint": "^8.30.1"
 	}
 }

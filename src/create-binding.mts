@@ -1,4 +1,4 @@
-import { assertArray, assertDefined, isInstanceOf, isNullish, ValidationError, type Awaitable } from "@vitruvius-labs/ts-predicate";
+import { assertArray, assertDefined, isInstanceOf, isNullish, ValidationError } from "@vitruvius-labs/ts-predicate";
 import type { Engine } from "./engine.mjs";
 import { make_variable } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
