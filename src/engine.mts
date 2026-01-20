@@ -1,75 +1,50 @@
-import type { Op } from './opcode.mjs'
-import type { NativeFunction, Variable } from './runtime.mjs'
+import { assertUnion, unary } from "@vitruvius-labs/ts-predicate"
 
+import type { Op } from './opcode.mjs'
 import { OpCode, op_code_name } from './opcode.mjs'
-import { DataType, nil, make_number, make_boolean, make_string } from './runtime.mjs'
+import { make_number, make_boolean, make_string, make_table } from './runtime.mjs'
 import { TokenStream } from './lexer.mjs'
 import { parse } from './parser.mjs'
 import { compile } from './compiler.mjs'
 import { optimize_chunk } from './optimizer.mjs'
 import * as std from './lib.mjs'
+import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs"
+import type { Variable } from "./variable/definition/type/variable.type.mjs"
+import { RuntimeError } from "./runtime-error.mjs"
+import { assertVariableKind } from "./variable/predicate/assert-variable-kind.mjs"
+import { isNil } from "./variable/predicate/is-nil.mjs"
+import { nil } from "./variable/nil.mjs"
+import { isVariableKind } from "./variable/predicate/is-variable-kind.mjs"
+import type { TableMap } from "./boundary/definition/type/table-map.type.mjs"
+import type { NativeFunction } from "./boundary/definition/type/native-function.type.mjs";
+import type { VariableFunction } from "./variable/definition/interface/variable-function.interface.mjs"
+import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs"
+import { equals } from "./variable/equals.mjs"
+import { assertVariable } from "./variable/predicate/assert-variable.mjs"
 
 function index(val: Variable | undefined): string | number | undefined
 {
-	if (val == undefined)
+	if (val === undefined)
 		return undefined
-	else if (val.data_type == DataType.String)
+
+	if (val.data_type === VariableKind.String)
 		return val.string
-	else if (val.data_type == DataType.Number)
+
+	if (val.data_type === VariableKind.Number)
 		return val.number
-	else
-		return undefined
+
+	return undefined
 }
 
 function is_true(val: Variable | undefined): boolean
 {
-	if (val == undefined)
+	if (isNil(val))
 		return false
 
-	switch (val.data_type)
-	{
-		case DataType.Number: return val.number != 0
-		case DataType.String: return val.string != ''
-		case DataType.Boolean: return val.boolean ?? false
-		case DataType.Function: return true
-		case DataType.NativeFunction: return true
-		default:
-			return false
-	}
-}
+	if (isVariableKind(val, VariableKind.Boolean))
+		return val.boolean
 
-function equals(a: Variable | undefined, b: Variable | undefined): boolean
-{
-	if (a == undefined && b == undefined)
-		return true
-	if (a == undefined || b == undefined)
-		return false
-
-	if (a.data_type != b.data_type)
-		return false
-
-	switch (a.data_type)
-	{
-		case DataType.Nil: return true
-		case DataType.Boolean: return a.boolean == b.boolean
-		case DataType.Number: return a.number == b.number
-		case DataType.String: return a.string == b.string
-		case DataType.Function: return a.function_id == b.function_id
-		case DataType.NativeFunction: return a.native_function == b.native_function
-		case DataType.Table:
-		{
-			if (a.table?.keys() != b.table?.keys())
-				return false
-
-			for (const key of a.table?.keys() ?? [])
-			{
-				if (!equals(a.table?.get(key), b.table?.get(key)))
-					return false
-			}
-
-			return true
-		}
-	}
+	return true
 }
 
 export interface LuaOptions
@@ -82,23 +57,22 @@ export interface LuaOptions
 
 export class Engine
 {
+	private program: Op[];
+	private globals: TableMap;
+	private start_ip: number = 0;
 
-	private program: Op[]
-	private globals: Map<string, Variable>
-	private start_ip: number = 0
+	private ip: number = 0;
+	private stack: Variable[] = [];
+	private locals_stack: Map<string, Variable>[] = [];
+	private locals_capture: Map<string, Variable>[] = [];
+	private call_stack: number[] = [];
+	private assign_height_stack: number[] = [];
 
-	private ip: number = 0
-	private stack: Variable[] = []
-	private locals_stack: Map<string, Variable>[] = []
-	private locals_capture: Map<string, Variable>[] = []
-	private call_stack: number[] = []
-	private assign_height_stack: number[] = []
-
-	private error: Error | undefined
+	private error: Error | undefined;
 
 	constructor(
 		script?: string,
-		globals?: Map<string, Variable>
+		globals?: TableMap
 	)
 	{
 		this.program = []
@@ -106,10 +80,10 @@ export class Engine
 		this.error = undefined
 		this.reset()
 
-		if (script != undefined)
+		if (script !== undefined)
 		{
 			const result = this.load(script)
-			if (result != undefined)
+			if (result !== undefined)
 				this.error = result
 		}
 	}
@@ -134,14 +108,14 @@ export class Engine
 
 	bytecode(): string[]
 	{
-		if (this.error != undefined)
+		if (this.error !== undefined)
 			return [ this.error.message ]
 
 		const output = []
 		for (const [i, op] of this.program.entries())
 		{
-			const arg = op.arg != undefined ? std.variable_to_string(op.arg) : ''
-			if (i == this.ip)
+			const arg = op.arg !== undefined ? std.variable_to_string(op.arg) : ''
+			if (i === this.ip)
 				output.push(`* ${ i } ${ op_code_name(op.code) } ${ arg }`)
 			else
 				output.push(`${ i } ${ op_code_name(op.code) } ${ arg }`)
@@ -158,7 +132,7 @@ export class Engine
 	define(name: string, func: NativeFunction): void
 	{
 		this.globals.set(name, {
-			data_type: DataType.NativeFunction,
+			data_type: VariableKind.NativeFunction,
 			native_function: func,
 		})
 	}
@@ -166,7 +140,7 @@ export class Engine
 	define_table(name: string, table: Map<string|number, Variable>): void
 	{
 		this.globals.set(name, {
-			data_type: DataType.Table,
+			data_type: VariableKind.Table,
 			table: table,
 		})
 	}
@@ -185,11 +159,10 @@ export class Engine
 
 	call(func: Variable, ...args: Variable[]): Variable[] | Error
 	{
-		if (func.native_function != undefined)
+		if (isVariableKind(func, VariableKind.NativeFunction))
 			return this.call_native_function(func.native_function, ...args)
 
-		if (func.function_id == undefined)
-			return new Error() // TODO: Error message
+		assertUnion<VariableFunction, VariableNativeFunction>(func, [unary(assertVariableKind, VariableKind.Function), unary(assertVariableKind, VariableKind.NativeFunction)]);
 
 		const old_stack = this.stack
 		const old_call_stack = this.call_stack
@@ -202,6 +175,7 @@ export class Engine
 
 		for (const arg of args)
 			this.stack.push(arg)
+
 		this.stack.push(make_number(args.length))
 		this.locals_stack.push(new Map())
 
@@ -220,10 +194,10 @@ export class Engine
 
 	run_for_steps(steps: number, options?: LuaOptions): Variable | Error | undefined
 	{
-		if (this.error != undefined)
+		if (this.error !== undefined)
 			return this.error
 
-		if (options?.locals != undefined)
+		if (options?.locals !== undefined)
 			this.locals_stack.push(options.locals)
 
 		let step_count = 0
@@ -231,7 +205,7 @@ export class Engine
 		{
 			const result = this.step(options)
 
-			if (result != undefined)
+			if (result !== undefined)
 				return result
 
 			step_count += 1
@@ -246,7 +220,7 @@ export class Engine
 	{
 		const result = this.run_for_steps(1000, options)
 
-		if (result == undefined)
+		if (result === undefined)
 			return new Error('Program ran for too long')
 		else
 			return result
@@ -268,11 +242,34 @@ export class Engine
 		return this.stack[index] ?? nil;
 	}
 
+	private stack_pop_maybe(): Variable
+	{
+		return this.stack.pop() ?? nil;
+	}
+
+	private stack_pop(): Variable
+	{
+		const value = this.stack.pop();
+
+		assertVariable(value);
+
+		return value;
+	}
+
+	private stack_pop_kind<K extends VariableKind>(kind: K): Variable & { data_type: K }
+	{
+		const value = this.stack.pop();
+
+		assertVariableKind(value, kind);
+
+		return value;
+	}
+
 	private call_native_function(native_function: NativeFunction, ...args: Array<Variable>): Array<Variable> | Error
 	{
 		const results = native_function(this, ...args)
 
-		if (this.error != undefined)
+		if (this.error !== undefined)
 		{
 			const error = this.error
 			this.error = undefined
@@ -285,49 +282,53 @@ export class Engine
 
 	private operation(op: (x: number, y: number) => number): void
 	{
-		const x = this.stack.pop()?.number ?? 0
-		const y = this.stack.pop()?.number ?? 0
-		this.stack.push(make_number(op(x, y)))
+		const x = this.stack_pop_kind(VariableKind.Number);
+		const y = this.stack_pop_kind(VariableKind.Number);
+
+		this.stack.push(make_number(op(x.number, y.number)))
 	}
 
-	private compair(op: (x: number, y: number) => boolean): void
+	private compare(op: (x: number, y: number) => boolean): void
 	{
-		const x = this.stack.pop()?.number ?? 0
-		const y = this.stack.pop()?.number ?? 0
-		this.stack.push(make_boolean(op(x, y)))
+		const x = this.stack_pop_kind(VariableKind.Number);
+		const y = this.stack_pop_kind(VariableKind.Number);
+
+		this.stack.push(make_boolean(op(x.number, y.number)))
 	}
 
 	private force_stack_height(expected: number, got: number): void
 	{
-		for (let i = got; i < expected; i++)
+		for (let i = got; i < expected; ++i)
 			this.stack.push(nil)
-		for (let i = expected; i < got; i++)
+
+		for (let i = expected; i < got; ++i)
 			this.stack.pop()
 	}
 
-	private runtime_error(op: Op | undefined, message: string): Error
+	private runtime_error(op: Op | undefined, message: string): never
 	{
-		if (op == undefined)
-			return new Error(`${ message }`)
-		else
-			return new Error(`${ op.debug.line }:${ op.debug.column }: ${ message }`)
+		if (op === undefined)
+			throw new RuntimeError(`${ message }`)
+
+		throw new RuntimeError(message, {}, op.debug)
 	}
 
 	private run_instruction(op: Op): Error | undefined
 	{
 		const { code, arg } = op
+
 		switch(code)
 		{
 			case OpCode.Pop:
 			{
-				const count = arg?.number ?? 1
+				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1
 				this.stack.splice(this.stack.length - count, count)
 				break
 			}
 
 			case OpCode.Dup:
 			{
-				const count = arg?.number ?? 1
+				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1
 				const items = this.stack.splice(this.stack.length - count, count)
 				this.stack.push(...items, ...items)
 				break
@@ -352,7 +353,7 @@ export class Engine
 				const control = this.stack_get(-2)
 				const iter = this.stack_get(-3)
 
-				if (iter.native_function !== undefined)
+				if (isVariableKind(iter, VariableKind.NativeFunction))
 				{
 					const result = this.call_native_function(iter.native_function, control, state)
 
@@ -367,90 +368,196 @@ export class Engine
 				this.call_stack.push(this.ip)
 				this.locals_stack.push(new Map())
 				this.locals_capture = iter.locals ?? []
-				this.ip = iter.function_id ?? this.ip
+
+				if (isVariableKind(iter, VariableKind.Function) && iter.function_id !== undefined)
+				{
+					this.ip = iter.function_id;
+				}
+
 				break
 			}
 
 			case OpCode.IterJumpIfDone:
 			{
-				if (this.stack_get(-1).data_type == DataType.Nil)
-					this.ip += arg?.number ?? 0
+				if (isVariableKind(arg, VariableKind.Number) && isNil(this.stack_get(-1)))
+				{
+					this.ip += arg.number
+				}
+
 				break
 			}
 
-			case OpCode.Add: this.operation((x, y) => x + y); break
-			case OpCode.Subtract: this.operation((x, y) => x - y); break
-			case OpCode.Multiply: this.operation((x, y) => x * y); break
-			case OpCode.Divide: this.operation((x, y) => x / y); break
-			case OpCode.FloorDivide: this.operation((x, y) => Math.floor(x / y)); break
-			case OpCode.Modulo: this.operation((x, y) => x % y); break
-			case OpCode.Exponent: this.operation((x, y) => Math.pow(x, y)); break
-			case OpCode.LessThen: this.compair((x, y) => x < y); break
-			case OpCode.LessThenEquals: this.compair((x, y) => x <= y); break
-			case OpCode.GreaterThen: this.compair((x, y) => x > y); break
-			case OpCode.GreaterThenEquals: this.compair((x, y) => x >= y); break
+			case OpCode.Add:
+				this.operation((x, y) => x + y);
+				break
+			case OpCode.Subtract:
+				this.operation((x, y) => x - y);
+				break
+			case OpCode.Multiply:
+				this.operation((x, y) => x * y);
+				break
+			case OpCode.Divide:
+				this.operation((x, y) => x / y);
+				break
+			case OpCode.FloorDivide:
+				this.operation((x, y) => Math.floor(x / y));
+				break
+			case OpCode.Modulo:
+				this.operation((x, y) => x % y);
+				break
+			case OpCode.Exponent:
+				this.operation((x, y) => Math.pow(x, y));
+				break
 
-			case OpCode.BitAnd: this.operation((x, y) => x & y); break
-			case OpCode.BitOr: this.operation((x, y) => x | y); break
-			case OpCode.BitXOr: this.operation((x, y) => x ^ y); break
-			case OpCode.BitShiftLeft: this.operation((x, y) => x << y); break
-			case OpCode.BitShiftRight: this.operation((x, y) => x >> y); break
+			case OpCode.LessThan:
+				this.compare((x, y) => x < y);
+				break
+			case OpCode.LessThanEquals:
+				this.compare((x, y) => x <= y);
+				break
+			case OpCode.GreaterThan:
+				this.compare((x, y) => x > y);
+				break
+			case OpCode.GreaterThanEquals:
+				this.compare((x, y) => x >= y);
+				break
+
+			case OpCode.BitAnd:
+				this.operation((x, y) => x & y);
+				break
+			case OpCode.BitOr:
+				this.operation((x, y) => x | y);
+				break
+			case OpCode.BitXOr:
+				this.operation((x, y) => x ^ y);
+				break
+			case OpCode.BitShiftLeft:
+				this.operation((x, y) => x << y);
+				break
+			case OpCode.BitShiftRight:
+				this.operation((x, y) => x >> y);
+				break
 
 			case OpCode.Concat:
 			{
-				const x = std.variable_to_string(this.stack.pop() ?? nil)
-				const y = std.variable_to_string(this.stack.pop() ?? nil)
-				this.stack.push(make_string(x + y))
+				const x = this.stack_pop();
+				const y = this.stack_pop();
+
+				const result = std.variable_to_string(x) + std.variable_to_string(y);
+
+				this.stack.push(make_string(result))
 				break
 			}
 
 			case OpCode.Equals:
 			{
-				const [x, y] = [this.stack.pop(), this.stack.pop()]
+				const x = this.stack_pop();
+				const y = this.stack_pop();
 				this.stack.push(make_boolean(equals(x, y)))
 				break
 			}
 
 			case OpCode.NotEquals:
 			{
-				const [x, y] = [this.stack.pop(), this.stack.pop()]
+				const x = this.stack_pop();
+				const y = this.stack_pop();
 				this.stack.push(make_boolean(!equals(x, y)))
 				break
 			}
 
 			case OpCode.And:
 			{
-				const [x, y] = [this.stack.pop(), this.stack.pop()]
-				this.stack.push(make_boolean(is_true(x) && is_true(y)))
+				const x = this.stack_pop();
+				const y = this.stack_pop();
+
+				const result = is_true(x) ? y : x;
+				this.stack.push(result)
 				break
 			}
 
 			case OpCode.Or:
 			{
-				const [x, y] = [this.stack.pop(), this.stack.pop()]
-				this.stack.push(make_boolean(is_true(x) || is_true(y)))
+				const x = this.stack_pop();
+				const y = this.stack_pop();
+
+				const result = is_true(x) ? x : y;
+				this.stack.push(result)
 				break
 			}
 
-			case OpCode.Not: this.stack.push(make_boolean(!is_true(this.stack.pop()))); break
-			case OpCode.BitNot: this.stack.push(make_number(~(this.stack.pop()?.number ?? 0))); break
-			case OpCode.Negate: this.stack.push(make_number(-(this.stack.pop()?.number ?? 0))); break
-			case OpCode.IsNotNil: this.stack.push(make_boolean((this.stack.pop() ?? nil) != nil)); break
-			case OpCode.Jump: this.ip += arg?.number ?? 0; break
-			case OpCode.JumpIfNot: if (!is_true(this.stack.pop())) { this.ip += arg?.number ?? 0 } break
-			case OpCode.JumpIf: if (is_true(this.stack.pop())) { this.ip += arg?.number ?? 0 } break
-			case OpCode.MakeLocal: this.locals_stack.at(-1)?.set(arg?.string ?? '', nil); break
-			case OpCode.NewTable: this.stack.push({ data_type: DataType.Table, table: new Map() }); break
-			case OpCode.StartBlock: this.locals_stack.push(new Map()); break
-			case OpCode.EndBlock: this.locals_stack.pop(); break
+			case OpCode.Not:
+				this.stack.push(make_boolean(!is_true(this.stack_pop())));
+				break
+
+			case OpCode.BitNot:
+				this.stack.push(make_number(~(this.stack_pop_kind(VariableKind.Number).number)));
+				break
+
+			case OpCode.Negate:
+				this.stack.push(make_number(-(this.stack_pop_kind(VariableKind.Number).number)));
+				break
+
+			case OpCode.IsNotNil:
+				this.stack.push(make_boolean(!isNil(this.stack_pop())));
+				break
+
+			case OpCode.Jump:
+				if (isVariableKind(arg, VariableKind.Number))
+				{
+					this.ip += arg.number;
+				}
+				break
+
+			case OpCode.JumpIfNot:
+				if (isVariableKind(arg, VariableKind.Number) && !is_true(this.stack_pop()))
+				{
+					this.ip += arg.number
+				}
+				break
+
+			case OpCode.JumpIf:
+				if (isVariableKind(arg, VariableKind.Number) && is_true(this.stack_pop()))
+				{
+					this.ip += arg.number
+				}
+				break
+
+			case OpCode.MakeLocal:
+				const last_locals = this.locals_stack.at(-1)
+
+				if (last_locals)
+				{
+					last_locals.set(isVariableKind(arg, VariableKind.String) ? arg.string : '', nil);
+				}
+				break
+
+			case OpCode.NewTable:
+				this.stack.push(make_table());
+				break
+
+			case OpCode.StartBlock:
+				this.locals_stack.push(new Map());
+				break
+
+			case OpCode.EndBlock:
+				this.locals_stack.pop();
+				break
 
 			case OpCode.Length:
 			{
-				const size = std.variable_size(this.stack.pop() ?? nil)
-				if (size == undefined)
-					this.stack.push(nil)
-				else
-					this.stack.push(make_number(size))
+				const variable = this.stack_pop_maybe()
+
+				switch (variable.data_type)
+				{
+					case VariableKind.String:
+						this.stack.push(make_number(variable.string.length))
+						break
+					case VariableKind.Table:
+						this.stack.push(make_number(std.table_size(variable)))
+						break
+					default:
+						this.runtime_error(op, `Attempt to get length of a ${ variable.data_type } value`)
+				}
 				break
 			}
 
@@ -464,27 +571,26 @@ export class Engine
 
 			case OpCode.LoadIndex:
 			{
-				const table = this.stack.pop()
-				if (table?.data_type == DataType.Nil)
+				const table = this.stack_pop_maybe()
+
+				if (isNil(table))
 				{
-					this.stack.pop() // Pop index
-					this.stack.push(nil)
-					break
+					this.runtime_error(op, 'Attempt to index a nil value')
 				}
 
-				if (table == undefined || table.table == undefined)
-					return this.runtime_error(op, 'Can only index on tables')
+				assertVariableKind(table, VariableKind.Table);
 
-				const i_var = this.stack.pop()
-				if (i_var?.data_type == DataType.Nil)
+				const i_var = this.stack_pop_maybe()
+
+				if (isNil(i_var))
 				{
-					this.stack.push(nil)
-					break
+					this.runtime_error(op, 'Attempt to index with a nil value')
 				}
 
 				const i = index(i_var)
-				if (i == undefined)
-					return this.runtime_error(op, 'Invalid index, must be a number or string')
+
+				if (i === undefined)
+					this.runtime_error(op, 'Invalid index, must be a number or string')
 
 				this.stack.push(table.table.get(i) ?? nil)
 				break
@@ -492,17 +598,17 @@ export class Engine
 
 			case OpCode.StoreIndex:
 			{
-				const count = arg?.number ?? 1
-				const table = this.stack_get(- count*2 - 1)
+				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1
+				const table = this.stack_get(- 1 - count * 2)
 
-				if (table.table == undefined)
-					return this.runtime_error(op, 'Can only index tables')
+				assertVariableKind(table, VariableKind.Table);
 
-				for (let i = 0; i < count; i++)
+				for (let i = 0; i < count; ++i)
 				{
-					const key = index(this.stack.pop())
-					const value = this.stack.pop() ?? nil
-					if (key == undefined)
+					const key = index(this.stack_pop_maybe())
+					const value = this.stack_pop_maybe()
+
+					if (key === undefined)
 						return this.runtime_error(op, 'Invalid key, must be a number or string')
 
 					table.table.set(key, value)
@@ -513,13 +619,11 @@ export class Engine
 
 			case OpCode.Store:
 			{
-				const name = arg?.string ?? ''
-				const value = this.stack.pop() ?? nil
-				const local = [...this.locals_capture, ...this.locals_stack]
-					.reverse()
-					.find(x => x.has(name))
+				const name = isVariableKind(arg, VariableKind.String) ? arg.string : ''
+				const value = this.stack_pop_maybe()
+				const local = [...this.locals_capture, ...this.locals_stack].findLast(x => x.has(name))
 
-				if (local != undefined)
+				if (local !== undefined)
 					local.set(name, value)
 				else
 					this.globals.set(name, value)
@@ -528,7 +632,7 @@ export class Engine
 
 			case OpCode.Push:
 			{
-				if (this.locals_stack.length > 0 && arg?.data_type == DataType.Function)
+				if (this.locals_stack.length > 0 && isVariableKind(arg, VariableKind.Function))
 					arg.locals = [...this.locals_stack]
 				this.stack.push(arg ?? nil)
 				break
@@ -536,11 +640,10 @@ export class Engine
 
 			case OpCode.Load:
 			{
-				const name = arg?.string ?? ''
+				const name =  isVariableKind(arg, VariableKind.String) ? arg.string : ''
 				const local = [...this.locals_capture, ...this.locals_stack]
-					.reverse()
 					.map(x => x.get(name))
-					.find(x => x != undefined && x.data_type != DataType.Nil)
+					.findLast(x => !isNil(x))
 
 				const global = this.globals.get(name)
 				this.stack.push(local ?? global ?? nil)
@@ -549,14 +652,16 @@ export class Engine
 
 			case OpCode.Call:
 			{
-				const count = this.stack.pop()?.number ?? 0
-				const func_var = this.stack.pop() ?? nil
+				const x = this.stack_pop_maybe();
+				const count = isVariableKind(x, VariableKind.Number) ? x.number : 0
+				const func_var = this.stack_pop_maybe()
+
 				switch (func_var.data_type)
 				{
-					case DataType.NativeFunction:
+					case VariableKind.NativeFunction:
 					{
 						const args = this.stack.splice(this.stack.length - count, count)
-						if (func_var.native_function != undefined)
+						if (func_var.native_function !== undefined)
 						{
 							const result = this.call_native_function(func_var.native_function, ...args)
 
@@ -566,7 +671,7 @@ export class Engine
 							this.stack.push(...result)
 						}
 
-						if (this.error != undefined)
+						if (this.error !== undefined)
 						{
 							const error = this.error
 							this.error = undefined
@@ -575,7 +680,7 @@ export class Engine
 						break
 					}
 
-					case DataType.Function:
+					case VariableKind.Function:
 					{
 						this.stack.push(make_number(count))
 						this.call_stack.push(this.locals_stack.length, this.ip)
@@ -587,9 +692,7 @@ export class Engine
 
 					default:
 					{
-						return this.runtime_error(op,
-							`Object of type '${ std.type_name(func_var.data_type) }' ` +
-							'is not callable')
+						return this.runtime_error(op, `Object of type '${ func_var.data_type }' is not callable`)
 					}
 				}
 
@@ -598,8 +701,9 @@ export class Engine
 
 			case OpCode.ArgumentCount:
 			{
-				const got = this.stack.pop()?.number ?? 0
-				const expected = arg?.number ?? 0
+				const x = this.stack_pop_maybe();
+				const got = isVariableKind(x, VariableKind.Number) ? x.number : 0
+				const expected = isVariableKind(arg, VariableKind.Number) ? arg.number : 0
 				this.force_stack_height(expected, got)
 				break
 			}
@@ -613,7 +717,7 @@ export class Engine
 			case OpCode.EndStackChange:
 			{
 				const got = this.stack.length - (this.assign_height_stack.pop() ?? 0)
-				const expected = arg?.number ?? 0
+				const expected = isVariableKind(arg, VariableKind.Number) ? arg.number : 0
 				this.force_stack_height(expected, got)
 				break
 			}
@@ -624,26 +728,27 @@ export class Engine
 
 	step(options?: LuaOptions): Error | undefined
 	{
-		if (this.error != undefined)
+		if (this.error !== undefined)
 			return this.error
 
 		if (this.ip >= this.program.length)
 			return
 
-		const op = this.program[this.ip++]
+		const op = this.program[this.ip]
+		++this.ip
 
 		if (op === undefined)
 			return this.runtime_error(op, 'Instruction pointer out of bounds')
 
 		if (options?.trace || options?.trace_instructions)
 		{
-			const arg = op.arg != undefined ? std.variable_to_string(op.arg) : ''
+			const arg = op.arg !== undefined ? std.variable_to_string(op.arg) : ''
 			console.log(this.ip - 1, op_code_name(op.code), arg)
 		}
 
 		const result = this.run_instruction(op)
 
-		if (result != undefined)
+		if (result !== undefined)
 			return result
 
 		if (options?.trace || options?.trace_stack)
@@ -651,5 +756,4 @@ export class Engine
 
 		return undefined
 	}
-
 }

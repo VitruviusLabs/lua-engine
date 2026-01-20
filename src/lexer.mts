@@ -47,10 +47,10 @@ export enum TokenKind {
 
 	Equals,
 	NotEquals,
-	LessThen,
-	LessThenEquals,
-	GreaterThen,
-	GreaterThenEquals,
+	LessThan,
+	LessThanEquals,
+	GreaterThan,
+	GreaterThanEquals,
 	And,
 	Or,
 	Not,
@@ -106,8 +106,8 @@ export function token_kind_to_string(kind: TokenKind): string | undefined
 		case TokenKind.BitXOrNot: return '~'
 		case TokenKind.BitShiftLeft: return '<<'
 		case TokenKind.BitShiftRight: return '>>'
-		case TokenKind.LessThen: return '<'
-		case TokenKind.GreaterThen: return '>'
+		case TokenKind.LessThan: return '<'
+		case TokenKind.GreaterThan: return '>'
 		case TokenKind.And: return 'and'
 		case TokenKind.Or: return 'or'
 		case TokenKind.Not: return 'not'
@@ -164,8 +164,8 @@ const single_token_map: Map<string, TokenKind> = new Map([
 	['|', TokenKind.BitOr],
 	['~', TokenKind.BitXOrNot],
 
-	['<', TokenKind.LessThen],
-	['>', TokenKind.GreaterThen],
+	['<', TokenKind.LessThan],
+	['>', TokenKind.GreaterThan],
 
 	['=', TokenKind.Assign],
 	[';', TokenKind.Semicolon],
@@ -176,8 +176,8 @@ const single_token_map: Map<string, TokenKind> = new Map([
 
 const double_token_map: Map<string, TokenKind> = new Map([
 	['==', TokenKind.Equals],
-	['<=', TokenKind.LessThenEquals],
-	['>=', TokenKind.GreaterThenEquals],
+	['<=', TokenKind.LessThanEquals],
+	['>=', TokenKind.GreaterThanEquals],
 	['~=', TokenKind.NotEquals],
 	['..', TokenKind.Concat],
 	['//', TokenKind.FloorDivision],
@@ -255,7 +255,7 @@ export class TokenStream
 			return
 
 		this.column += 1
-		if (this.processing_stream.shift() == '\n')
+		if (this.processing_stream.shift() === '\n')
 		{
 			this.line += 1
 			this.column = 1
@@ -273,7 +273,7 @@ export class TokenStream
 
 	private initial()
 	{
-		if (this.processing_stream.length == 0)
+		if (this.processing_stream.length === 0)
 		{
 			this.peek_queue.push({
 				data: '',
@@ -294,13 +294,13 @@ export class TokenStream
 		if (this.processing_stream.length > 1)
 		{
 			const double = c + this.processing_stream[1]
-			if (double == '--')
+			if (double === '--')
 			{
 				this.state = State.Comment
 				return
 			}
 
-			if (double == '[[')
+			if (double === '[[')
 			{
 				this.state = State.MultiLineString
 				this.start_token()
@@ -310,7 +310,7 @@ export class TokenStream
 			}
 
 			const dobule_token_type = double_token_map.get(double)
-			if (dobule_token_type != undefined)
+			if (dobule_token_type !== undefined)
 			{
 				this.peek_queue.push({
 					data: double,
@@ -327,7 +327,7 @@ export class TokenStream
 		}
 
 		const single_token_type = single_token_map.get(c)
-		if (single_token_type != undefined)
+		if (single_token_type !== undefined)
 		{
 			this.peek_queue.push({
 				data: c,
@@ -341,7 +341,7 @@ export class TokenStream
 			return
 		}
 
-		if (c == '"')
+		if (c === '"')
 		{
 			this.start_token()
 			this.consume()
@@ -369,7 +369,7 @@ export class TokenStream
 		const c = this.current()
 		this.consume()
 
-		if (c == '"')
+		if (c === '"')
 		{
 			this.peek_queue.push({
 				data: this.buffer,
@@ -381,7 +381,7 @@ export class TokenStream
 			return
 		}
 
-		if (c == '\\')
+		if (c === '\\')
 		{
 			this.state = State.StringLiteralEscape
 			return
@@ -413,7 +413,7 @@ export class TokenStream
 		const c = this.current() ?? '\0'
 		this.consume()
 
-		if (c + this.current() == ']]')
+		if (c + this.current() === ']]')
 		{
 			this.peek_queue.push({
 				data: this.buffer,
@@ -459,7 +459,7 @@ export class TokenStream
 			return
 		}
 
-		if (c == '.')
+		if (c === '.')
 		{
 			this.buffer += c
 			this.consume()
@@ -467,7 +467,7 @@ export class TokenStream
 			return
 		}
 
-		if (c == 'e' || c == 'E')
+		if (c === 'e' || c === 'E')
 		{
 			this.buffer += c
 			this.consume()
@@ -475,9 +475,9 @@ export class TokenStream
 			return
 		}
 
-		if (c == 'x')
+		if (c === 'x')
 		{
-			if (this.buffer != '0')
+			if (this.buffer !== '0')
 			{
 				this.peek_queue.push({
 					data: this.buffer,
@@ -512,7 +512,7 @@ export class TokenStream
 			return
 		}
 
-		if (c == 'e' || c == 'E')
+		if (c === 'e' || c === 'E')
 		{
 			this.buffer += c
 			this.state = State.NumberLiteralExpSign
@@ -588,17 +588,17 @@ export class TokenStream
 		const c = this.current()
 		this.consume()
 
-		if (c == '\n')
+		if (c === '\n')
 			this.state = State.Initial
 	}
 
 	private on_char()
 	{
-		if (this.current() == undefined)
+		if (this.current() === undefined)
 		{
 			this.peek_queue.push({
 				data: '',
-				kind: this.state == State.Initial
+				kind: this.state === State.Initial
 					? TokenKind.EOF
 					: TokenKind.NotFinished,
 				debug: {
@@ -656,7 +656,7 @@ export class TokenStream
 
 	next(): Token
 	{
-		if (this.peek_queue.length == 0)
+		if (this.peek_queue.length === 0)
 			this.peek()
 
 		return this.peek_queue.shift() as Token

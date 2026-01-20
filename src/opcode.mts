@@ -1,4 +1,4 @@
-import type { Variable } from './runtime.mjs'
+import type { Variable } from './variable/definition/type/variable.type.mjs'
 import type { Debug } from './lexer.mjs'
 
 export enum OpCode {
@@ -35,10 +35,10 @@ export enum OpCode {
 
 	Equals,
 	NotEquals,
-	LessThen,
-	LessThenEquals,
-	GreaterThen,
-	GreaterThenEquals,
+	LessThan,
+	LessThanEquals,
+	GreaterThan,
+	GreaterThanEquals,
 	And,
 	Or,
 
@@ -94,10 +94,10 @@ export function op_code_name(op_code: OpCode): string
 		case OpCode.BitShiftRight: return 'BitShiftRight'
 		case OpCode.Equals: return 'Equals'
 		case OpCode.NotEquals: return 'NotEquals'
-		case OpCode.LessThen: return 'LessThen'
-		case OpCode.LessThenEquals: return 'LessThenEquals'
-		case OpCode.GreaterThen: return 'GreaterThen'
-		case OpCode.GreaterThenEquals: return 'GreaterThenEquals'
+		case OpCode.LessThan: return 'LessThan'
+		case OpCode.LessThanEquals: return 'LessThanEquals'
+		case OpCode.GreaterThan: return 'GreaterThan'
+		case OpCode.GreaterThanEquals: return 'GreaterThanEquals'
 		case OpCode.And: return 'And'
 		case OpCode.Or: return 'Or'
 		case OpCode.Not: return 'Not'

@@ -54,10 +54,10 @@ export enum ExpressionKind
 
 	Equals,
 	NotEquals,
-	LessThen,
-	LessThenEquals,
-	GreaterThen,
-	GreaterThenEquals,
+	LessThan,
+	LessThanEquals,
+	GreaterThan,
+	GreaterThanEquals,
 	And,
 	Or,
 

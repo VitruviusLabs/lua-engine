@@ -1,42 +1,130 @@
-import { Engine } from './engine.mjs'
+import {
+	isArray,
+	isBoolean,
+	isCallable,
+	isInstanceOf,
+	isNullish,
+	isNumber,
+	isString,
+} from "@vitruvius-labs/ts-predicate";
 
-export enum DataType {
-	Nil,
-	Boolean,
-	Number,
-	String,
-	Function,
-	NativeFunction,
-	Table,
-}
+import type { Variable } from "./variable/definition/type/variable.type.mjs";
+import type { VariableBoolean } from "./variable/definition/interface/variable-boolean.interface.mjs";
+import type { VariableNumber } from "./variable/definition/interface/variable-number.interface.mjs";
+import type { VariableString } from "./variable/definition/interface/variable-string.interface.mjs";
+import type { VariableTable } from "./variable/definition/interface/variable-table.interface.mjs";
+import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
+import { isVariable } from "./variable/predicate/is-variable.mjs";
+import { nil } from "./variable/nil.mjs";
+import type { TableInputType } from "./boundary/definition/type/table-input.type.mjs";
+import { isTableInputType } from "./boundary/predicate/is-table-input-type.mjs";
+import { isTableKey } from "./boundary/predicate/is-table-key.mjs";
 
-export type NativeFunction = (engine: Engine, ...args: Array<Variable>) => Array<Variable> | Error
-
-export interface Variable {
-	data_type: DataType,
-	boolean?: boolean,
-	number?: number,
-	string?: string,
-	native_function?: NativeFunction,
-	table?: Map<number | string, Variable>,
-
-	function_id?: number,
-	locals?: Map<string, Variable>[],
-}
-
-export const nil: Variable = { data_type: DataType.Nil }
-
-export function make_boolean(boolean: boolean): Variable
+export function make_boolean(boolean: boolean): VariableBoolean
 {
-	return { data_type: DataType.Boolean, boolean: boolean }
+	return { data_type: VariableKind.Boolean, boolean: boolean }
 }
 
-export function make_number(number: number): Variable
+export function make_number(number: number): VariableNumber
 {
-	return { data_type: DataType.Number, number: number }
+	return { data_type: VariableKind.Number, number: number }
 }
 
-export function make_string(string: string): Variable
+export function make_string(string: string): VariableString
 {
-	return { data_type: DataType.String, string: string }
+	return { data_type: VariableKind.String, string: string }
+}
+
+export function make_table(input?: TableInputType): VariableTable
+{
+	const table_content: Map<number | string, Variable> = new Map();
+
+	const table_variable: Variable = {
+		data_type: VariableKind.Table,
+		table: table_content,
+	};
+
+	if (input === undefined)
+	{
+		return table_variable;
+	}
+
+	if (isArray(input))
+	{
+		for (let i = 0; i < input.length; ++i)
+		{
+			table_content.set(i + 1, make_variable(input.at(i)));
+		}
+
+		return table_variable;
+	}
+
+	if (isInstanceOf(input, Map))
+	{
+		for (const [key, value] of input.entries())
+		{
+			if (isTableKey(key))
+			{
+				table_content.set(key, make_variable(value));
+			}
+		}
+
+		return table_variable;
+	}
+
+	for (const [key, value] of Object.entries(input))
+	{
+		const variable: Variable = make_variable(value);
+		const numeric_key: number = Number(key);
+
+		if (isNumber(numeric_key))
+		{
+			table_content.set(numeric_key, variable);
+			continue;
+		}
+
+		table_content.set(key, variable);
+	}
+
+	return table_variable;
+}
+
+export function make_variable(input: unknown): Variable
+{
+	if (isVariable(input))
+	{
+		return input;
+	}
+
+	if (isNullish(input))
+	{
+		return nil;
+	}
+
+	if (isBoolean(input))
+	{
+		return make_boolean(input);
+	}
+
+	if (isNumber(input))
+	{
+		return make_number(input);
+	}
+
+	if (isString(input))
+	{
+		return make_string(input);
+	}
+
+	if (isTableInputType(input))
+	{
+		return make_table(input);
+	}
+
+	if (isCallable(input))
+	{
+		throw new Error("Functions cannot be converted into a variable automatically, please use make_function instead");
+	}
+
+	throw new Error("Cannot be converted into a variable");
 }

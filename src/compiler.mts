@@ -6,8 +6,9 @@ import type { Assignment, Local, Return } from './ast.mjs'
 
 import { StatementKind, ExpressionKind, ValueKind  } from './ast.mjs'
 import { OpCode } from './opcode.mjs'
-import { DataType } from './runtime.mjs'
-import { make_boolean, make_number, make_string, nil } from './runtime.mjs'
+import { make_boolean, make_number, make_string } from './runtime.mjs'
+import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs"
+import { nil } from "./variable/nil.mjs"
 
 function compile_function(chunk: Chunk, token: Token, parameters: Token[], functions: Op[][]): number
 {
@@ -28,7 +29,7 @@ function compile_function(chunk: Chunk, token: Token, parameters: Token[], funct
 
 function compile_value(value: Value | undefined, functions: Op[][]): Op[]
 {
-	if (value == undefined)
+	if (value === undefined)
 		throw new Error()
 
 	const debug = value.token.debug
@@ -47,7 +48,7 @@ function compile_value(value: Value | undefined, functions: Op[][]): Op[]
 		{
 			return [{
 				code: OpCode.Push, arg: {
-					data_type: DataType.Function,
+					data_type: VariableKind.Function,
 					function_id: compile_function(
 						value.function?.body ?? { statements: [] },
 						value.token,
@@ -77,7 +78,7 @@ function compile_value(value: Value | undefined, functions: Op[][]): Op[]
 		{
 			return [{
 				code: OpCode.Load,
-				arg: { data_type: DataType.String, string: value.identifier ?? '' },
+				arg: { data_type: VariableKind.String, string: value.identifier ?? '' },
 				debug: debug,
 			}]
 		}
@@ -94,7 +95,7 @@ function compile_operation(
 ): Op[]
 {
 	const { lhs, rhs } = expression
-	if (lhs == undefined || rhs == undefined)
+	if (lhs === undefined || rhs === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -110,7 +111,7 @@ function compile_call(
 	functions: Op[][]
 ): Op[]
 {
-	if (func == undefined || args == undefined)
+	if (func === undefined || args === undefined)
 		throw new Error()
 
 	const debug = func.token.debug
@@ -129,7 +130,7 @@ function compile_index(
 	functions: Op[][]
 ): Op[]
 {
-	if (target == undefined || index == undefined)
+	if (target === undefined || index === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -145,7 +146,7 @@ function compile_unary_operation(
 	functions: Op[][]
 ): Op[]
 {
-	if (expression == undefined || expression.expression == undefined)
+	if (expression === undefined || expression.expression === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -156,7 +157,7 @@ function compile_unary_operation(
 
 function compile_expression(expression: Expression | undefined, functions: Op[][]): Op[]
 {
-	if (expression == undefined)
+	if (expression === undefined)
 		throw new Error()
 
 	switch (expression.kind)
@@ -200,14 +201,14 @@ function compile_expression(expression: Expression | undefined, functions: Op[][
 			return compile_operation(expression, OpCode.Equals, functions)
 		case ExpressionKind.NotEquals:
 			return compile_operation(expression, OpCode.NotEquals, functions)
-		case ExpressionKind.LessThen:
-			return compile_operation(expression, OpCode.LessThen, functions)
-		case ExpressionKind.LessThenEquals:
-			return compile_operation(expression, OpCode.LessThenEquals, functions)
-		case ExpressionKind.GreaterThen:
-			return compile_operation(expression, OpCode.GreaterThen, functions)
-		case ExpressionKind.GreaterThenEquals:
-			return compile_operation(expression, OpCode.GreaterThenEquals, functions)
+		case ExpressionKind.LessThan:
+			return compile_operation(expression, OpCode.LessThan, functions)
+		case ExpressionKind.LessThanEquals:
+			return compile_operation(expression, OpCode.LessThanEquals, functions)
+		case ExpressionKind.GreaterThan:
+			return compile_operation(expression, OpCode.GreaterThan, functions)
+		case ExpressionKind.GreaterThanEquals:
+			return compile_operation(expression, OpCode.GreaterThanEquals, functions)
 		case ExpressionKind.And:
 			return compile_operation(expression, OpCode.And, functions)
 		case ExpressionKind.Or:
@@ -229,7 +230,7 @@ function compile_expression(expression: Expression | undefined, functions: Op[][
 
 function compile_assignment(assignment: Assignment | undefined, functions: Op[][]): Op[]
 {
-	if (assignment == undefined)
+	if (assignment === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -246,7 +247,7 @@ function compile_assignment(assignment: Assignment | undefined, functions: Op[][
 		{
 			case ExpressionKind.Value:
 			{
-				if (lhs.value?.kind != ValueKind.Variable)
+				if (lhs.value?.kind !== ValueKind.Variable)
 					throw new Error()
 
 				const identifier = make_string(lhs.value?.identifier ?? '')
@@ -278,14 +279,14 @@ function compile_assignment(assignment: Assignment | undefined, functions: Op[][
 
 function compile_local(local: Local | undefined): Op[]
 {
-	if (local == undefined)
+	if (local === undefined)
 		throw new Error()
 
 	return local.names
 		.map(name => ({
 			code: OpCode.MakeLocal,
 			arg: {
-				data_type: DataType.String,
+				data_type: VariableKind.String,
 				string: name.data,
 			},
 			debug: name.debug,
@@ -294,7 +295,7 @@ function compile_local(local: Local | undefined): Op[]
 
 function compile_inverted_conditional_jump(condition: Expression | undefined, jump_by: number, functions: Op[][]): Op[]
 {
-	if (condition == undefined)
+	if (condition === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -336,7 +337,7 @@ function compile_inverted_conditional_jump(condition: Expression | undefined, ju
 
 function compile_conditional_jump(condition: Expression | undefined, jump_by: number, functions: Op[][]): Op[]
 {
-	if (condition == undefined)
+	if (condition === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -378,11 +379,11 @@ function compile_conditional_jump(condition: Expression | undefined, jump_by: nu
 
 function compile_if(if_block: IfBlock | undefined, functions: Op[][]): Op[]
 {
-	if (if_block == undefined)
+	if (if_block === undefined)
 		throw new Error()
 
 	const else_chunk: Op[] = []
-	if (if_block.else_body != undefined)
+	if (if_block.else_body !== undefined)
 		else_chunk.push(...compile_block(if_block.else_body, functions))
 
 	const if_else_chunks: Op[][] = []
@@ -419,7 +420,7 @@ function replace_breaks(code: Op[], offset_from_end: number): void
 {
 	for (const [i, op] of code.entries())
 	{
-		if (op.code == OpCode.Break)
+		if (op.code === OpCode.Break)
 		{
 			const offset = code.length - i - 1 + offset_from_end
 			op.code = OpCode.Jump
@@ -430,7 +431,7 @@ function replace_breaks(code: Op[], offset_from_end: number): void
 
 function compile_while(while_block: While | undefined, functions: Op[][]): Op[]
 {
-	if (while_block == undefined)
+	if (while_block === undefined)
 		throw new Error()
 
 	const debug = while_block.token.debug
@@ -448,7 +449,7 @@ function compile_while(while_block: While | undefined, functions: Op[][]): Op[]
 
 function compile_for(for_block: For | undefined, functions: Op[][]): Op[]
 {
-	if (for_block == undefined)
+	if (for_block === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -469,7 +470,7 @@ function compile_for(for_block: For | undefined, functions: Op[][]): Op[]
 	ops.push({ code: OpCode.EndStackChange, arg: make_number(for_block.items.length), debug: debug })
 	for (const [i, item] of [...for_block.items].reverse().entries())
 	{
-		if (i == for_block.items.length - 1)
+		if (i === for_block.items.length - 1)
 			ops.push({ code: OpCode.IterUpdateState, debug: debug })
 		ops.push({ code: OpCode.Store, arg: make_string(item.data), debug: item.debug })
 	}
@@ -484,7 +485,7 @@ function compile_for(for_block: For | undefined, functions: Op[][]): Op[]
 
 function compile_step(step: Expression | undefined, functions: Op[][]): Op[]
 {
-	if (step == undefined)
+	if (step === undefined)
 		return [{ code: OpCode.Push, arg: make_number(1), debug: { line: 0, column: 0 } }]
 
 	return compile_expression(step, functions)
@@ -492,7 +493,7 @@ function compile_step(step: Expression | undefined, functions: Op[][]): Op[]
 
 function compile_numeric_for(numeric_for_block: NumericFor | undefined, functions: Op[][]): Op[]
 {
-	if (numeric_for_block == undefined)
+	if (numeric_for_block === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -525,7 +526,7 @@ function compile_numeric_for(numeric_for_block: NumericFor | undefined, function
 
 function compile_repeat(repeat: Repeat | undefined, functions: Op[][]): Op[]
 {
-	if (repeat == undefined)
+	if (repeat === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -542,7 +543,7 @@ function compile_repeat(repeat: Repeat | undefined, functions: Op[][]): Op[]
 
 function compile_do(do_block: Do | undefined, functions: Op[][]): Op[]
 {
-	if (do_block == undefined)
+	if (do_block === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -555,7 +556,7 @@ function compile_do(do_block: Do | undefined, functions: Op[][]): Op[]
 
 function compile_return(return_block: Return | undefined, functions: Op[][]): Op[]
 {
-	if (return_block == undefined)
+	if (return_block === undefined)
 		throw new Error()
 
 	const ops: Op[] = []
@@ -590,14 +591,14 @@ function compile_chunk(chunk: Chunk, functions: Op[][]): ChunkResult
 
 	for (const [index, statement] of chunk.statements.entries())
 	{
-		const is_last_statement = (index == chunk.statements.length - 1)
+		const is_last_statement = (index === chunk.statements.length - 1)
 		switch (statement.kind)
 		{
 			case StatementKind.Empty:
 				break
 			case StatementKind.Expression:
 				ops.push(...compile_expression(statement.expression, functions))
-				if (statement.expression == undefined)
+				if (statement.expression === undefined)
 					break
 
 				if (is_last_statement)
@@ -648,8 +649,8 @@ function link(code: Op[], function_id: number, location: number): void
 {
 	for (const op of code)
 	{
-		if (op.arg?.data_type == DataType.Function &&
-			op.arg?.function_id == function_id)
+		if (op.arg?.data_type === VariableKind.Function &&
+			op.arg?.function_id === function_id)
 		{
 			op.arg.function_id = location
 		}

@@ -14,7 +14,7 @@ const UNARY = [
 const ORDERS = [
 	[TokenKind.Or],
 	[TokenKind.And],
-	[TokenKind.LessThen, TokenKind.LessThenEquals, TokenKind.GreaterThen, TokenKind.GreaterThenEquals, TokenKind.Equals, TokenKind.NotEquals],
+	[TokenKind.LessThan, TokenKind.LessThanEquals, TokenKind.GreaterThan, TokenKind.GreaterThanEquals, TokenKind.Equals, TokenKind.NotEquals],
 	[TokenKind.BitOr],
 	[TokenKind.BitAnd],
 	[TokenKind.BitXOrNot],
@@ -38,7 +38,7 @@ function expect(stream: TokenStream, kind: TokenKind): Token | Error
 	if (token === undefined)
 		throw new Error()
 
-	if (token.kind != kind)
+	if (token.kind !== kind)
 	{
 		return error(token,
 			`expected '${ token_kind_to_string(kind) }', ` +
@@ -55,7 +55,7 @@ function consume(stream: TokenStream, kind: TokenKind): boolean
 	if (token === undefined)
 		throw new Error()
 
-	if (token.kind != kind)
+	if (token.kind !== kind)
 		return false
 
 	stream.next()
@@ -82,7 +82,7 @@ function parse_table_key(stream: TokenStream): Expression | Error
 	if (value instanceof Error)
 		return value
 
-	if (value.kind == ValueKind.Variable)
+	if (value.kind === ValueKind.Variable)
 	{
 		value.kind = ValueKind.StringLiteral
 		value.string = value.identifier
@@ -105,7 +105,7 @@ function parse_table(stream: TokenStream): Value | Error
 	const elements: Map<Expression, Expression> = new Map()
 	let current_numeric_key = 1
 
-	while (stream.peek().kind != TokenKind.SquiglyClose)
+	while (stream.peek().kind !== TokenKind.SquiglyClose)
 	{
 		const element = parse_table_key(stream)
 		if (element instanceof Error)
@@ -164,7 +164,7 @@ function parse_value(stream: TokenStream): Value | Error
 		case TokenKind.NumberLiteral:
 			return { kind: ValueKind.NumberLiteral, token: stream.next(), number: parseFloat(token.data) }
 		case TokenKind.BooleanLiteral:
-			return { kind: ValueKind.BooleanLiteral, token: stream.next(), boolean: token.data == 'true' }
+			return { kind: ValueKind.BooleanLiteral, token: stream.next(), boolean: token.data === 'true' }
 		case TokenKind.StringLiteral:
 			return { kind: ValueKind.StringLiteral, token: stream.next(), string: token.data }
 		case TokenKind.NilLiteral:
@@ -246,7 +246,7 @@ function parse_call(func: Expression, stream: TokenStream): Expression | Error
 {
 	const open_brace = stream.next()
 	const args: Expression[] = []
-	while (stream.peek().kind != TokenKind.CloseBrace)
+	while (stream.peek().kind !== TokenKind.CloseBrace)
 	{
 		const argument = parse_expression(stream)
 		if (argument instanceof Error)
@@ -364,10 +364,10 @@ function operation_type_to_expression_kind(
 		case TokenKind.BitXOrNot: return ExpressionKind.BitXOr
 		case TokenKind.BitShiftLeft: return ExpressionKind.BitShiftLeft
 		case TokenKind.BitShiftRight: return ExpressionKind.BitShiftRight
-		case TokenKind.LessThen: return ExpressionKind.LessThen
-		case TokenKind.LessThenEquals: return ExpressionKind.LessThenEquals
-		case TokenKind.GreaterThen: return ExpressionKind.GreaterThen
-		case TokenKind.GreaterThenEquals: return ExpressionKind.GreaterThenEquals
+		case TokenKind.LessThan: return ExpressionKind.LessThan
+		case TokenKind.LessThanEquals: return ExpressionKind.LessThanEquals
+		case TokenKind.GreaterThan: return ExpressionKind.GreaterThan
+		case TokenKind.GreaterThanEquals: return ExpressionKind.GreaterThanEquals
 		case TokenKind.Equals: return ExpressionKind.Equals
 		case TokenKind.NotEquals: return ExpressionKind.NotEquals
 		case TokenKind.And: return ExpressionKind.And
@@ -418,7 +418,7 @@ function parse_operation(
 
 function parse_expression(stream: TokenStream): Expression | Error
 {
-	if (stream.peek().kind == TokenKind.BitXOrNot)
+	if (stream.peek().kind === TokenKind.BitXOrNot)
 		return parse_unary_operator(stream)
 
 	return parse_operation(stream, 0)
@@ -430,7 +430,7 @@ function parse_local_statement(local: Token, values: Expression[]): Statement | 
 	for (const expression of values)
 	{
 		const value = expression.value
-		if (value == undefined || value.kind != ValueKind.Variable)
+		if (value === undefined || value.kind !== ValueKind.Variable)
 			return error(expression.token, 'Invalid local name')
 		names.push(value.token)
 	}
@@ -448,7 +448,7 @@ function parse_assign_or_expression(stream: TokenStream): Statement | Error
 {
 	const local = expect(stream, TokenKind.Local)
 	const lhs: Expression[] = []
-	while (lhs.length == 0 || consume(stream, TokenKind.Comma))
+	while (lhs.length === 0 || consume(stream, TokenKind.Comma))
 	{
 		const lvalue = parse_expression(stream)
 		if (lvalue instanceof Error)
@@ -467,7 +467,7 @@ function parse_assign_or_expression(stream: TokenStream): Statement | Error
 	}
 
 	const rhs: Expression[] = []
-	while (rhs.length == 0 || consume(stream, TokenKind.Comma))
+	while (rhs.length === 0 || consume(stream, TokenKind.Comma))
 	{
 		const rvalue = parse_expression(stream)
 		if (rvalue instanceof Error)
@@ -493,7 +493,7 @@ function parse_return(stream: TokenStream): Statement | Error
 		return ret
 
 	const values: Expression[] = []
-	while (values.length == 0 || consume(stream, TokenKind.Comma))
+	while (values.length === 0 || consume(stream, TokenKind.Comma))
 	{
 		const value = parse_expression(stream)
 		if (value instanceof Error)
@@ -506,7 +506,7 @@ function parse_return(stream: TokenStream): Statement | Error
 		values.push(value)
 	}
 
-	if (values.length == 0)
+	if (values.length === 0)
 	{
 		values.push({
 			kind: ExpressionKind.Value,
@@ -684,7 +684,7 @@ function parse_for(stream: TokenStream): Statement | Error
 		return for_token
 
 	const items: Token[] = []
-	while (items.length == 0 || consume(stream, TokenKind.Comma))
+	while (items.length === 0 || consume(stream, TokenKind.Comma))
 	{
 		const item = expect(stream, TokenKind.Identifier)
 		if (item instanceof Error)
@@ -789,7 +789,7 @@ function parse_function_params(stream: TokenStream): Token[] | Error
 		return open_brace
 
 	const params: Token[] = []
-	while (stream.peek().kind != TokenKind.CloseBrace)
+	while (stream.peek().kind !== TokenKind.CloseBrace)
 	{
 		const param = expect(stream, TokenKind.Identifier)
 		if (param instanceof Error)
@@ -963,13 +963,13 @@ function parse_statement(stream: TokenStream, end_tokens: TokenKind[]): Statemen
 export function parse(stream: TokenStream, ...end_tokens: TokenKind[]): Chunk | Error
 {
 	const chunk: Chunk = { statements: [] }
-	if (end_tokens.length == 0)
+	if (end_tokens.length === 0)
 		end_tokens.push(TokenKind.EOF)
 
 	while (true)
 	{
 		const statement = parse_statement(stream, end_tokens)
-		if (statement == undefined)
+		if (statement === undefined)
 			break
 		if (statement instanceof Error)
 			return statement
