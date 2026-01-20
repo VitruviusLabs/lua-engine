@@ -1,4 +1,4 @@
-import { assertArray, assertDefined, isInstanceOf, isNullish, ValidationError } from "@vitruvius-labs/ts-predicate";
+import { assertArray, assertDefined, isInstanceOf, isNullish, ValidationError, type Awaitable } from "@vitruvius-labs/ts-predicate";
 import type { Engine } from "./engine.mjs";
 import { make_variable } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
@@ -6,6 +6,7 @@ import type { Variable } from "./variable/definition/type/variable.type.mjs";
 import type { NativeFunction } from "./boundary/definition/type/native-function.type.mjs";
 import { RuntimeError } from "./runtime-error.mjs";
 import { VariableUnwrapUtility } from "./variable/unwrap-variable.mjs";
+import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs";
 
 export const enum ParameterOptionEnum
 {
@@ -81,14 +82,15 @@ function handle_error(error: unknown, callable: Function): never
 	throw new RuntimeError(`An error occurred during native function ${callable.name} execution.`, { cause: error });
 }
 
-export function make_function(callable: Function, parameters_descriptor: Array<ParameterDescriptorInterface>): Variable
+export function make_function(callable: Function, parameters_descriptor: Array<ParameterDescriptorInterface>): VariableNativeFunction
 {
-	const proxy_function: NativeFunction = (_: Engine, ...args: Array<Variable>): Array<Variable> => {
+	const proxy_function: NativeFunction = async (_: Engine, ...args: Array<Variable>): Promise<Array<Variable>> =>
+	{
 		try
 		{
 			const unwrapped_args: Array<unknown> = args.map(VariableUnwrapUtility.unwrap);
 			const sanitized_args: Array<unknown> = sanitize_parameters(unwrapped_args, parameters_descriptor);
-			const result: unknown = callable(...sanitized_args);
+			const result: unknown = await callable(...sanitized_args);
 			const variable: Variable = make_variable(result);
 
 			return [variable];

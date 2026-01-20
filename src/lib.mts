@@ -15,6 +15,7 @@ import { isNil } from "./variable/predicate/is-nil.mjs"
 import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs"
 import type { NativeFunction } from "./index.mjs"
 import type { TableMap } from "./boundary/definition/type/table-map.type.mjs"
+import { RuntimeError } from "./runtime-error.mjs"
 
 function optional_parameter<K extends VariableKind>(
 	expected_kind: K,
@@ -223,10 +224,17 @@ function key_variable(key: unknown): Variable
 	return make_variable(key);
 }
 
+// @ts-expect-error: unimplemented
 function table_sort(engine: Engine, table: Variable, by: Variable): Variable[]
 {
 	assertVariableKind(table, VariableKind.Table);
+
+	throw new RuntimeError("Unimplemented: table.sort");
+
+	/*
+
 	const entries: Array<[unknown, Variable]> = [...table.table.entries()]
+
 	entries.sort(([_, a], [__, b]) =>
 	{
 		const result = engine.call(by, a, b)
@@ -240,31 +248,29 @@ function table_sort(engine: Engine, table: Variable, by: Variable): Variable[]
 
 	const numbered_entries = entries.map(([key, _], i) => [i + 1, key_variable(key)] as const)
 	return [{ data_type: VariableKind.Table, table: new Map(numbered_entries) }]
+
+	*/
 }
 
-function find(engine: Engine, table: Variable, matches: Variable): Variable[]
+async function find(engine: Engine, table: Variable, matches: Variable): Promise<Variable[]>
 {
 	assertVariableKind(table, VariableKind.Table);
 	const entries: Array<[unknown, Variable]> = [...table.table.entries()]
-	const found: [unknown, Variable] | undefined = entries.find(
-		([_, a]) =>
-		{
-			const result = engine.call(matches, a)
-			if (result instanceof Error)
-				return 0
 
-			const matching = result.at(0)
-			assertVariableKind(matching, VariableKind.Boolean);
-			return matching.boolean
-		}
-	)
+	for (const [key, value] of entries)
+	{
+		const result = await engine.call(matches, value)
 
-	if (found === undefined)
-		return [nil]
+		if (result instanceof Error)
+			throw result;
 
-	const [key] = found
+		const matching: Variable | undefined = result.at(0);
+		assertVariableKind(matching, VariableKind.Boolean);
 
-	return [make_variable(key)];
+		return [make_variable(key)];
+	}
+
+	return [nil];
 }
 
 function first(_: Engine, table: Variable): Variable[]

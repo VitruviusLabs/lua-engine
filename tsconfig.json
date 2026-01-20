@@ -45,7 +45,7 @@
 		"useUnknownInCatchVariables": true
 	},
 	"include": [
-		"./src/index.mts"
+		"./src"
 	],
 	"exclude": [
 		"./node_modules"

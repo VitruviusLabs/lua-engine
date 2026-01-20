@@ -157,10 +157,10 @@ export class Engine
 		this.locals_stack.push(new Map())
 	}
 
-	call(func: Variable, ...args: Variable[]): Variable[] | Error
+	async call(func: Variable, ...args: Variable[]): Promise<Variable[] | Error>
 	{
 		if (isVariableKind(func, VariableKind.NativeFunction))
-			return this.call_native_function(func.native_function, ...args)
+			return await this.call_native_function(func.native_function, ...args)
 
 		assertUnion<VariableFunction, VariableNativeFunction>(func, [unary(assertVariableKind, VariableKind.Function), unary(assertVariableKind, VariableKind.NativeFunction)]);
 
@@ -179,7 +179,7 @@ export class Engine
 		this.stack.push(make_number(args.length))
 		this.locals_stack.push(new Map())
 
-		const result = this.run()
+		const result = await this.run()
 		const return_values = this.stack
 		this.stack = old_stack
 		this.call_stack = old_call_stack
@@ -192,7 +192,7 @@ export class Engine
 		return return_values
 	}
 
-	run_for_steps(steps: number, options?: LuaOptions): Variable | Error | undefined
+	async run_for_steps(steps: number, options?: LuaOptions): Promise<Variable | Error | undefined>
 	{
 		if (this.error !== undefined)
 			return this.error
@@ -203,7 +203,7 @@ export class Engine
 		let step_count = 0
 		while (this.ip < this.program.length)
 		{
-			const result = this.step(options)
+			const result = await this.step(options)
 
 			if (result !== undefined)
 				return result
@@ -216,9 +216,9 @@ export class Engine
 		return this.stack_get(0);
 	}
 
-	run(options?: LuaOptions): Variable | Error
+	async run(options?: LuaOptions): Promise<Variable | Error>
 	{
-		const result = this.run_for_steps(1000, options)
+		const result = await this.run_for_steps(1000, options)
 
 		if (result === undefined)
 			return new Error('Program ran for too long')
@@ -265,9 +265,9 @@ export class Engine
 		return value;
 	}
 
-	private call_native_function(native_function: NativeFunction, ...args: Array<Variable>): Array<Variable> | Error
+	private async call_native_function(native_function: NativeFunction, ...args: Array<Variable>): Promise<Array<Variable> | Error>
 	{
-		const results = native_function(this, ...args)
+		const results = await native_function(this, ...args)
 
 		if (this.error !== undefined)
 		{
@@ -313,7 +313,7 @@ export class Engine
 		throw new RuntimeError(message, {}, op.debug)
 	}
 
-	private run_instruction(op: Op): Error | undefined
+	private async run_instruction(op: Op): Promise<Error | undefined>
 	{
 		const { code, arg } = op
 
@@ -355,7 +355,7 @@ export class Engine
 
 				if (isVariableKind(iter, VariableKind.NativeFunction))
 				{
-					const result = this.call_native_function(iter.native_function, control, state)
+					const result = await this.call_native_function(iter.native_function, control, state)
 
 					if (result instanceof Error)
 						return result
@@ -663,7 +663,7 @@ export class Engine
 						const args = this.stack.splice(this.stack.length - count, count)
 						if (func_var.native_function !== undefined)
 						{
-							const result = this.call_native_function(func_var.native_function, ...args)
+							const result = await this.call_native_function(func_var.native_function, ...args)
 
 							if (result instanceof Error)
 								return result
@@ -726,7 +726,7 @@ export class Engine
 		return undefined
 	}
 
-	step(options?: LuaOptions): Error | undefined
+	async step(options?: LuaOptions): Promise<Error | undefined>
 	{
 		if (this.error !== undefined)
 			return this.error
@@ -746,7 +746,7 @@ export class Engine
 			console.log(this.ip - 1, op_code_name(op.code), arg)
 		}
 
-		const result = this.run_instruction(op)
+		const result = await this.run_instruction(op)
 
 		if (result !== undefined)
 			return result
