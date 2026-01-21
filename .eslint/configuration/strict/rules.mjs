@@ -443,19 +443,6 @@ const RULES = {
 			"types": "never"
 		}
 	],
-	"@ts/typedef": [
-		"error",
-		{
-			"arrayDestructuring": true,
-			"arrowParameter": true,
-			"memberVariableDeclaration": true,
-			"objectDestructuring": true,
-			"parameter": true,
-			"propertyDeclaration": true,
-			"variableDeclaration": true,
-			"variableDeclarationIgnoreFunction": true
-		}
-	],
 	"@ts/unbound-method": [
 		"error",
 		{

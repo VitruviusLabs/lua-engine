@@ -65,7 +65,7 @@ const RULES = {
 		"error",
 		"consistent"
 	],
-	"@style/func-call-spacing": [
+	"@style/function-call-spacing": [
 		"error",
 		"never"
 	],
@@ -397,11 +397,24 @@ const RULES = {
 			"returnAssign": true,
 			"nestedBinaryExpressions": false,
 			"ternaryOperandBinaryExpressions": false,
-			"enforceForArrowConditionals": false,
-			"enforceForNewInMemberExpressions": false,
+			"enforceForSequenceExpressions": false,
 			"enforceForFunctionPrototypeMethods": false,
 			/*"allowParensAfterCommentPattern": undefined,*/
-			"ignoreJSX": "multi-line"
+			"ignoreJSX": "multi-line",
+			"ignoredNodes": [
+				// Allows () => (a ? b : c) instead of () => a ? b : c
+				"ArrowFunctionExpression[body.type=ConditionalExpression]",
+				// Allows (new Foo()).bar instead of new Foo().bar
+				"MemberExpression[object.type=NewExpression]",
+				// Allows ...(a ? b : c) instead of ...a ? b : c
+				"SpreadElement[argument.type=ConditionalExpression]",
+				// Allows ...(a && b) instead of ...a && b
+				"SpreadElement[argument.type=LogicalExpression]",
+				// Allows ...(await foo) instead of ...await foo
+				"SpreadElement[argument.type=AwaitExpression]",
+				// Allows type X = (A | B) instead of type X = A | B
+				"TSTypeAliasDeclaration[typeAnnotation.type=TSUnionType]",
+			]
 		}
 	],
 	"@style/no-extra-semi": "error",
@@ -512,8 +525,8 @@ const RULES = {
 		"error",
 		"double",
 		{
-			"avoidEscape": true,
-			"allowTemplateLiterals": false
+			"allowTemplateLiterals": "avoidEscape",
+			"avoidEscape": true
 		}
 	],
 	"@style/semi": [
@@ -549,10 +562,7 @@ const RULES = {
 			"before": false,
 			"after": true,
 			"overrides": {
-				"arrow": {
-					"before": true,
-					"after": true
-				}
+				"arrow": "ignore"
 			}
 		}
 	],
