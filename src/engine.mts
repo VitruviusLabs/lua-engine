@@ -1,26 +1,26 @@
-import { assertUnion, unary } from "@vitruvius-labs/ts-predicate"
+import { assertUnion, unary } from "@vitruvius-labs/ts-predicate";
 
-import type { Op } from './opcode.mjs'
-import { OpCode, op_code_name } from './opcode.mjs'
-import { make_number, make_boolean, make_string, make_table } from './runtime.mjs'
-import { TokenStream } from './lexer.mjs'
-import { parse } from './parser.mjs'
-import { compile } from './compiler.mjs'
-import { optimize_chunk } from './optimizer.mjs'
-import * as std from './lib.mjs'
-import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs"
-import type { Variable } from "./variable/definition/type/variable.type.mjs"
-import { RuntimeError } from "./runtime-error.mjs"
-import { assertVariableKind } from "./variable/predicate/assert-variable-kind.mjs"
-import { isNil } from "./variable/predicate/is-nil.mjs"
-import { nil } from "./variable/nil.mjs"
-import { isVariableKind } from "./variable/predicate/is-variable-kind.mjs"
-import type { TableMap } from "./boundary/definition/type/table-map.type.mjs"
+import type { Op } from "./opcode.mjs";
+import { OpCode, op_code_name } from "./opcode.mjs";
+import { make_boolean, make_number, make_string, make_table } from "./runtime.mjs";
+import { TokenStream } from "./lexer.mjs";
+import { parse } from "./parser.mjs";
+import { compile } from "./compiler.mjs";
+import { optimize_chunk } from "./optimizer.mjs";
+import * as std from "./lib.mjs";
+import { VariableKind, type VariableKindEnum } from "./variable/definition/enum/variable-kind.enum.mjs";
+import type { Variable } from "./variable/definition/type/variable.type.mjs";
+import { RuntimeError } from "./runtime-error.mjs";
+import { assertVariableKind } from "./variable/predicate/assert-variable-kind.mjs";
+import { isNil } from "./variable/predicate/is-nil.mjs";
+import { nil } from "./variable/nil.mjs";
+import { isVariableKind } from "./variable/predicate/is-variable-kind.mjs";
+import type { VariableTableMapType } from "./variable/definition/type/variable-table-map.type.mjs";
 import type { NativeFunction } from "./boundary/definition/type/native-function.type.mjs";
-import type { VariableFunction } from "./variable/definition/interface/variable-function.interface.mjs"
-import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs"
-import { equals } from "./variable/equals.mjs"
-import { assertVariable } from "./variable/predicate/assert-variable.mjs"
+import type { VariableFunction } from "./variable/definition/interface/variable-function.interface.mjs";
+import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs";
+import { equals } from "./variable/equals.mjs";
+import { assertVariable } from "./variable/predicate/assert-variable.mjs";
 
 function index(val: Variable | undefined): string | number | undefined
 {
@@ -58,7 +58,7 @@ export interface LuaOptions
 export class Engine
 {
 	private program: Op[];
-	private globals: TableMap;
+	private globals: VariableTableMapType;
 	private start_ip: number = 0;
 
 	private ip: number = 0;
@@ -72,7 +72,7 @@ export class Engine
 
 	constructor(
 		script?: string,
-		globals?: TableMap
+		globals?: VariableTableMapType
 	)
 	{
 		this.program = []
@@ -137,7 +137,7 @@ export class Engine
 		})
 	}
 
-	define_table(name: string, table: Map<string|number, Variable>): void
+	define_table(name: string, table: VariableTableMapType): void
 	{
 		this.globals.set(name, {
 			data_type: VariableKind.Table,
@@ -256,7 +256,7 @@ export class Engine
 		return value;
 	}
 
-	private stack_pop_kind<K extends VariableKind>(kind: K): Variable & { data_type: K }
+	private stack_pop_kind<K extends VariableKindEnum>(kind: K): Variable & { data_type: K }
 	{
 		const value = this.stack.pop();
 

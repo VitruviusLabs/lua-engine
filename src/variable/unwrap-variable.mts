@@ -6,8 +6,13 @@ import type { VariableNil } from "./definition/interface/variable-nil.interface.
 import type { VariableNumber } from "./definition/interface/variable-number.interface.mjs";
 import type { VariableString } from "./definition/interface/variable-string.interface.mjs";
 import type { VariableTable } from "./definition/interface/variable-table.interface.mjs";
+import type { NativeFunction } from "../_index.mjs";
+import type { TableType } from "../boundary/definition/type/table.type.mjs";
+import type { TableMapType } from "../boundary/definition/type/table-map.type.mjs";
+import type { FunctionReferenceType } from "../boundary/definition/type/function-reference.type.mjs";
+import type { ValueType } from "../boundary/definition/type/value.type.mjs";
 import { VariableKind } from "./definition/enum/variable-kind.enum.mjs";
-import { isCallable } from "@vitruvius-labs/ts-predicate";
+import { isTableMapKeyType } from "../boundary/predicate/is-table-map-key-type.mjs";
 
 class VariableUnwrapUtility
 {
@@ -15,12 +20,12 @@ class VariableUnwrapUtility
 	public static unwrap(this: void, input: VariableBoolean): boolean;
 	public static unwrap(this: void, input: VariableNumber): number;
 	public static unwrap(this: void, input: VariableString): string;
-	public static unwrap(this: void, input: VariableTable): Array<unknown> | Map<unknown, unknown>;
-	public static unwrap(this: void, input: VariableFunction): { function_id: number };
-	public static unwrap(this: void, input: VariableNativeFunction): Function;
-	public static unwrap(this: void, input: Variable): unknown;
+	public static unwrap(this: void, input: VariableTable): TableType;
+	public static unwrap(this: void, input: VariableFunction): FunctionReferenceType;
+	public static unwrap(this: void, input: VariableNativeFunction): NativeFunction;
+	public static unwrap(this: void, input: Variable): ValueType;
 
-	public static unwrap(this: void, input: Variable): unknown
+	public static unwrap(this: void, input: Variable): ValueType
 	{
 		switch (input.data_type)
 		{
@@ -41,7 +46,7 @@ class VariableUnwrapUtility
 		}
 	}
 
-	public static unwrapTable(this: void, input: VariableTable): Array<unknown> | Map<unknown, unknown>
+	public static unwrapTable(this: void, input: VariableTable): TableType
 	{
 		const output: Array<unknown> = [];
 
@@ -61,13 +66,13 @@ class VariableUnwrapUtility
 		return output;
 	}
 
-	protected static unwrapTableGeneric(this: void, input: VariableTable): Map<unknown, unknown>
+	protected static unwrapTableGeneric(this: void, input: VariableTable): TableMapType
 	{
-		const output: Map<unknown, unknown> = new Map();
+		const output: TableMapType = new Map();
 
 		for (const [key, value] of input.table.entries())
 		{
-			if (isCallable(key))
+			if (!isTableMapKeyType(key))
 			{
 				continue;
 			}

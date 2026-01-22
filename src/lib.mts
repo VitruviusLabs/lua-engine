@@ -1,23 +1,23 @@
-import type { Variable } from './variable/definition/type/variable.type.mjs'
-import type { VariableValueType } from './variable/definition/type/variable-value.type.mjs'
-import { VariableKind } from './variable/definition/enum/variable-kind.enum.mjs'
-import { isVariableKind } from './variable/predicate/is-variable-kind.mjs'
-import { assertVariableKind } from './variable/predicate/assert-variable-kind.mjs'
-import { nil } from './variable/nil.mjs'
-import { Engine } from './engine.mjs'
-import { make_boolean, make_number, make_string, make_variable } from './runtime.mjs'
-import { assertArray, assertPopulatedArray, isCallable, isInteger, unary, ValidationError } from "@vitruvius-labs/ts-predicate"
-import { VariableNumber } from "./variable/definition/interface/variable-number.interface.mjs"
-import { assertVariable } from "./variable/predicate/assert-variable.mjs"
-import { VariableUnwrapUtility } from "./variable/unwrap-variable.mjs"
-import type { VariableTable } from "./variable/definition/interface/variable-table.interface.mjs"
-import { isNil } from "./variable/predicate/is-nil.mjs"
-import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs"
-import type { NativeFunction } from "./index.mjs"
-import type { TableMap } from "./boundary/definition/type/table-map.type.mjs"
-import { RuntimeError } from "./runtime-error.mjs"
+import type { Variable } from "./variable/definition/type/variable.type.mjs";
+import type { VariableValueType } from "./variable/definition/type/variable-value.type.mjs";
+import { VariableKind, type VariableKindEnum } from "./variable/definition/enum/variable-kind.enum.mjs";
+import { isVariableKind } from "./variable/predicate/is-variable-kind.mjs";
+import { assertVariableKind } from "./variable/predicate/assert-variable-kind.mjs";
+import { nil } from "./variable/nil.mjs";
+import type { Engine } from "./engine.mjs";
+import { make_boolean, make_number, make_string, make_variable } from "./runtime.mjs";
+import { ValidationError, assertArray, assertPopulatedArray, isCallable, isInteger, unary } from "@vitruvius-labs/ts-predicate";
+import type { VariableNumber } from "./variable/definition/interface/variable-number.interface.mjs";
+import { assertVariable } from "./variable/predicate/assert-variable.mjs";
+import { VariableUnwrapUtility } from "./variable/unwrap-variable.mjs";
+import type { VariableTable } from "./variable/definition/interface/variable-table.interface.mjs";
+import { isNil } from "./variable/predicate/is-nil.mjs";
+import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs";
+import type { NativeFunction } from "./boundary/definition/type/native-function.type.mjs";
+import type { VariableTableMapType } from "./variable/definition/type/variable-table-map.type.mjs";
+import { RuntimeError } from "./runtime-error.mjs";
 
-function optional_parameter<K extends VariableKind>(
+function optional_parameter<K extends VariableKindEnum>(
 	expected_kind: K,
 	parameter: Variable | undefined
 ): VariableValueType<K> | undefined
@@ -847,7 +847,7 @@ function twrap(content: Array<[unknown, Variable]>): VariableTable
 	};
 }
 
-export function std_lib(): TableMap
+export function std_lib(): VariableTableMapType
 {
 	const string_mapping: VariableTable = twrap([
 		['byte', fwrap(string_byte)],

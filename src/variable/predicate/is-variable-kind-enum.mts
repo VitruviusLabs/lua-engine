@@ -1,7 +1,7 @@
 import { isEnumValue } from "@vitruvius-labs/ts-predicate";
-import { VariableKind } from "../definition/enum/variable-kind.enum.mjs";
+import { VariableKind, type VariableKindEnum } from "../definition/enum/variable-kind.enum.mjs";
 
-function isVariableKindEnum(value: unknown): value is VariableKind
+function isVariableKindEnum(value: unknown): value is VariableKindEnum
 {
 	return isEnumValue(value, [
 		VariableKind.Nil,

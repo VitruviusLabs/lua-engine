@@ -1,5 +1,5 @@
-import type { Variable } from "../../../variable/definition/type/variable.type.mjs";
+import type { TableMapKeyType } from "./table-map-key.type.mjs";
 
-type TableMap = Map<unknown, Variable>;
+type TableMapType = Map<TableMapKeyType, unknown>;
 
-export type { TableMap };
+export type { TableMapType };

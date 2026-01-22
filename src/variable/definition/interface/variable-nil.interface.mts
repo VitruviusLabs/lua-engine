@@ -3,7 +3,7 @@ import type { VariableKind } from "../enum/variable-kind.enum.mjs";
 
 interface VariableNil extends BaseVariable
 {
-	data_type: VariableKind.Nil;
+	data_type: typeof VariableKind.Nil;
 }
 
 export type { VariableNil };

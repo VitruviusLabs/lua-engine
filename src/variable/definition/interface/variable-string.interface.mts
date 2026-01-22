@@ -3,7 +3,7 @@ import type { VariableKind } from "../enum/variable-kind.enum.mjs";
 
 interface VariableString extends BaseVariable
 {
-	data_type: VariableKind.String;
+	data_type: typeof VariableKind.String;
 	string: string;
 }
 

@@ -8,12 +8,13 @@ import { RuntimeError } from "./runtime-error.mjs";
 import { VariableUnwrapUtility } from "./variable/unwrap-variable.mjs";
 import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs";
 
-export const enum ParameterOptionEnum
-{
-	REQUIRED = "required",
-	OPTIONAL = "optional",
-	VARIADIC = "variadic",
-}
+export const ParameterOptionEnum = {
+	REQUIRED: "required",
+	OPTIONAL: "optional",
+	VARIADIC: "variadic",
+} as const satisfies Record<string, string>;
+
+export type ParameterOptionEnum = typeof ParameterOptionEnum[keyof typeof ParameterOptionEnum];
 
 export interface ParameterDescriptorInterface<T = unknown>
 {

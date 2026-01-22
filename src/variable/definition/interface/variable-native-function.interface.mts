@@ -4,7 +4,7 @@ import type { VariableKind } from "../enum/variable-kind.enum.mjs";
 
 interface VariableNativeFunction extends BaseVariable
 {
-	data_type: VariableKind.NativeFunction;
+	data_type: typeof VariableKind.NativeFunction;
 	native_function: NativeFunction;
 }
 

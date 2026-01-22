@@ -3,7 +3,7 @@ import type { VariableKind } from "../enum/variable-kind.enum.mjs";
 
 interface VariableBoolean extends BaseVariable
 {
-	data_type: VariableKind.Boolean;
+	data_type: typeof VariableKind.Boolean;
 	boolean: boolean;
 }
 

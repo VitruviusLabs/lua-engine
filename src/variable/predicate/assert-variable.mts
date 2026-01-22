@@ -6,7 +6,7 @@ function assertVariable(variable: unknown): asserts variable is Variable
 {
 	if (!isVariable(variable))
 	{
-		throw new ValidationError(`Expected Variable`)
+		throw new ValidationError("Expected Variable");
 	}
 }
 

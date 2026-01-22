@@ -13,31 +13,32 @@ import type { VariableBoolean } from "./variable/definition/interface/variable-b
 import type { VariableNumber } from "./variable/definition/interface/variable-number.interface.mjs";
 import type { VariableString } from "./variable/definition/interface/variable-string.interface.mjs";
 import type { VariableTable } from "./variable/definition/interface/variable-table.interface.mjs";
+import type { TableInputType } from "./boundary/definition/type/table-input.type.mjs";
+import type { VariableTableMapType } from "./variable/definition/type/variable-table-map.type.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
 import { isVariable } from "./variable/predicate/is-variable.mjs";
 import { nil } from "./variable/nil.mjs";
-import type { TableInputType } from "./boundary/definition/type/table-input.type.mjs";
 import { isTableInputType } from "./boundary/predicate/is-table-input-type.mjs";
-import { isTableKey } from "./boundary/predicate/is-table-key.mjs";
+import { isTableMapKeyType } from "./boundary/predicate/is-table-map-key-type.mjs";
 
 export function make_boolean(boolean: boolean): VariableBoolean
 {
-	return { data_type: VariableKind.Boolean, boolean: boolean }
+	return { data_type: VariableKind.Boolean, boolean: boolean };
 }
 
 export function make_number(number: number): VariableNumber
 {
-	return { data_type: VariableKind.Number, number: number }
+	return { data_type: VariableKind.Number, number: number };
 }
 
 export function make_string(string: string): VariableString
 {
-	return { data_type: VariableKind.String, string: string }
+	return { data_type: VariableKind.String, string: string };
 }
 
 export function make_table(input?: TableInputType): VariableTable
 {
-	const table_content: Map<number | string, Variable> = new Map();
+	const table_content: VariableTableMapType = new Map();
 
 	const table_variable: Variable = {
 		data_type: VariableKind.Table,
@@ -63,7 +64,7 @@ export function make_table(input?: TableInputType): VariableTable
 	{
 		for (const [key, value] of input.entries())
 		{
-			if (isTableKey(key))
+			if (isTableMapKeyType(key))
 			{
 				table_content.set(key, make_variable(value));
 			}
@@ -80,6 +81,7 @@ export function make_table(input?: TableInputType): VariableTable
 		if (isNumber(numeric_key))
 		{
 			table_content.set(numeric_key, variable);
+
 			continue;
 		}
 
