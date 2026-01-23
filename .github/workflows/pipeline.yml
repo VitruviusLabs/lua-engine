@@ -41,7 +41,6 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile
-          cd packages/mockingbird && pnpm install --frozen-lockfile && cd ../..
 
       - name: Dependencies caching
         uses: actions/cache@v4
