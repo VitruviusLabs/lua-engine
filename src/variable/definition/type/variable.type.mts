@@ -16,4 +16,13 @@ type Variable = (
 	| VariableNativeFunction
 );
 
-export type { Variable };
+export type {
+	Variable,
+	VariableBoolean,
+	VariableFunction,
+	VariableNativeFunction,
+	VariableNil,
+	VariableNumber,
+	VariableString,
+	VariableTable,
+};
