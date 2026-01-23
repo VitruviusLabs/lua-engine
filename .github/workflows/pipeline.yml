@@ -4,12 +4,6 @@ run-name: Running CI/CD for event ${{github.event_name}} (Triggered by user ${{ 
 
 on:
   push:
-  workflow_dispatch:
-    inputs:
-      publish:
-        type: boolean
-        required: false
-        default: false
 
 jobs:
   setup:
@@ -153,7 +147,7 @@ jobs:
         run: pnpm ci:test:unit
 
   publish-lua-engine:
-    if: ${{ (github.ref == 'refs/heads/main' && ! failure() && ! cancelled() && github.event_name == 'push') || inputs.publish == true }}
+    # if: ${{ github.ref == 'refs/heads/main' && ! failure() && ! cancelled() && github.event_name == 'push' }}
     # needs:
     #   [
     #     spell-check-global,
