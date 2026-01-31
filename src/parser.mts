@@ -1121,7 +1121,7 @@ function parse_function(stream: TokenStream): StatementInterface | Error
 	};
 }
 
-function parse_statement(stream: TokenStream, end_tokens: Array<TokenKindEnum>): StatementInterface | Error | undefined
+export function parse_statement(stream: TokenStream, end_tokens: Array<TokenKindEnum>): StatementInterface | Error | undefined
 {
 	const token = stream.peek();
 
@@ -1175,33 +1175,4 @@ function parse_statement(stream: TokenStream, end_tokens: Array<TokenKindEnum>):
 								+ `got '${token_kind_to_string(token.kind)}' instead`);
 		}
 	}
-}
-
-export function parse(stream: TokenStream, ...end_tokens: Array<TokenKindEnum>): ChunkInterface | Error
-{
-	const chunk: ChunkInterface = { statements: [] };
-
-	if (end_tokens.length === 0)
-	{
-		end_tokens.push(TokenKindEnum.EOF);
-	}
-
-	for (;;)
-	{
-		const statement = parse_statement(stream, end_tokens);
-
-		if (statement === undefined)
-		{
-			break;
-		}
-
-		if (statement instanceof Error)
-		{
-			return statement;
-		}
-
-		chunk.statements.push(statement);
-	}
-
-	return chunk;
 }
