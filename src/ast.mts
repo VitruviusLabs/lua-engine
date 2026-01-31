@@ -1,5 +1,6 @@
 import type { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
+import type { DoInterface } from "./ast/definition/interface/do.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { ForInterface } from "./ast/definition/interface/for.interface.mjs";
 import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
@@ -8,12 +9,6 @@ import type { NumericForInterface } from "./ast/definition/interface/numeric-for
 import type { RepeatInterface } from "./ast/definition/interface/repeat.interface.mjs";
 import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
 import type { Token } from "./lexer.mjs";
-
-export interface Do
-{
-	body: Chunk;
-	token: Token;
-}
 
 export interface Return
 {
@@ -32,7 +27,7 @@ export interface Statement
 	for?: ForInterface | undefined;
 	numeric_for?: NumericForInterface | undefined;
 	repeat?: RepeatInterface | undefined;
-	do?: Do | undefined;
+	do?: DoInterface | undefined;
 	return?: Return | undefined;
 }
 

@@ -1,5 +1,4 @@
 import type { Chunk } from "./ast.mjs";
-import type { Do } from "./ast.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Return } from "./ast.mjs";
 
@@ -21,6 +20,7 @@ import type { WhileInterface } from "./ast/definition/interface/while.interface.
 import type { ForInterface } from "./ast/definition/interface/for.interface.mjs";
 import type { NumericForInterface } from "./ast/definition/interface/numeric-for.interface.mjs";
 import type { RepeatInterface } from "./ast/definition/interface/repeat.interface.mjs";
+import type { DoInterface } from "./ast/definition/interface/do.interface.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
@@ -663,7 +663,7 @@ function compile_repeat(repeat: RepeatInterface | undefined, functions: Array<Ar
 	return ops;
 }
 
-function compile_do(do_block: Do | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_do(do_block: DoInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (do_block === undefined)
 	{
