@@ -1,4 +1,4 @@
-import type { Chunk, Statement } from "./ast.mjs";
+import type { Chunk } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
@@ -8,6 +8,7 @@ import type { ForInterface } from "./ast/definition/interface/for.interface.mjs"
 import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
 import type { NumericForInterface } from "./ast/definition/interface/numeric-for.interface.mjs";
 import type { RepeatInterface } from "./ast/definition/interface/repeat.interface.mjs";
+import type { StatementInterface } from "./ast/definition/interface/statement.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
 
@@ -495,7 +496,7 @@ function remove_constant_local_assignments(
 	}
 
 	chunk.statements = chunk.statements.filter(
-		(x: Statement): boolean =>
+		(x: StatementInterface): boolean =>
 		{
 			return x.assignment === undefined || x.assignment.lhs.length > 0;
 		}
