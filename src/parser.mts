@@ -11,6 +11,7 @@ import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
 import { token_kind_to_string } from "./lexer/token-kind-to-string/token-kind-to-string.mjs";
 import { to_error } from "./parser/error/to-error.mjs";
+import { expect } from "./parser/expect/expect.mjs";
 
 const UNARY = [
 	TokenKindEnum.Not,
@@ -31,21 +32,6 @@ const ORDERS = [
 	[TokenKindEnum.Multiply, TokenKindEnum.Division, TokenKindEnum.FloorDivision, TokenKindEnum.Modulo],
 	[TokenKindEnum.Exponent],
 ];
-
-function expect(stream: TokenStream, kind: TokenKindEnum): TokenInterface | Error
-{
-	const token = stream.peek();
-
-	if (token.kind !== kind)
-	{
-		return to_error(
-			token,
-			`expected '${token_kind_to_string(kind)}', got '${token_kind_to_string(token.kind)}' instead`
-		);
-	}
-
-	return stream.next();
-}
 
 function consume(stream: TokenStream, kind: TokenKindEnum): boolean
 {
