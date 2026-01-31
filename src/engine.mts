@@ -25,6 +25,7 @@ import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs
 import { index } from "./engine/index/index.mjs";
 import type { LuaOptionsInterface } from "./engine/interface/lua-options.interface.mjs";
 import { table_size } from "./lib/table-size/table-size.mjs";
+import { variable_to_string } from "./lib/variable-to-string/variable-to-string.mjs";
 
 function is_true(val: Variable | undefined): boolean
 {
@@ -111,7 +112,7 @@ export class Engine
 
 		for (const [i, op] of this.program.entries())
 		{
-			const arg = op.arg !== undefined ? std.variable_to_string(op.arg) : "";
+			const arg = op.arg !== undefined ? variable_to_string(op.arg) : "";
 
 			if (i === this.ip)
 			{
@@ -579,7 +580,7 @@ export class Engine
 				const x = this.stack_pop();
 				const y = this.stack_pop();
 
-				const result = std.variable_to_string(x) + std.variable_to_string(y);
+				const result = variable_to_string(x) + variable_to_string(y);
 
 				this.stack.push(make_string(result));
 				break;
@@ -931,7 +932,7 @@ export class Engine
 
 		if (options?.trace || options?.trace_instructions)
 		{
-			const arg = op.arg !== undefined ? std.variable_to_string(op.arg) : "";
+			const arg = op.arg !== undefined ? variable_to_string(op.arg) : "";
 
 			console.log(this.ip - 1, op_code_name(op.code), arg);
 		}
@@ -950,7 +951,7 @@ export class Engine
 				...this.stack.map(
 					(x) =>
 					{
-						return std.variable_to_string(x);
+						return variable_to_string(x);
 					}
 				)
 			);

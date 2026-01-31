@@ -17,6 +17,7 @@ import type { NativeFunction } from "./boundary/definition/type/native-function.
 import type { VariableTableMapType } from "./variable/definition/type/variable-table-map.type.mjs";
 import { RuntimeError } from "./runtime-error.mjs";
 import { table_size } from "./lib/table-size/table-size.mjs";
+import { variable_to_string } from "./lib/variable-to-string/variable-to-string.mjs";
 
 function optional_parameter<K extends VariableKindEnum>(
 	expected_kind: K,
@@ -33,45 +34,6 @@ function optional_parameter<K extends VariableKindEnum>(
 	const value: unknown = VariableUnwrapUtility.unwrap(parameter);
 
 	return value as VariableValueType<K>;
-}
-
-export function variable_to_string(variable: Variable, tables_done: Array<Variable> = []): string
-{
-	switch (variable.data_type)
-	{
-		case VariableKind.Nil:
-			return "nil";
-		case VariableKind.Boolean:
-			return variable.boolean ? "true" : "false";
-		case VariableKind.Number:
-			return variable.number.toString();
-		case VariableKind.String:
-			return variable.string;
-		case VariableKind.Function:
-			return `<Function id="${variable.function_id?.toString() ?? "nil"}">`;
-		case VariableKind.NativeFunction:
-			return `<Function name="${variable.native_function.name}">`;
-		case VariableKind.Table:
-		{
-			if (tables_done.includes(variable))
-			{
-				return "...";
-			}
-
-			tables_done.push(variable);
-
-			const items: Array<string> = [];
-
-			for (const [key, value] of variable.table.entries())
-			{
-				const item: string = `${String(key)} = ${variable_to_string(value, tables_done)}`;
-
-				items.push(item);
-			}
-
-			return `{ ${items.join(", ")} }`;
-		}
-	}
 }
 
 function print(_: Engine, ...args: Array<Variable>): Array<Variable>
