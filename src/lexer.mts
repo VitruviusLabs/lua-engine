@@ -1,123 +1,59 @@
 import { StateEnum } from "./lexer/definition/enum/state.enum.mjs";
+import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 
-export enum TokenKind {
-	EOF = "EOF",
-	NotFinished = "not-finished",
-
-	Identifier = "identifier",
-	StringLiteral = "string-literal",
-	BooleanLiteral = "boolean-literal",
-	NumberLiteral = "number-literal",
-	NilLiteral = "nil-literal",
-
-	OpenBrace = "open-brace",
-	CloseBrace = "close-brace",
-	OpenSquare = "open-square",
-	CloseSquare = "close-square",
-	SquiglyOpen = "squigly-open",
-	SquiglyClose = "squigly-close",
-
-	Addition = "addition",
-	Subtract = "subtract",
-	Multiply = "multiply",
-	Division = "division",
-	FloorDivision = "floor-division",
-	Modulo = "modulo",
-	Exponent = "exponent",
-	Concat = "concat",
-	Hash = "hash",
-
-	BitAnd = "bit-and",
-	BitOr = "bit-or",
-	BitXOrNot = "bit-xor-not",
-	BitShiftLeft = "bit-shift-left",
-	BitShiftRight = "bit-shift-right",
-
-	Equals = "equals",
-	NotEquals = "not-equals",
-	LessThan = "less-than",
-	LessThanEquals = "less-than-equals",
-	GreaterThan = "greater-than",
-	GreaterThanEquals = "greater-than-equals",
-	And = "and",
-	Or = "or",
-	Not = "not",
-
-	Assign = "assign",
-	Semicolon = "semicolon",
-	Comma = "comma",
-	Dot = "dot",
-
-	Function = "function",
-	If = "if",
-	While = "while",
-	For = "for",
-	Repeat = "repeat",
-	In = "in",
-	Do = "do",
-	Then = "then",
-	ElseIf = "elseif",
-	Else = "else",
-	Until = "until",
-	End = "end",
-	Return = "return",
-	Break = "break",
-	Local = "local",
-}
-
-export function token_kind_to_string(kind: TokenKind): string
+export function token_kind_to_string(kind: TokenKindEnum): string
 {
 	switch (kind)
 	{
-		case TokenKind.EOF: return "EOF";
-		case TokenKind.NotFinished: return "NotFinished";
-		case TokenKind.Identifier: return "Identifier";
-		case TokenKind.StringLiteral: return "StringLiteral";
-		case TokenKind.BooleanLiteral: return "BooleanLiteral";
-		case TokenKind.NumberLiteral: return "NumberLiteral";
-		case TokenKind.NilLiteral: return "nil";
-		case TokenKind.OpenBrace: return "(";
-		case TokenKind.CloseBrace: return ")";
-		case TokenKind.OpenSquare: return "[";
-		case TokenKind.CloseSquare: return "]";
-		case TokenKind.SquiglyOpen: return "{";
-		case TokenKind.SquiglyClose: return "}";
-		case TokenKind.Addition: return "+";
-		case TokenKind.Subtract: return "-";
-		case TokenKind.Multiply: return "*";
-		case TokenKind.Division: return "/";
-		case TokenKind.FloorDivision: return "//";
-		case TokenKind.Modulo: return "%";
-		case TokenKind.Exponent: return "^";
-		case TokenKind.BitAnd: return "&";
-		case TokenKind.BitOr: return "|";
-		case TokenKind.BitXOrNot: return "~";
-		case TokenKind.BitShiftLeft: return "<<";
-		case TokenKind.BitShiftRight: return ">>";
-		case TokenKind.LessThan: return "<";
-		case TokenKind.GreaterThan: return ">";
-		case TokenKind.And: return "and";
-		case TokenKind.Or: return "or";
-		case TokenKind.Not: return "not";
-		case TokenKind.Assign: return "=";
-		case TokenKind.Semicolon: return ";";
-		case TokenKind.Comma: return ",";
-		case TokenKind.Dot: return ".";
-		case TokenKind.Function: return "function";
-		case TokenKind.If: return "if";
-		case TokenKind.While: return "while";
-		case TokenKind.For: return "for";
-		case TokenKind.Repeat: return "repeat";
-		case TokenKind.In: return "in";
-		case TokenKind.Do: return "do";
-		case TokenKind.Then: return "then";
-		case TokenKind.ElseIf: return "elseif";
-		case TokenKind.Else: return "else";
-		case TokenKind.Until: return "until";
-		case TokenKind.End: return "end";
-		case TokenKind.Return: return "return";
-		case TokenKind.Break: return "break";
-		case TokenKind.Local: return "local";
+		case TokenKindEnum.EOF: return "EOF";
+		case TokenKindEnum.NotFinished: return "NotFinished";
+		case TokenKindEnum.Identifier: return "Identifier";
+		case TokenKindEnum.StringLiteral: return "StringLiteral";
+		case TokenKindEnum.BooleanLiteral: return "BooleanLiteral";
+		case TokenKindEnum.NumberLiteral: return "NumberLiteral";
+		case TokenKindEnum.NilLiteral: return "nil";
+		case TokenKindEnum.OpenBrace: return "(";
+		case TokenKindEnum.CloseBrace: return ")";
+		case TokenKindEnum.OpenSquare: return "[";
+		case TokenKindEnum.CloseSquare: return "]";
+		case TokenKindEnum.SquiglyOpen: return "{";
+		case TokenKindEnum.SquiglyClose: return "}";
+		case TokenKindEnum.Addition: return "+";
+		case TokenKindEnum.Subtract: return "-";
+		case TokenKindEnum.Multiply: return "*";
+		case TokenKindEnum.Division: return "/";
+		case TokenKindEnum.FloorDivision: return "//";
+		case TokenKindEnum.Modulo: return "%";
+		case TokenKindEnum.Exponent: return "^";
+		case TokenKindEnum.BitAnd: return "&";
+		case TokenKindEnum.BitOr: return "|";
+		case TokenKindEnum.BitXOrNot: return "~";
+		case TokenKindEnum.BitShiftLeft: return "<<";
+		case TokenKindEnum.BitShiftRight: return ">>";
+		case TokenKindEnum.LessThan: return "<";
+		case TokenKindEnum.GreaterThan: return ">";
+		case TokenKindEnum.And: return "and";
+		case TokenKindEnum.Or: return "or";
+		case TokenKindEnum.Not: return "not";
+		case TokenKindEnum.Assign: return "=";
+		case TokenKindEnum.Semicolon: return ";";
+		case TokenKindEnum.Comma: return ",";
+		case TokenKindEnum.Dot: return ".";
+		case TokenKindEnum.FunctionLike: return "function";
+		case TokenKindEnum.If: return "if";
+		case TokenKindEnum.While: return "while";
+		case TokenKindEnum.For: return "for";
+		case TokenKindEnum.Repeat: return "repeat";
+		case TokenKindEnum.In: return "in";
+		case TokenKindEnum.Do: return "do";
+		case TokenKindEnum.Then: return "then";
+		case TokenKindEnum.ElseIf: return "elseif";
+		case TokenKindEnum.Else: return "else";
+		case TokenKindEnum.Until: return "until";
+		case TokenKindEnum.End: return "end";
+		case TokenKindEnum.Return: return "return";
+		case TokenKindEnum.Break: return "break";
+		case TokenKindEnum.Local: return "local";
 
 		default:
 			return "unknown token";
@@ -131,73 +67,73 @@ export interface Debug {
 
 export interface Token {
 	data: string;
-	kind: TokenKind;
+	kind: TokenKindEnum;
 	debug: Debug;
 }
 
-const single_token_map: Map<string, TokenKind> = new Map([
-	["(", TokenKind.OpenBrace],
-	[")", TokenKind.CloseBrace],
-	["[", TokenKind.OpenSquare],
-	["]", TokenKind.CloseSquare],
-	["{", TokenKind.SquiglyOpen],
-	["}", TokenKind.SquiglyClose],
+const single_token_map: Map<string, TokenKindEnum> = new Map([
+	["(", TokenKindEnum.OpenBrace],
+	[")", TokenKindEnum.CloseBrace],
+	["[", TokenKindEnum.OpenSquare],
+	["]", TokenKindEnum.CloseSquare],
+	["{", TokenKindEnum.SquiglyOpen],
+	["}", TokenKindEnum.SquiglyClose],
 
-	["+", TokenKind.Addition],
-	["-", TokenKind.Subtract],
-	["*", TokenKind.Multiply],
-	["/", TokenKind.Division],
-	["%", TokenKind.Modulo],
-	["^", TokenKind.Exponent],
-	["&", TokenKind.BitAnd],
-	["|", TokenKind.BitOr],
-	["~", TokenKind.BitXOrNot],
+	["+", TokenKindEnum.Addition],
+	["-", TokenKindEnum.Subtract],
+	["*", TokenKindEnum.Multiply],
+	["/", TokenKindEnum.Division],
+	["%", TokenKindEnum.Modulo],
+	["^", TokenKindEnum.Exponent],
+	["&", TokenKindEnum.BitAnd],
+	["|", TokenKindEnum.BitOr],
+	["~", TokenKindEnum.BitXOrNot],
 
-	["<", TokenKind.LessThan],
-	[">", TokenKind.GreaterThan],
+	["<", TokenKindEnum.LessThan],
+	[">", TokenKindEnum.GreaterThan],
 
-	["=", TokenKind.Assign],
-	[";", TokenKind.Semicolon],
-	[",", TokenKind.Comma],
-	[".", TokenKind.Dot],
-	["#", TokenKind.Hash],
+	["=", TokenKindEnum.Assign],
+	[";", TokenKindEnum.Semicolon],
+	[",", TokenKindEnum.Comma],
+	[".", TokenKindEnum.Dot],
+	["#", TokenKindEnum.Hash],
 ]);
 
-const double_token_map: Map<string, TokenKind> = new Map([
-	["==", TokenKind.Equals],
-	["<=", TokenKind.LessThanEquals],
-	[">=", TokenKind.GreaterThanEquals],
-	["~=", TokenKind.NotEquals],
-	["..", TokenKind.Concat],
-	["//", TokenKind.FloorDivision],
-	["<<", TokenKind.BitShiftLeft],
-	[">>", TokenKind.BitShiftRight],
+const double_token_map: Map<string, TokenKindEnum> = new Map([
+	["==", TokenKindEnum.Equals],
+	["<=", TokenKindEnum.LessThanEquals],
+	[">=", TokenKindEnum.GreaterThanEquals],
+	["~=", TokenKindEnum.NotEquals],
+	["..", TokenKindEnum.Concat],
+	["//", TokenKindEnum.FloorDivision],
+	["<<", TokenKindEnum.BitShiftLeft],
+	[">>", TokenKindEnum.BitShiftRight],
 ]);
 
-const keyword_map: Map<string, TokenKind> = new Map([
-	["function", TokenKind.Function],
-	["if", TokenKind.If],
-	["while", TokenKind.While],
-	["for", TokenKind.For],
-	["repeat", TokenKind.Repeat],
-	["in", TokenKind.In],
-	["do", TokenKind.Do],
-	["then", TokenKind.Then],
-	["elseif", TokenKind.ElseIf],
-	["else", TokenKind.Else],
-	["until", TokenKind.Until],
-	["end", TokenKind.End],
-	["return", TokenKind.Return],
-	["break", TokenKind.Break],
+const keyword_map: Map<string, TokenKindEnum> = new Map([
+	["function", TokenKindEnum.FunctionLike],
+	["if", TokenKindEnum.If],
+	["while", TokenKindEnum.While],
+	["for", TokenKindEnum.For],
+	["repeat", TokenKindEnum.Repeat],
+	["in", TokenKindEnum.In],
+	["do", TokenKindEnum.Do],
+	["then", TokenKindEnum.Then],
+	["elseif", TokenKindEnum.ElseIf],
+	["else", TokenKindEnum.Else],
+	["until", TokenKindEnum.Until],
+	["end", TokenKindEnum.End],
+	["return", TokenKindEnum.Return],
+	["break", TokenKindEnum.Break],
 
-	["and", TokenKind.And],
-	["or", TokenKind.Or],
-	["not", TokenKind.Not],
+	["and", TokenKindEnum.And],
+	["or", TokenKindEnum.Or],
+	["not", TokenKindEnum.Not],
 
-	["true", TokenKind.BooleanLiteral],
-	["false", TokenKind.BooleanLiteral],
-	["nil", TokenKind.NilLiteral],
-	["local", TokenKind.Local],
+	["true", TokenKindEnum.BooleanLiteral],
+	["false", TokenKindEnum.BooleanLiteral],
+	["nil", TokenKindEnum.NilLiteral],
+	["local", TokenKindEnum.Local],
 ]);
 
 export class TokenStream
@@ -274,7 +210,7 @@ export class TokenStream
 		{
 			this.peek_queue.push({
 				data: "",
-				kind: TokenKind.EOF,
+				kind: TokenKindEnum.EOF,
 				debug: {
 					line: this.line,
 					column: this.column,
@@ -386,7 +322,7 @@ this.consume();
 		{
 			this.peek_queue.push({
 				data: this.buffer,
-				kind: TokenKind.StringLiteral,
+				kind: TokenKindEnum.StringLiteral,
 				debug: this.token_start_debug,
 			});
 
@@ -435,7 +371,7 @@ this.consume();
 		{
 			this.peek_queue.push({
 				data: this.buffer,
-				kind: TokenKind.StringLiteral,
+				kind: TokenKindEnum.StringLiteral,
 				debug: this.token_start_debug,
 			});
 
@@ -458,7 +394,7 @@ this.consume();
 
 			this.peek_queue.push({
 				data: this.buffer,
-				kind: kind ?? TokenKind.Identifier,
+				kind: kind ?? TokenKindEnum.Identifier,
 				debug: this.token_start_debug,
 			});
 
@@ -507,7 +443,7 @@ this.consume();
 			{
 				this.peek_queue.push({
 					data: this.buffer,
-					kind: TokenKind.NumberLiteral,
+					kind: TokenKindEnum.NumberLiteral,
 					debug: this.token_start_debug,
 				});
 
@@ -525,7 +461,7 @@ this.consume();
 
 		this.peek_queue.push({
 			data: this.buffer,
-			kind: TokenKind.NumberLiteral,
+			kind: TokenKindEnum.NumberLiteral,
 			debug: this.token_start_debug,
 		});
 
@@ -555,7 +491,7 @@ this.consume();
 
 		this.peek_queue.push({
 			data: this.buffer,
-			kind: TokenKind.NumberLiteral,
+			kind: TokenKindEnum.NumberLiteral,
 			debug: this.token_start_debug,
 		});
 
@@ -577,7 +513,7 @@ this.consume();
 
 		this.peek_queue.push({
 			data: this.buffer,
-			kind: TokenKind.NumberLiteral,
+			kind: TokenKindEnum.NumberLiteral,
 			debug: this.token_start_debug,
 		});
 
@@ -598,7 +534,7 @@ this.consume();
 
 		this.peek_queue.push({
 			data: this.buffer,
-			kind: TokenKind.NumberLiteral,
+			kind: TokenKindEnum.NumberLiteral,
 			debug: this.token_start_debug,
 		});
 
@@ -619,7 +555,7 @@ this.consume();
 
 		this.peek_queue.push({
 			data: parseInt(this.buffer.slice(2), 16).toString(),
-			kind: TokenKind.NumberLiteral,
+			kind: TokenKindEnum.NumberLiteral,
 			debug: this.token_start_debug,
 		});
 
@@ -645,8 +581,8 @@ this.consume();
 			this.peek_queue.push({
 				data: "",
 				kind: this.state === StateEnum.Initial
-					? TokenKind.EOF
-					: TokenKind.NotFinished,
+					? TokenKindEnum.EOF
+					: TokenKindEnum.NotFinished,
 				debug: {
 					line: this.line,
 					column: this.column,
