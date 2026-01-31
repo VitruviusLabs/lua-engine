@@ -535,20 +535,6 @@ function parse_return(stream: TokenStream): StatementInterface | Error
 	};
 }
 
-function parse_break(stream: TokenStream): StatementInterface | Error
-{
-	const break_token = expect(stream, TokenKindEnum.Break);
-
-	if (break_token instanceof Error)
-	{
-		return break_token;
-	}
-
-	return {
-		kind: StatementKindEnum.Break,
-	};
-}
-
 function parse_if(stream: TokenStream): StatementInterface | Error
 {
 	const if_token = expect(stream, TokenKindEnum.If);
@@ -1032,7 +1018,6 @@ function parse_function(stream: TokenStream): StatementInterface | Error
 export {
 	parse_assign_or_expression,
 	parse_return,
-	parse_break,
 	parse_if,
 	parse_while,
 	parse_for,

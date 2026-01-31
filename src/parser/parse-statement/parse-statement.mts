@@ -3,8 +3,9 @@ import type { StatementInterface } from "../../ast/definition/interface/statemen
 import type { TokenStream } from "../../lexer.mjs";
 import { TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
 import { token_kind_to_string } from "../../lexer/token-kind-to-string/token-kind-to-string.mjs";
-import { parse_assign_or_expression, parse_break, parse_do, parse_for, parse_function, parse_if, parse_repeat, parse_return, parse_while } from "../../parser.mjs";
+import { parse_assign_or_expression, parse_do, parse_for, parse_function, parse_if, parse_repeat, parse_return, parse_while } from "../../parser.mjs";
 import { to_error } from "../error/to-error.mjs";
+import { parse_break } from "../parse_break/parse-break.mjs";
 
 function parse_statement(stream: TokenStream, end_tokens: Array<TokenKindEnum>): StatementInterface | Error | undefined
 {
