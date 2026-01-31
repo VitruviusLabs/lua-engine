@@ -1,7 +1,7 @@
 import type { Chunk } from "./ast.mjs";
 import type { Do, For, IfBlock, NumericFor, Repeat, While } from "./ast.mjs";
 import type { Token } from "./lexer.mjs";
-import type { Assignment, Local, Return } from "./ast.mjs";
+import type { Local, Return } from "./ast.mjs";
 
 import { make_boolean, make_number, make_string } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
@@ -14,6 +14,7 @@ import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs
 import type { ProgramInterface } from "./opcode/definition/interface/program.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
+import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
@@ -260,7 +261,7 @@ function compile_expression(expression: ExpressionInterface | undefined, functio
 	}
 }
 
-function compile_assignment(assignment: Assignment | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_assignment(assignment: AssignmentInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (assignment === undefined)
 	{

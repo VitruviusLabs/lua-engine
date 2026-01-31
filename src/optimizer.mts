@@ -1,7 +1,8 @@
-import type { Assignment, Chunk, For, IfBlock, NumericFor, Repeat, Statement, While } from "./ast.mjs";
+import type { Chunk, For, IfBlock, NumericFor, Repeat, Statement, While } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
+import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 
@@ -372,7 +373,7 @@ function optimize_expression(
 	}
 }
 
-function mark_local_constants(assignment: Assignment, constants: Map<string, ValueInterface>): void
+function mark_local_constants(assignment: AssignmentInterface, constants: Map<string, ValueInterface>): void
 {
 	for (const [index, rhs] of assignment.rhs.entries())
 	{
@@ -410,7 +411,7 @@ function mark_local_constants(assignment: Assignment, constants: Map<string, Val
 	}
 }
 
-function unmark_constants_if_reassigned(assignment: Assignment, constants: Map<string, ValueInterface>): void
+function unmark_constants_if_reassigned(assignment: AssignmentInterface, constants: Map<string, ValueInterface>): void
 {
 	for (const lhs of assignment.lhs)
 	{
@@ -431,7 +432,7 @@ function unmark_constants_if_reassigned(assignment: Assignment, constants: Map<s
 }
 
 function optimize_assignment(
-	assignment: Assignment | undefined,
+	assignment: AssignmentInterface | undefined,
 	constants: Map<string, ValueInterface>
 ): void
 {

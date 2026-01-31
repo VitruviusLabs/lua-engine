@@ -1,14 +1,7 @@
 import type { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
+import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { Token } from "./lexer.mjs";
-
-export interface Assignment
-{
-	local: boolean;
-	lhs: Array<ExpressionInterface>;
-	rhs: Array<ExpressionInterface>;
-	token: Token;
-}
 
 export interface Local
 {
@@ -79,7 +72,7 @@ export interface Statement
 {
 	kind: StatementKindEnum;
 	expression?: ExpressionInterface | undefined;
-	assignment?: Assignment | undefined;
+	assignment?: AssignmentInterface | undefined;
 	local?: Local | undefined;
 	if?: IfBlock | undefined;
 	while?: While | undefined;
