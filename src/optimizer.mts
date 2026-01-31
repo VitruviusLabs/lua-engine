@@ -1,7 +1,8 @@
-import type { Assignment, Chunk, Expression, For, IfBlock, NumericFor, Repeat, Statement, Value, While } from "./ast.mjs";
+import type { Assignment, Chunk, Expression, For, IfBlock, NumericFor, Repeat, Statement, While } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
+import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 
 const CONSTANT_VALUES = [
 	ValueKindEnum.NilLiteral,
@@ -13,8 +14,8 @@ const CONSTANT_VALUES = [
 function compute_arithmetic_operation(
 	expression: Expression,
 	operation: (a: number, b: number) => number,
-	constants: Map<string, Value>
-): Value | undefined
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
 {
 	const lhs = compute_constant_expression(expression.lhs, constants);
 	const rhs = compute_constant_expression(expression.rhs, constants);
@@ -34,8 +35,8 @@ function compute_arithmetic_operation(
 function compute_comparison_operation(
 	expression: Expression,
 	operation: (a: number | string, b: number | string) => boolean,
-	constants: Map<string, Value>
-): Value | undefined
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
 {
 	const lhs = compute_constant_expression(expression.lhs, constants);
 	const rhs = compute_constant_expression(expression.rhs, constants);
@@ -55,8 +56,8 @@ function compute_comparison_operation(
 function compute_logical_operation(
 	expression: Expression,
 	operation: ExpressionKind.And | ExpressionKind.Or,
-	constants: Map<string, Value>
-): Value | undefined
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
 {
 	const lhs = compute_constant_expression(expression.lhs, constants);
 	const rhs = compute_constant_expression(expression.rhs, constants);
@@ -79,8 +80,8 @@ function compute_logical_operation(
 // @TODO: Fix complexity warning
 function compute_constant_expression(
 	expression: Expression | undefined,
-	constants: Map<string, Value>
-): Value | undefined
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
 {
 	if (expression === undefined)
 	{
@@ -334,7 +335,7 @@ function compute_constant_expression(
 
 function optimize_expression(
 	expression: Expression | undefined,
-	constants: Map<string, Value>
+	constants: Map<string, ValueInterface>
 ): void
 {
 	if (expression === undefined)
@@ -370,7 +371,7 @@ function optimize_expression(
 	}
 }
 
-function mark_local_constants(assignment: Assignment, constants: Map<string, Value>): void
+function mark_local_constants(assignment: Assignment, constants: Map<string, ValueInterface>): void
 {
 	for (const [index, rhs] of assignment.rhs.entries())
 	{
@@ -408,7 +409,7 @@ function mark_local_constants(assignment: Assignment, constants: Map<string, Val
 	}
 }
 
-function unmark_constants_if_reassigned(assignment: Assignment, constants: Map<string, Value>): void
+function unmark_constants_if_reassigned(assignment: Assignment, constants: Map<string, ValueInterface>): void
 {
 	for (const lhs of assignment.lhs)
 	{
@@ -430,7 +431,7 @@ function unmark_constants_if_reassigned(assignment: Assignment, constants: Map<s
 
 function optimize_assignment(
 	assignment: Assignment | undefined,
-	constants: Map<string, Value>
+	constants: Map<string, ValueInterface>
 ): void
 {
 	if (assignment === undefined)
@@ -455,7 +456,7 @@ function optimize_assignment(
 
 function remove_constant_local_assignments(
 	chunk: Chunk,
-	constants: Map<string, Value>
+	constants: Map<string, ValueInterface>
 ): void
 {
 	for (const statement of chunk.statements)
@@ -494,7 +495,7 @@ function remove_constant_local_assignments(
 	);
 }
 
-function optimize_if(if_block: IfBlock | undefined, constants: Map<string, Value>): void
+function optimize_if(if_block: IfBlock | undefined, constants: Map<string, ValueInterface>): void
 {
 	if (if_block === undefined)
 	{
@@ -505,7 +506,7 @@ function optimize_if(if_block: IfBlock | undefined, constants: Map<string, Value
 	optimize_chunk(if_block.body, constants);
 }
 
-function optimize_while(while_block: While | undefined, constants: Map<string, Value>): void
+function optimize_while(while_block: While | undefined, constants: Map<string, ValueInterface>): void
 {
 	if (while_block === undefined)
 	{
@@ -516,7 +517,7 @@ function optimize_while(while_block: While | undefined, constants: Map<string, V
 	optimize_chunk(while_block.body, constants);
 }
 
-function optimize_for(for_block: For | undefined, constants: Map<string, Value>): void
+function optimize_for(for_block: For | undefined, constants: Map<string, ValueInterface>): void
 {
 	if (for_block === undefined)
 	{
@@ -527,7 +528,7 @@ function optimize_for(for_block: For | undefined, constants: Map<string, Value>)
 	optimize_chunk(for_block.body, constants);
 }
 
-function optimize_numeric_for(numeric_for_block: NumericFor | undefined, constants: Map<string, Value>): void
+function optimize_numeric_for(numeric_for_block: NumericFor | undefined, constants: Map<string, ValueInterface>): void
 {
 	if (numeric_for_block === undefined)
 	{
@@ -540,7 +541,7 @@ function optimize_numeric_for(numeric_for_block: NumericFor | undefined, constan
 	optimize_chunk(numeric_for_block.body, constants);
 }
 
-function optimize_repeat(repeat_block: Repeat | undefined, constants: Map<string, Value>): void
+function optimize_repeat(repeat_block: Repeat | undefined, constants: Map<string, ValueInterface>): void
 {
 	if (repeat_block === undefined)
 	{
@@ -551,7 +552,7 @@ function optimize_repeat(repeat_block: Repeat | undefined, constants: Map<string
 	optimize_chunk(repeat_block.body, constants);
 }
 
-export function optimize_chunk(chunk: Chunk, parent_constants?: Map<string, Value>): void
+export function optimize_chunk(chunk: Chunk, parent_constants?: Map<string, ValueInterface>): void
 {
 	const constants = new Map(parent_constants);
 

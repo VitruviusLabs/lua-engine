@@ -1,19 +1,5 @@
 import type { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
-import type { LuaFunctionInterface } from "./ast/definition/interface/lua-function.interface.mjs";
 import type { Token } from "./lexer.mjs";
-
-export interface Value
-{
-	kind: ValueKind;
-	token: Token;
-
-	number?: number | undefined;
-	boolean?: boolean | undefined;
-	string?: string | undefined;
-	table?: Map<Expression, Expression> | undefined;
-	function?: LuaFunctionInterface | undefined;
-	identifier?: string | undefined;
-}
 
 export interface Expression
 {

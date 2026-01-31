@@ -1,7 +1,8 @@
-import type { Chunk, ElseIfBlock, Expression, Statement, Value } from "./ast.mjs";
+import type { Chunk, ElseIfBlock, Expression, Statement } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
+import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 import { type Token, type TokenStream, token_kind_to_string } from "./lexer.mjs";
 import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 
@@ -103,7 +104,7 @@ function parse_table_key(stream: TokenStream): Expression | Error
 	};
 }
 
-function parse_table(stream: TokenStream): Value | Error
+function parse_table(stream: TokenStream): ValueInterface | Error
 {
 	const squigly_open = expect(stream, TokenKindEnum.SquiglyOpen);
 
@@ -177,7 +178,7 @@ function parse_table(stream: TokenStream): Value | Error
 	};
 }
 
-function parse_value(stream: TokenStream): Value | Error
+function parse_value(stream: TokenStream): ValueInterface | Error
 {
 	const token = stream.peek();
 
@@ -1032,7 +1033,7 @@ function parse_function_params(stream: TokenStream): Array<Token> | Error
 	return params;
 }
 
-function parse_function_value(function_token: Token, stream: TokenStream): Value | Error
+function parse_function_value(function_token: Token, stream: TokenStream): ValueInterface | Error
 {
 	const params = parse_function_params(stream);
 

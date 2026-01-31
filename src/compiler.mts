@@ -1,4 +1,4 @@
-import type { Chunk, Expression, Value } from "./ast.mjs";
+import type { Chunk, Expression } from "./ast.mjs";
 import type { Do, For, IfBlock, NumericFor, Repeat, While } from "./ast.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Assignment, Local, Return } from "./ast.mjs";
@@ -12,6 +12,7 @@ import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs
 import { OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
 import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs";
 import type { ProgramInterface } from "./opcode/definition/interface/program.interface.mjs";
+import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
@@ -34,7 +35,7 @@ function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, 
 	return functions.length - 1;
 }
 
-function compile_value(value: Value | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_value(value: ValueInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (value === undefined)
 	{
