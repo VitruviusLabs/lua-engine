@@ -55,7 +55,7 @@ export class Engine
 
 	private error: Error | undefined;
 
-	constructor(
+	public constructor(
 		script?: string,
 		globals?: VariableTableMapType
 	)
