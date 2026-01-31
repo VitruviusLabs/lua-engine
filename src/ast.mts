@@ -1,18 +1,11 @@
 import type { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
+import type { ForInterface } from "./ast/definition/interface/for.interface.mjs";
 import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
 import type { LocalInterface } from "./ast/definition/interface/local.interface.mjs";
 import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
 import type { Token } from "./lexer.mjs";
-
-export interface For
-{
-	items: Array<Token>;
-	iterator: ExpressionInterface;
-	body: Chunk;
-	token: Token;
-}
 
 export interface NumericFor
 {
@@ -50,7 +43,7 @@ export interface Statement
 	local?: LocalInterface | undefined;
 	if?: IfBlockInterface | undefined;
 	while?: WhileInterface | undefined;
-	for?: For | undefined;
+	for?: ForInterface | undefined;
 	numeric_for?: NumericFor | undefined;
 	repeat?: Repeat | undefined;
 	do?: Do | undefined;

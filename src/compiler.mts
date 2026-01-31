@@ -1,5 +1,5 @@
 import type { Chunk } from "./ast.mjs";
-import type { Do, For, NumericFor, Repeat } from "./ast.mjs";
+import type { Do, NumericFor, Repeat } from "./ast.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Return } from "./ast.mjs";
 
@@ -18,6 +18,7 @@ import type { AssignmentInterface } from "./ast/definition/interface/assignment.
 import type { LocalInterface } from "./ast/definition/interface/local.interface.mjs";
 import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
 import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
+import type { ForInterface } from "./ast/definition/interface/for.interface.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
@@ -544,7 +545,7 @@ function compile_while(while_block: WhileInterface | undefined, functions: Array
 	return ops;
 }
 
-function compile_for(for_block: For | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_for(for_block: ForInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (for_block === undefined)
 	{
