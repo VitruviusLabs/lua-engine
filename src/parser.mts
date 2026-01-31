@@ -11,9 +11,11 @@ import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
 import { token_kind_to_string } from "./lexer/token-kind-to-string/token-kind-to-string.mjs";
 import { consume } from "./parser/consume/consume.mjs";
+import { to_error } from "./parser/error/to-error.mjs";
 import { expect } from "./parser/expect/expect.mjs";
 import { operation_type_to_expression_kind } from "./parser/operation-type-to-expression-kind/operation-type-to-expression-kind.mjs";
 import { parse_function_params } from "./parser/parse-function-params/parse-function-params.mjs";
+import { parse_local_statement } from "./parser/parse-local-statement/parse-local-statement.mjs";
 import { parse } from "./parser/parse/parse.mjs";
 import { unary_type_to_expression_kind } from "./parser/unary-type-to-expression-kind/unary-type-to-expression-kind.mjs";
 
@@ -177,7 +179,7 @@ function parse_value(stream: TokenStream): ValueInterface | Error
 			return parse_function_value(stream.next(), stream);
 
 		default:
-			return error(token, `Expected value, got ${token_kind_to_string(token.kind)} instead`);
+			return to_error(token, `Expected value, got ${token_kind_to_string(token.kind)} instead`);
 	}
 }
 
@@ -427,31 +429,6 @@ function parse_expression(stream: TokenStream): ExpressionInterface | Error
 	}
 
 	return parse_operation(stream, 0);
-}
-
-function parse_local_statement(local: TokenInterface, values: Array<ExpressionInterface>): StatementInterface | Error
-{
-	const names: Array<TokenInterface> = [];
-
-	for (const expression of values)
-	{
-		const value = expression.value;
-
-		if (value === undefined || value.kind !== ValueKindEnum.Variable)
-		{
-			return error(expression.token, "Invalid local name");
-		}
-
-		names.push(value.token);
-	}
-
-	return {
-		kind: StatementKindEnum.Local,
-		local: {
-			token: local,
-			names: names,
-		},
-	};
 }
 
 function parse_assign_or_expression(stream: TokenStream): StatementInterface | Error
