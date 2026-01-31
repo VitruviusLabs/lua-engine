@@ -1,8 +1,8 @@
-import type { Chunk } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
+import type { ChunkInterface } from "./ast/definition/interface/chunk.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { ForInterface } from "./ast/definition/interface/for.interface.mjs";
 import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
@@ -463,7 +463,7 @@ function optimize_assignment(
 }
 
 function remove_constant_local_assignments(
-	chunk: Chunk,
+	chunk: ChunkInterface,
 	constants: Map<string, ValueInterface>
 ): void
 {
@@ -560,7 +560,7 @@ function optimize_repeat(repeat_block: RepeatInterface | undefined, constants: M
 	optimize_chunk(repeat_block.body, constants);
 }
 
-export function optimize_chunk(chunk: Chunk, parent_constants?: Map<string, ValueInterface>): void
+export function optimize_chunk(chunk: ChunkInterface, parent_constants?: Map<string, ValueInterface>): void
 {
 	const constants = new Map(parent_constants);
 

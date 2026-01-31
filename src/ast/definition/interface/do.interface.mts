@@ -1,9 +1,9 @@
-import type { Chunk } from "../../../ast.mjs";
 import type { Token } from "../../../lexer.mjs";
+import type { ChunkInterface } from "./chunk.interface.mjs";
 
 interface DoInterface
 {
-	body: Chunk;
+	body: ChunkInterface;
 	token: Token;
 }
 

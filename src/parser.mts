@@ -1,7 +1,7 @@
-import type { Chunk } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
+import type { ChunkInterface } from "./ast/definition/interface/chunk.interface.mjs";
 import type { ElseIfBlockInterface } from "./ast/definition/interface/else-if-block.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { StatementInterface } from "./ast/definition/interface/statement.interface.mjs";
@@ -680,7 +680,7 @@ function parse_if(stream: TokenStream): StatementInterface | Error
 	}
 
 	const else_if_bodies: Array<ElseIfBlockInterface> = [];
-	let else_body: Chunk | undefined = undefined;
+	let else_body: ChunkInterface | undefined = undefined;
 
 	while (consume(stream, TokenKindEnum.ElseIf))
 	{
@@ -1223,9 +1223,9 @@ function parse_statement(stream: TokenStream, end_tokens: Array<TokenKindEnum>):
 	}
 }
 
-export function parse(stream: TokenStream, ...end_tokens: Array<TokenKindEnum>): Chunk | Error
+export function parse(stream: TokenStream, ...end_tokens: Array<TokenKindEnum>): ChunkInterface | Error
 {
-	const chunk: Chunk = { statements: [] };
+	const chunk: ChunkInterface = { statements: [] };
 
 	if (end_tokens.length === 0)
 	{

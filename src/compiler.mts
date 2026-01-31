@@ -1,4 +1,3 @@
-import type { Chunk } from "./ast.mjs";
 import type { Token } from "./lexer.mjs";
 
 import { make_boolean, make_number, make_string } from "./runtime.mjs";
@@ -21,8 +20,9 @@ import type { NumericForInterface } from "./ast/definition/interface/numeric-for
 import type { RepeatInterface } from "./ast/definition/interface/repeat.interface.mjs";
 import type { DoInterface } from "./ast/definition/interface/do.interface.mjs";
 import type { ReturnInterface } from "./ast/definition/interface/return.interface.mjs";
+import type { ChunkInterface } from "./ast/definition/interface/chunk.interface.mjs";
 
-function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
+function compile_function(chunk: ChunkInterface, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
 	const ops: Array<OpInterface> = [];
 
@@ -708,7 +708,7 @@ interface ChunkResult
 	has_last_expression: boolean;
 }
 
-function compile_block(chunk: Chunk, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_block(chunk: ChunkInterface, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	const { code, has_last_expression } = compile_chunk(chunk, functions);
 
@@ -720,7 +720,7 @@ function compile_block(chunk: Chunk, functions: Array<Array<OpInterface>>): Arra
 	return code;
 }
 
-function compile_chunk(chunk: Chunk, functions: Array<Array<OpInterface>>): ChunkResult
+function compile_chunk(chunk: ChunkInterface, functions: Array<Array<OpInterface>>): ChunkResult
 {
 	const ops = [];
 	let has_last_expression = false;
@@ -802,7 +802,7 @@ function link(code: Array<OpInterface>, function_id: number, location: number): 
 	}
 }
 
-export function compile(chunk: Chunk, extend?: Array<OpInterface>): ProgramInterface
+export function compile(chunk: ChunkInterface, extend?: Array<OpInterface>): ProgramInterface
 {
 	const ops = [...(extend ?? [])];
 	const functions: Array<Array<OpInterface>> = [];
