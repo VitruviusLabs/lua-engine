@@ -6,8 +6,9 @@ import type { ElseIfBlockInterface } from "./ast/definition/interface/else-if-bl
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { StatementInterface } from "./ast/definition/interface/statement.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
-import type { Token, TokenStream } from "./lexer.mjs";
+import type { TokenStream } from "./lexer.mjs";
 import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
+import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
 import { token_kind_to_string } from "./lexer/token-kind-to-string/token-kind-to-string.mjs";
 
 const UNARY = [
@@ -30,14 +31,14 @@ const ORDERS = [
 	[TokenKindEnum.Exponent],
 ];
 
-function error(token: Token, message: string): Error
+function error(token: TokenInterface, message: string): Error
 {
 	return new Error(
 		`${token.debug.line.toFixed(0)}:${token.debug.column.toFixed(0)}: ${message}`
 	);
 }
 
-function expect(stream: TokenStream, kind: TokenKindEnum): Token | Error
+function expect(stream: TokenStream, kind: TokenKindEnum): TokenInterface | Error
 {
 	const token = stream.peek();
 
@@ -507,9 +508,9 @@ function parse_expression(stream: TokenStream): ExpressionInterface | Error
 	return parse_operation(stream, 0);
 }
 
-function parse_local_statement(local: Token, values: Array<ExpressionInterface>): StatementInterface | Error
+function parse_local_statement(local: TokenInterface, values: Array<ExpressionInterface>): StatementInterface | Error
 {
-	const names: Array<Token> = [];
+	const names: Array<TokenInterface> = [];
 
 	for (const expression of values)
 	{
@@ -786,7 +787,7 @@ function parse_while(stream: TokenStream): StatementInterface | Error
 	};
 }
 
-function parse_numeric_for(index: Token, stream: TokenStream): StatementInterface | Error
+function parse_numeric_for(index: TokenInterface, stream: TokenStream): StatementInterface | Error
 {
 	const start = parse_expression(stream);
 
@@ -860,7 +861,7 @@ function parse_for(stream: TokenStream): StatementInterface | Error
 		return for_token;
 	}
 
-	const items: Array<Token> = [];
+	const items: Array<TokenInterface> = [];
 
 	while (items.length === 0 || consume(stream, TokenKindEnum.Comma))
 	{
@@ -999,7 +1000,7 @@ function parse_do(stream: TokenStream): StatementInterface | Error
 	};
 }
 
-function parse_function_params(stream: TokenStream): Array<Token> | Error
+function parse_function_params(stream: TokenStream): Array<TokenInterface> | Error
 {
 	const open_brace = expect(stream, TokenKindEnum.OpenBrace);
 
@@ -1008,7 +1009,7 @@ function parse_function_params(stream: TokenStream): Array<Token> | Error
 		return open_brace;
 	}
 
-	const params: Array<Token> = [];
+	const params: Array<TokenInterface> = [];
 
 	while (stream.peek().kind !== TokenKindEnum.CloseBrace)
 	{
@@ -1037,7 +1038,7 @@ function parse_function_params(stream: TokenStream): Array<Token> | Error
 	return params;
 }
 
-function parse_function_value(function_token: Token, stream: TokenStream): ValueInterface | Error
+function parse_function_value(function_token: TokenInterface, stream: TokenStream): ValueInterface | Error
 {
 	const params = parse_function_params(stream);
 
@@ -1065,7 +1066,7 @@ function parse_function_value(function_token: Token, stream: TokenStream): Value
 	};
 }
 
-function parse_local_function(table_name: Token, stream: TokenStream): StatementInterface | Error
+function parse_local_function(table_name: TokenInterface, stream: TokenStream): StatementInterface | Error
 {
 	const local_name = expect(stream, TokenKindEnum.Identifier);
 

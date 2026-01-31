@@ -1,13 +1,13 @@
-import type { Token } from "../../../lexer.mjs";
+import type { TokenInterface } from "../../../lexer/definition/interface/token.interface.mjs";
 import type { ChunkInterface } from "./chunk.interface.mjs";
 import type { ExpressionInterface } from "./expression.interface.mjs";
 
 interface ForInterface
 {
-	items: Array<Token>;
+	items: Array<TokenInterface>;
 	iterator: ExpressionInterface;
 	body: ChunkInterface;
-	token: Token;
+	token: TokenInterface;
 }
 
 export type { ForInterface };

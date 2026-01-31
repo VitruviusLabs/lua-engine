@@ -1,5 +1,3 @@
-import type { Token } from "./lexer.mjs";
-
 import { make_boolean, make_number, make_string } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
 import { nil } from "./variable/nil.mjs";
@@ -21,8 +19,9 @@ import type { RepeatInterface } from "./ast/definition/interface/repeat.interfac
 import type { DoInterface } from "./ast/definition/interface/do.interface.mjs";
 import type { ReturnInterface } from "./ast/definition/interface/return.interface.mjs";
 import type { ChunkInterface } from "./ast/definition/interface/chunk.interface.mjs";
+import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
 
-function compile_function(chunk: ChunkInterface, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
+function compile_function(chunk: ChunkInterface, token: TokenInterface, parameters: Array<TokenInterface>, functions: Array<Array<OpInterface>>): number
 {
 	const ops: Array<OpInterface> = [];
 

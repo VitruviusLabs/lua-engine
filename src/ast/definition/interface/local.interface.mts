@@ -1,9 +1,9 @@
-import type { Token } from "../../../lexer.mjs";
+import type { TokenInterface } from "../../../lexer/definition/interface/token.interface.mjs";
 
 interface LocalInterface
 {
-	names: Array<Token>;
-	token: Token;
+	names: Array<TokenInterface>;
+	token: TokenInterface;
 }
 
 export type { LocalInterface };

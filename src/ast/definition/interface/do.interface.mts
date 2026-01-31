@@ -1,10 +1,10 @@
-import type { Token } from "../../../lexer.mjs";
+import type { TokenInterface } from "../../../lexer/definition/interface/token.interface.mjs";
 import type { ChunkInterface } from "./chunk.interface.mjs";
 
 interface DoInterface
 {
 	body: ChunkInterface;
-	token: Token;
+	token: TokenInterface;
 }
 
 export type { DoInterface };

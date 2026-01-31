@@ -1,10 +1,10 @@
-import type { Token } from "../../../lexer.mjs";
+import type { TokenInterface } from "../../../lexer/definition/interface/token.interface.mjs";
 import type { ExpressionInterface } from "./expression.interface.mjs";
 
 interface ReturnInterface
 {
 	values: Array<ExpressionInterface>;
-	token: Token;
+	token: TokenInterface;
 }
 
 export type { ReturnInterface };

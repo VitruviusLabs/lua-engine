@@ -1,4 +1,4 @@
-import type { Token } from "../../../lexer.mjs";
+import type { TokenInterface } from "../../../lexer/definition/interface/token.interface.mjs";
 import type { ExpressionInterface } from "./expression.interface.mjs";
 
 interface AssignmentInterface
@@ -6,7 +6,7 @@ interface AssignmentInterface
 	local: boolean;
 	lhs: Array<ExpressionInterface>;
 	rhs: Array<ExpressionInterface>;
-	token: Token;
+	token: TokenInterface;
 }
 
 export type { AssignmentInterface };

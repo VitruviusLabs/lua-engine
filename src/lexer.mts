@@ -1,12 +1,7 @@
 import { StateEnum } from "./lexer/definition/enum/state.enum.mjs";
 import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 import type { DebugInterface } from "./lexer/definition/interface/debug.interface.mjs";
-
-export interface Token {
-	data: string;
-	kind: TokenKindEnum;
-	debug: DebugInterface;
-}
+import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
 
 const single_token_map: Map<string, TokenKindEnum> = new Map([
 	["(", TokenKindEnum.OpenBrace],
@@ -76,7 +71,7 @@ const keyword_map: Map<string, TokenKindEnum> = new Map([
 export class TokenStream
 {
 	private readonly processing_stream: Array<string>;
-	private readonly peek_queue: Array<Token>;
+	private readonly peek_queue: Array<TokenInterface>;
 
 	private state: StateEnum;
 	private end_of_stream: boolean = false;
@@ -573,17 +568,17 @@ this.consume();
 		this.end_of_stream = false;
 	}
 
-	next(): Token
+	next(): TokenInterface
 	{
 		if (this.peek_queue.length === 0)
 		{
 			this.peek();
 		}
 
-		return this.peek_queue.shift() as Token;
+		return this.peek_queue.shift() as TokenInterface;
 	}
 
-	peek(count = 1): Token
+	peek(count = 1): TokenInterface
 	{
 		while (this.peek_queue.length < count)
 		{
