@@ -1,5 +1,5 @@
 import type { Chunk } from "./ast.mjs";
-import type { Do, For, IfBlock, NumericFor, Repeat, While } from "./ast.mjs";
+import type { Do, For, NumericFor, Repeat, While } from "./ast.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Return } from "./ast.mjs";
 
@@ -16,6 +16,7 @@ import type { ValueInterface } from "./ast/definition/interface/value.interface.
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
 import type { LocalInterface } from "./ast/definition/interface/local.interface.mjs";
+import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
@@ -441,7 +442,7 @@ function compile_conditional_jump(condition: ExpressionInterface | undefined, ju
 	return ops;
 }
 
-function compile_if(if_block: IfBlock | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_if(if_block: IfBlockInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (if_block === undefined)
 	{

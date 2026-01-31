@@ -1,9 +1,10 @@
-import type { Chunk, For, IfBlock, NumericFor, Repeat, Statement, While } from "./ast.mjs";
+import type { Chunk, For, NumericFor, Repeat, Statement, While } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
+import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 
 const CONSTANT_VALUES = [
@@ -497,7 +498,7 @@ function remove_constant_local_assignments(
 	);
 }
 
-function optimize_if(if_block: IfBlock | undefined, constants: Map<string, ValueInterface>): void
+function optimize_if(if_block: IfBlockInterface | undefined, constants: Map<string, ValueInterface>): void
 {
 	if (if_block === undefined)
 	{
