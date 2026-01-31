@@ -6,8 +6,9 @@ import type { ElseIfBlockInterface } from "./ast/definition/interface/else-if-bl
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { StatementInterface } from "./ast/definition/interface/statement.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
-import { type Token, type TokenStream, token_kind_to_string } from "./lexer.mjs";
+import type { Token, TokenStream } from "./lexer.mjs";
 import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
+import { token_kind_to_string } from "./lexer/token-kind-to-string/token-kind-to-string.mjs";
 
 const UNARY = [
 	TokenKindEnum.Not,
