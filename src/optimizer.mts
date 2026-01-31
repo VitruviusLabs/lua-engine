@@ -1,10 +1,11 @@
-import { type Assignment, type Chunk, type Expression, ExpressionKind, type For, type IfBlock, type NumericFor, type Repeat, type Statement, StatementKind, type Value, ValueKind, type While } from "./ast.mjs";
+import { type Assignment, type Chunk, type Expression, ExpressionKind, type For, type IfBlock, type NumericFor, type Repeat, type Statement, StatementKind, type Value, type While } from "./ast.mjs";
+import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 
 const CONSTANT_VALUES = [
-	ValueKind.NilLiteral,
-	ValueKind.NumberLiteral,
-	ValueKind.BooleanLiteral,
-	ValueKind.StringLiteral,
+	ValueKindEnum.NilLiteral,
+	ValueKindEnum.NumberLiteral,
+	ValueKindEnum.BooleanLiteral,
+	ValueKindEnum.StringLiteral,
 ];
 
 function compute_arithmetic_operation(
@@ -22,7 +23,7 @@ function compute_arithmetic_operation(
 	}
 
 	return {
-		kind: ValueKind.NumberLiteral,
+		kind: ValueKindEnum.NumberLiteral,
 		number: operation(lhs.number ?? 0, rhs.number ?? 0),
 		token: expression.token,
 	};
@@ -43,7 +44,7 @@ function compute_comparison_operation(
 	}
 
 	return {
-		kind: ValueKind.BooleanLiteral,
+		kind: ValueKindEnum.BooleanLiteral,
 		boolean: operation(lhs.number ?? 0, rhs.number ?? 0),
 		token: expression.token,
 	};
@@ -63,7 +64,7 @@ function compute_logical_operation(
 		return undefined;
 	}
 
-	const lhs_falsy: boolean = lhs.kind === ValueKind.NilLiteral || lhs.kind === ValueKind.BooleanLiteral && !(lhs.boolean ?? true);
+	const lhs_falsy: boolean = lhs.kind === ValueKindEnum.NilLiteral || lhs.kind === ValueKindEnum.BooleanLiteral && !(lhs.boolean ?? true);
 
 	if (operation === ExpressionKind.And)
 	{
@@ -101,7 +102,7 @@ function compute_constant_expression(
 				return value;
 			}
 
-			if (value.kind === ValueKind.Variable && constants.has(value.identifier ?? ""))
+			if (value.kind === ValueKindEnum.Variable && constants.has(value.identifier ?? ""))
 			{
 				return constants.get(value.identifier ?? "");
 			}
@@ -300,7 +301,7 @@ function compute_constant_expression(
 			}
 
 			return {
-				kind: ValueKind.BooleanLiteral,
+				kind: ValueKindEnum.BooleanLiteral,
 				boolean: !(lhs.boolean ?? false),
 				token: expression.token,
 			};
@@ -316,7 +317,7 @@ function compute_constant_expression(
 			}
 
 			return {
-				kind: ValueKind.NumberLiteral,
+				kind: ValueKindEnum.NumberLiteral,
 				number: -(lhs.number ?? 0),
 				token: expression.token,
 			};

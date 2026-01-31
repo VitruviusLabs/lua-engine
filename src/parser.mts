@@ -1,4 +1,5 @@
-import { type Chunk, type ElseIfBlock, type Expression, ExpressionKind, type Statement, StatementKind, type Value, ValueKind } from "./ast.mjs";
+import { type Chunk, type ElseIfBlock, type Expression, ExpressionKind, type Statement, StatementKind, type Value } from "./ast.mjs";
+import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 import { type Token, TokenKind, type TokenStream, token_kind_to_string } from "./lexer.mjs";
 
 const UNARY = [
@@ -85,9 +86,9 @@ function parse_table_key(stream: TokenStream): Expression | Error
 		return value;
 	}
 
-	if (value.kind === ValueKind.Variable)
+	if (value.kind === ValueKindEnum.Variable)
 	{
-		value.kind = ValueKind.StringLiteral;
+		value.kind = ValueKindEnum.StringLiteral;
 		value.string = value.identifier;
 		value.identifier = undefined;
 	}
@@ -143,7 +144,7 @@ function parse_table(stream: TokenStream): Value | Error
 				kind: ExpressionKind.Value,
 				token: key_token,
 				value: {
-					kind: ValueKind.NumberLiteral,
+					kind: ValueKindEnum.NumberLiteral,
 					token: key_token,
 					number: current_numeric_key,
 				},
@@ -167,7 +168,7 @@ function parse_table(stream: TokenStream): Value | Error
 	}
 
 	return {
-		kind: ValueKind.TableLiteral,
+		kind: ValueKindEnum.TableLiteral,
 		token: squigly_open,
 		table: elements,
 	};
@@ -181,15 +182,15 @@ function parse_value(stream: TokenStream): Value | Error
 	switch (token.kind)
 	{
 		case TokenKind.NumberLiteral:
-			return { kind: ValueKind.NumberLiteral, token: stream.next(), number: parseFloat(token.data) };
+			return { kind: ValueKindEnum.NumberLiteral, token: stream.next(), number: parseFloat(token.data) };
 		case TokenKind.BooleanLiteral:
-			return { kind: ValueKind.BooleanLiteral, token: stream.next(), boolean: token.data === "true" };
+			return { kind: ValueKindEnum.BooleanLiteral, token: stream.next(), boolean: token.data === "true" };
 		case TokenKind.StringLiteral:
-			return { kind: ValueKind.StringLiteral, token: stream.next(), string: token.data };
+			return { kind: ValueKindEnum.StringLiteral, token: stream.next(), string: token.data };
 		case TokenKind.NilLiteral:
-			return { kind: ValueKind.NilLiteral, token: stream.next() };
+			return { kind: ValueKindEnum.NilLiteral, token: stream.next() };
 		case TokenKind.Identifier:
-			return { kind: ValueKind.Variable, token: stream.next(), identifier: token.data };
+			return { kind: ValueKindEnum.Variable, token: stream.next(), identifier: token.data };
 
 		case TokenKind.SquiglyOpen:
 			return parse_table(stream);
@@ -360,7 +361,7 @@ function parse_dot(table: Expression, stream: TokenStream): Expression | Error
 			kind: ExpressionKind.Value,
 			token: index,
 			value: {
-				kind: ValueKind.StringLiteral,
+				kind: ValueKindEnum.StringLiteral,
 				token: index,
 				string: index.data,
 			},
@@ -506,7 +507,7 @@ function parse_local_statement(local: Token, values: Array<Expression>): Stateme
 	{
 		const value = expression.value;
 
-		if (value === undefined || value.kind !== ValueKind.Variable)
+		if (value === undefined || value.kind !== ValueKindEnum.Variable)
 		{
 			return error(expression.token, "Invalid local name");
 		}
@@ -612,7 +613,7 @@ function parse_return(stream: TokenStream): Statement | Error
 			kind: ExpressionKind.Value,
 			token: ret,
 			value: {
-				kind: ValueKind.NilLiteral,
+				kind: ValueKindEnum.NilLiteral,
 				token: ret,
 			},
 		});
@@ -1047,7 +1048,7 @@ function parse_function_value(function_token: Token, stream: TokenStream): Value
 	consume(stream, TokenKind.End);
 
 	return {
-		kind: ValueKind.Function,
+		kind: ValueKindEnum.FunctionLike,
 		token: function_token,
 		function: {
 			parameters: params,
@@ -1084,7 +1085,7 @@ function parse_local_function(table_name: Token, stream: TokenStream): Statement
 					kind: ExpressionKind.Value,
 					token: table_name,
 					value: {
-						kind: ValueKind.Variable,
+						kind: ValueKindEnum.Variable,
 						token: table_name,
 						identifier: table_name.data,
 					},
@@ -1093,7 +1094,7 @@ function parse_local_function(table_name: Token, stream: TokenStream): Statement
 					kind: ExpressionKind.Value,
 					token: local_name,
 					value: {
-						kind: ValueKind.StringLiteral,
+						kind: ValueKindEnum.StringLiteral,
 						token: local_name,
 						string: local_name.data,
 					},
@@ -1145,7 +1146,7 @@ function parse_function(stream: TokenStream): Statement | Error
 				kind: ExpressionKind.Value,
 				token: name,
 				value: {
-					kind: ValueKind.Variable,
+					kind: ValueKindEnum.Variable,
 					token: name,
 					identifier: name.data,
 				},

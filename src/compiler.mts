@@ -4,11 +4,12 @@ import type { Op, Program } from "./opcode.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Assignment, Local, Return } from "./ast.mjs";
 
-import { ExpressionKind, StatementKind, ValueKind } from "./ast.mjs";
+import { ExpressionKind, StatementKind } from "./ast.mjs";
 import { OpCode } from "./opcode.mjs";
 import { make_boolean, make_number, make_string } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
 import { nil } from "./variable/nil.mjs";
+import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<Op>>): number
 {
@@ -42,16 +43,16 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 
 	switch (value.kind)
 	{
-		case ValueKind.NilLiteral:
+		case ValueKindEnum.NilLiteral:
 			return [{ code: OpCode.Push, arg: nil, debug: debug }];
-		case ValueKind.BooleanLiteral:
+		case ValueKindEnum.BooleanLiteral:
 			return [{ code: OpCode.Push, arg: make_boolean(value.boolean ?? false), debug: debug }];
-		case ValueKind.NumberLiteral:
+		case ValueKindEnum.NumberLiteral:
 			return [{ code: OpCode.Push, arg: make_number(value.number ?? 0), debug: debug }];
-		case ValueKind.StringLiteral:
+		case ValueKindEnum.StringLiteral:
 			return [{ code: OpCode.Push, arg: make_string(value.string ?? ""), debug: debug }];
 
-		case ValueKind.Function:
+		case ValueKindEnum.FunctionLike:
 		{
 			return [{
 				code: OpCode.Push,
@@ -68,7 +69,7 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 			}];
 		}
 
-		case ValueKind.TableLiteral:
+		case ValueKindEnum.TableLiteral:
 		{
 			const output: Array<Op> = [];
 
@@ -85,7 +86,7 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 			return output;
 		}
 
-		case ValueKind.Variable:
+		case ValueKindEnum.Variable:
 		{
 			return [{
 				code: OpCode.Load,
@@ -282,7 +283,7 @@ function compile_assignment(assignment: Assignment | undefined, functions: Array
 		{
 			case ExpressionKind.Value:
 			{
-				if (lhs.value?.kind !== ValueKind.Variable)
+				if (lhs.value?.kind !== ValueKindEnum.Variable)
 				{
 					throw new Error();
 				}
