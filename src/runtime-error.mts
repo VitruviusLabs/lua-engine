@@ -31,7 +31,7 @@ class RuntimeError extends Error
 			return this.message;
 		}
 
-		return `${ this.line }:${ this.column }: ${ this.message }`
+		return `${this.line.toFixed(0)}:${this.column.toFixed(0)}: ${this.message}`;
 	}
 }
 

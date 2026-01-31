@@ -25,48 +25,58 @@ import { assertVariable } from "./variable/predicate/assert-variable.mjs";
 function index(val: Variable | undefined): string | number | undefined
 {
 	if (val === undefined)
-		return undefined
+	{
+		return undefined;
+	}
 
 	if (val.data_type === VariableKind.String)
-		return val.string
+	{
+		return val.string;
+	}
 
 	if (val.data_type === VariableKind.Number)
-		return val.number
+	{
+		return val.number;
+	}
 
-	return undefined
+	return undefined;
 }
 
 function is_true(val: Variable | undefined): boolean
 {
 	if (isNil(val))
-		return false
+	{
+		return false;
+	}
 
 	if (isVariableKind(val, VariableKind.Boolean))
-		return val.boolean
+	{
+		return val.boolean;
+	}
 
-	return true
+	return true;
 }
 
 export interface LuaOptions
 {
-	trace?: boolean
-	trace_instructions?: boolean
-	trace_stack?: boolean
-	locals?: Map<string, Variable>,
+	trace?: boolean;
+	trace_instructions?: boolean;
+	trace_stack?: boolean;
+	locals?: Map<string, Variable>;
 }
 
 export class Engine
 {
-	private program: Op[];
-	private globals: VariableTableMapType;
+	private program: Array<Op>;
+	private readonly globals: VariableTableMapType;
 	private start_ip: number = 0;
 
 	private ip: number = 0;
-	private stack: Variable[] = [];
-	private locals_stack: Map<string, Variable>[] = [];
-	private locals_capture: Map<string, Variable>[] = [];
-	private call_stack: number[] = [];
-	private assign_height_stack: number[] = [];
+	private stack: Array<Variable> = [];
+	private locals_stack: Array<Map<string, Variable>> = [];
+	private locals_capture: Array<Map<string, Variable>> = [];
+	private call_stack: Array<number> = [];
+	private assign_height_stack: Array<number> = [];
 
 	private error: Error | undefined;
 
@@ -75,58 +85,79 @@ export class Engine
 		globals?: VariableTableMapType
 	)
 	{
-		this.program = []
-		this.globals = globals ?? std.std_lib()
-		this.error = undefined
-		this.reset()
+		this.program = [];
+		this.globals = globals ?? std.std_lib();
+		this.error = undefined;
+		this.reset();
 
 		if (script !== undefined)
 		{
-			const result = this.load(script)
+			const result = this.load(script);
+
 			if (result !== undefined)
-				this.error = result
+			{
+				this.error = result;
+			}
 		}
 	}
 
 	load(chunk: string): undefined | Error
 	{
-		const stream = new TokenStream()
-		stream.feed(chunk)
+		const stream = new TokenStream();
 
-		const ast = parse(stream)
+		stream.feed(chunk);
+
+		const ast = parse(stream);
+
 		if (ast instanceof Error)
-			return ast
-
-		optimize_chunk(ast)
-		const program = compile(ast, this.program)
-		this.program = program.code
-		this.ip = program.start
-		this.start_ip = program.start
-
-		return undefined
-	}
-
-	bytecode(): string[]
-	{
-		if (this.error !== undefined)
-			return [ this.error.message ]
-
-		const output = []
-		for (const [i, op] of this.program.entries())
 		{
-			const arg = op.arg !== undefined ? std.variable_to_string(op.arg) : ''
-			if (i === this.ip)
-				output.push(`* ${ i } ${ op_code_name(op.code) } ${ arg }`)
-			else
-				output.push(`${ i } ${ op_code_name(op.code) } ${ arg }`)
+			return ast;
 		}
 
-		return output
+		optimize_chunk(ast);
+		const program = compile(ast, this.program);
+
+		this.program = program.code;
+		this.ip = program.start;
+		this.start_ip = program.start;
+
+		return undefined;
+	}
+
+	bytecode(): Array<string>
+	{
+		if (this.error !== undefined)
+		{
+			return [this.error.message];
+		}
+
+		const output = [];
+
+		for (const [i, op] of this.program.entries())
+		{
+			const arg = op.arg !== undefined ? std.variable_to_string(op.arg) : "";
+
+			if (i === this.ip)
+			{
+				output.push(`* ${i} ${op_code_name(op.code)} ${arg}`);
+			}
+			else
+			{
+				output.push(`${i} ${op_code_name(op.code)} ${arg}`);
+			}
+		}
+
+		return output;
 	}
 
 	global(name: string): Variable | undefined
 	{
-		return this.globals.get(name)
+		return this.globals.get(name);
+	}
+
+	set(name: string, variable: Variable): void
+	{
+		this.globals.set(name, variable);
 	}
 
 	define(name: string, func: NativeFunction): void
@@ -134,7 +165,7 @@ export class Engine
 		this.globals.set(name, {
 			data_type: VariableKind.NativeFunction,
 			native_function: func,
-		})
+		});
 	}
 
 	define_table(name: string, table: VariableTableMapType): void
@@ -142,75 +173,93 @@ export class Engine
 		this.globals.set(name, {
 			data_type: VariableKind.Table,
 			table: table,
-		})
+		});
 	}
 
 	reset(): void
 	{
-		this.ip = this.start_ip
-		this.stack = []
-		this.locals_stack = []
-		this.locals_capture = []
-		this.call_stack = []
-		this.assign_height_stack = []
+		this.ip = this.start_ip;
+		this.stack = [];
+		this.locals_stack = [];
+		this.locals_capture = [];
+		this.call_stack = [];
+		this.assign_height_stack = [];
 
-		this.locals_stack.push(new Map())
+		this.locals_stack.push(new Map());
 	}
 
-	async call(func: Variable, ...args: Variable[]): Promise<Variable[] | Error>
+	async call(func: Variable, ...args: Array<Variable>): Promise<Array<Variable> | Error>
 	{
 		if (isVariableKind(func, VariableKind.NativeFunction))
-			return await this.call_native_function(func.native_function, ...args)
+		{
+			return await this.call_native_function(func.native_function, ...args);
+		}
 
 		assertUnion<VariableFunction, VariableNativeFunction>(func, [unary(assertVariableKind, VariableKind.Function), unary(assertVariableKind, VariableKind.NativeFunction)]);
 
-		const old_stack = this.stack
-		const old_call_stack = this.call_stack
-		const old_ip = this.ip
-		const old_locals_stack = this.locals_stack
-		this.stack = []
-		this.call_stack = []
-		this.locals_stack = [...func.locals ?? []]
-		this.ip = func.function_id ?? this.ip
+		const old_stack = this.stack;
+		const old_call_stack = this.call_stack;
+		const old_ip = this.ip;
+		const old_locals_stack = this.locals_stack;
+
+		this.stack = [];
+		this.call_stack = [];
+		this.locals_stack = [...func.locals ?? []];
+		this.ip = func.function_id ?? this.ip;
 
 		for (const arg of args)
-			this.stack.push(arg)
+		{
+			this.stack.push(arg);
+		}
 
-		this.stack.push(make_number(args.length))
-		this.locals_stack.push(new Map())
+		this.stack.push(make_number(args.length));
+		this.locals_stack.push(new Map());
 
-		const result = await this.run()
-		const return_values = this.stack
-		this.stack = old_stack
-		this.call_stack = old_call_stack
-		this.locals_stack = old_locals_stack
-		this.ip = old_ip
+		const result = await this.run();
+		const return_values = this.stack;
+
+		this.stack = old_stack;
+		this.call_stack = old_call_stack;
+		this.locals_stack = old_locals_stack;
+		this.ip = old_ip;
 
 		if (result instanceof Error)
-			return result
+		{
+			return result;
+		}
 
-		return return_values
+		return return_values;
 	}
 
 	async run_for_steps(steps: number, options?: LuaOptions): Promise<Variable | Error | undefined>
 	{
 		if (this.error !== undefined)
-			return this.error
+		{
+			return this.error;
+		}
 
 		if (options?.locals !== undefined)
-			this.locals_stack.push(options.locals)
+		{
+			this.locals_stack.push(options.locals);
+		}
 
-		let step_count = 0
+		let step_count = 0;
+
 		while (this.ip < this.program.length)
 		{
-			const result = await this.step(options)
+			const result = await this.step(options);
 
 			if (result !== undefined)
-				return result
+			{
+				return result;
+			}
 
-			step_count += 1
+			step_count = step_count + 1;
+
 			if (step_count >= steps)
-				return undefined
+			{
+				return undefined;
+			}
 		}
 
 		return this.stack_get(0);
@@ -218,18 +267,21 @@ export class Engine
 
 	async run(options?: LuaOptions): Promise<Variable | Error>
 	{
-		const result = await this.run_for_steps(1000, options)
+		const result = await this.run_for_steps(1000, options);
 
 		if (result === undefined)
-			return new Error('Program ran for too long')
-		else
-			return result
+		{
+			return new Error("Program ran for too long");
+		}
+
+		return result;
 	}
 
 	raise_error(message: string): void
 	{
-		const op = this.program.at(this.ip - 1)
-		this.error = this.runtime_error(op, message)
+		const op = this.program.at(this.ip - 1);
+
+		this.error = this.runtime_error(op, message);
 	}
 
 	private stack_get(index: number): Variable
@@ -267,17 +319,18 @@ export class Engine
 
 	private async call_native_function(native_function: NativeFunction, ...args: Array<Variable>): Promise<Array<Variable> | Error>
 	{
-		const results = await native_function(this, ...args)
+		const results = await native_function(this, ...args);
 
 		if (this.error !== undefined)
 		{
-			const error = this.error
-			this.error = undefined
+			const error = this.error;
 
-			return error
+			this.error = undefined;
+
+			return error;
 		}
 
-		return results
+		return results;
 	}
 
 	private operation(op: (x: number, y: number) => number): void
@@ -285,7 +338,7 @@ export class Engine
 		const x = this.stack_pop_kind(VariableKind.Number);
 		const y = this.stack_pop_kind(VariableKind.Number);
 
-		this.stack.push(make_number(op(x.number, y.number)))
+		this.stack.push(make_number(op(x.number, y.number)));
 	}
 
 	private compare(op: (x: number, y: number) => boolean): void
@@ -293,150 +346,257 @@ export class Engine
 		const x = this.stack_pop_kind(VariableKind.Number);
 		const y = this.stack_pop_kind(VariableKind.Number);
 
-		this.stack.push(make_boolean(op(x.number, y.number)))
+		this.stack.push(make_boolean(op(x.number, y.number)));
 	}
 
 	private force_stack_height(expected: number, got: number): void
 	{
 		for (let i = got; i < expected; ++i)
-			this.stack.push(nil)
+		{
+			this.stack.push(nil);
+		}
 
 		for (let i = expected; i < got; ++i)
-			this.stack.pop()
+		{
+			this.stack.pop();
+		}
 	}
 
 	private runtime_error(op: Op | undefined, message: string): never
 	{
 		if (op === undefined)
-			throw new RuntimeError(`${ message }`)
+		{
+			throw new RuntimeError(message);
+		}
 
-		throw new RuntimeError(message, {}, op.debug)
+		throw new RuntimeError(message, {}, op.debug);
 	}
 
 	private async run_instruction(op: Op): Promise<Error | undefined>
 	{
-		const { code, arg } = op
+		const { code, arg } = op;
 
-		switch(code)
+		switch (code)
 		{
 			case OpCode.Pop:
 			{
-				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1
-				this.stack.splice(this.stack.length - count, count)
-				break
+				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1;
+
+				this.stack.splice(this.stack.length - count, count);
+				break;
 			}
 
 			case OpCode.Dup:
 			{
-				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1
-				const items = this.stack.splice(this.stack.length - count, count)
-				this.stack.push(...items, ...items)
-				break
+				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1;
+				const items = this.stack.splice(this.stack.length - count, count);
+
+				this.stack.push(...items, ...items);
+				break;
 			}
 
 			case OpCode.Swap:
 			{
-				const x = this.stack.splice(this.stack.length - 2, 1)
-				this.stack.push(...x)
-				break
+				const x = this.stack.splice(this.stack.length - 2, 1);
+
+				this.stack.push(...x);
+				break;
 			}
 
 			case OpCode.IterUpdateState:
 			{
-				this.stack[this.stack.length - 2] = this.stack_get(-1)
-				break
+				this.stack[this.stack.length - 2] = this.stack_get(-1);
+				break;
 			}
 
 			case OpCode.IterNext:
 			{
-				const state = this.stack_get(-1)
-				const control = this.stack_get(-2)
-				const iter = this.stack_get(-3)
+				const state = this.stack_get(-1);
+				const control = this.stack_get(-2);
+				const iter = this.stack_get(-3);
 
 				if (isVariableKind(iter, VariableKind.NativeFunction))
 				{
-					const result = await this.call_native_function(iter.native_function, control, state)
+					const result = await this.call_native_function(iter.native_function, control, state);
 
 					if (result instanceof Error)
-						return result
+					{
+						return result;
+					}
 
-					this.stack.push(...result)
-					break
+					this.stack.push(...result);
+					break;
 				}
 
-				this.stack.push(control, state, make_number(2))
-				this.call_stack.push(this.ip)
-				this.locals_stack.push(new Map())
-				this.locals_capture = iter.locals ?? []
+				this.stack.push(control, state, make_number(2));
+				this.call_stack.push(this.ip);
+				this.locals_stack.push(new Map());
+				this.locals_capture = iter.locals ?? [];
 
 				if (isVariableKind(iter, VariableKind.Function) && iter.function_id !== undefined)
 				{
 					this.ip = iter.function_id;
 				}
 
-				break
+				break;
 			}
 
 			case OpCode.IterJumpIfDone:
 			{
 				if (isVariableKind(arg, VariableKind.Number) && isNil(this.stack_get(-1)))
 				{
-					this.ip += arg.number
+					this.ip = this.ip + arg.number;
 				}
 
-				break
+				break;
 			}
 
 			case OpCode.Add:
-				this.operation((x, y) => x + y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x + y;
+					}
+				);
+
+				break;
 			case OpCode.Subtract:
-				this.operation((x, y) => x - y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x - y;
+					}
+				);
+
+				break;
 			case OpCode.Multiply:
-				this.operation((x, y) => x * y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x * y;
+					}
+				);
+
+				break;
 			case OpCode.Divide:
-				this.operation((x, y) => x / y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x / y;
+					}
+				);
+
+				break;
 			case OpCode.FloorDivide:
-				this.operation((x, y) => Math.floor(x / y));
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return Math.floor(x / y);
+					}
+				);
+
+				break;
 			case OpCode.Modulo:
-				this.operation((x, y) => x % y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x % y;
+					}
+				);
+
+				break;
 			case OpCode.Exponent:
-				this.operation((x, y) => Math.pow(x, y));
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return Math.pow(x, y);
+					}
+				);
+
+				break;
 
 			case OpCode.LessThan:
-				this.compare((x, y) => x < y);
-				break
+				this.compare(
+					(x, y) =>
+					{
+						return x < y;
+					}
+				);
+
+				break;
 			case OpCode.LessThanEquals:
-				this.compare((x, y) => x <= y);
-				break
+				this.compare(
+					(x, y) =>
+					{
+						return x <= y;
+					}
+				);
+
+				break;
 			case OpCode.GreaterThan:
-				this.compare((x, y) => x > y);
-				break
+				this.compare(
+					(x, y) =>
+					{
+						return x > y;
+					}
+				);
+
+				break;
 			case OpCode.GreaterThanEquals:
-				this.compare((x, y) => x >= y);
-				break
+				this.compare(
+					(x, y) =>
+					{
+						return x >= y;
+					}
+				);
+
+				break;
 
 			case OpCode.BitAnd:
-				this.operation((x, y) => x & y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x & y;
+					}
+				);
+
+				break;
 			case OpCode.BitOr:
-				this.operation((x, y) => x | y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x | y;
+					}
+				);
+
+				break;
 			case OpCode.BitXOr:
-				this.operation((x, y) => x ^ y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x ^ y;
+					}
+				);
+
+				break;
 			case OpCode.BitShiftLeft:
-				this.operation((x, y) => x << y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x << y;
+					}
+				);
+
+				break;
 			case OpCode.BitShiftRight:
-				this.operation((x, y) => x >> y);
-				break
+				this.operation(
+					(x, y) =>
+					{
+						return x >> y;
+					}
+				);
+
+				break;
 
 			case OpCode.Concat:
 			{
@@ -445,24 +605,26 @@ export class Engine
 
 				const result = std.variable_to_string(x) + std.variable_to_string(y);
 
-				this.stack.push(make_string(result))
-				break
+				this.stack.push(make_string(result));
+				break;
 			}
 
 			case OpCode.Equals:
 			{
 				const x = this.stack_pop();
 				const y = this.stack_pop();
-				this.stack.push(make_boolean(equals(x, y)))
-				break
+
+				this.stack.push(make_boolean(equals(x, y)));
+				break;
 			}
 
 			case OpCode.NotEquals:
 			{
 				const x = this.stack_pop();
 				const y = this.stack_pop();
-				this.stack.push(make_boolean(!equals(x, y)))
-				break
+
+				this.stack.push(make_boolean(!equals(x, y)));
+				break;
 			}
 
 			case OpCode.And:
@@ -471,8 +633,9 @@ export class Engine
 				const y = this.stack_pop();
 
 				const result = is_true(x) ? y : x;
-				this.stack.push(result)
-				break
+
+				this.stack.push(result);
+				break;
 			}
 
 			case OpCode.Or:
@@ -481,279 +644,342 @@ export class Engine
 				const y = this.stack_pop();
 
 				const result = is_true(x) ? x : y;
-				this.stack.push(result)
-				break
+
+				this.stack.push(result);
+				break;
 			}
 
 			case OpCode.Not:
 				this.stack.push(make_boolean(!is_true(this.stack_pop())));
-				break
+				break;
 
 			case OpCode.BitNot:
-				this.stack.push(make_number(~(this.stack_pop_kind(VariableKind.Number).number)));
-				break
+				this.stack.push(make_number(~this.stack_pop_kind(VariableKind.Number).number));
+				break;
 
 			case OpCode.Negate:
-				this.stack.push(make_number(-(this.stack_pop_kind(VariableKind.Number).number)));
-				break
+				this.stack.push(make_number(-this.stack_pop_kind(VariableKind.Number).number));
+				break;
 
 			case OpCode.IsNotNil:
 				this.stack.push(make_boolean(!isNil(this.stack_pop())));
-				break
+				break;
 
 			case OpCode.Jump:
 				if (isVariableKind(arg, VariableKind.Number))
 				{
-					this.ip += arg.number;
+					this.ip = this.ip + arg.number;
 				}
-				break
+
+				break;
 
 			case OpCode.JumpIfNot:
 				if (isVariableKind(arg, VariableKind.Number) && !is_true(this.stack_pop()))
 				{
-					this.ip += arg.number
+					this.ip = this.ip + arg.number;
 				}
-				break
+
+				break;
 
 			case OpCode.JumpIf:
 				if (isVariableKind(arg, VariableKind.Number) && is_true(this.stack_pop()))
 				{
-					this.ip += arg.number
+					this.ip = this.ip + arg.number;
 				}
-				break
+
+				break;
 
 			case OpCode.MakeLocal:
-				const last_locals = this.locals_stack.at(-1)
+				const last_locals = this.locals_stack.at(-1);
 
 				if (last_locals)
 				{
-					last_locals.set(isVariableKind(arg, VariableKind.String) ? arg.string : '', nil);
+					last_locals.set(isVariableKind(arg, VariableKind.String) ? arg.string : "", nil);
 				}
-				break
+
+				break;
 
 			case OpCode.NewTable:
 				this.stack.push(make_table());
-				break
+				break;
 
 			case OpCode.StartBlock:
 				this.locals_stack.push(new Map());
-				break
+				break;
 
 			case OpCode.EndBlock:
 				this.locals_stack.pop();
-				break
+				break;
 
 			case OpCode.Length:
 			{
-				const variable = this.stack_pop_maybe()
+				const variable = this.stack_pop_maybe();
 
 				switch (variable.data_type)
 				{
 					case VariableKind.String:
-						this.stack.push(make_number(variable.string.length))
-						break
+						this.stack.push(make_number(variable.string.length));
+						break;
 					case VariableKind.Table:
-						this.stack.push(make_number(std.table_size(variable)))
-						break
+						this.stack.push(make_number(std.table_size(variable)));
+						break;
+
 					default:
-						this.runtime_error(op, `Attempt to get length of a ${ variable.data_type } value`)
+						this.runtime_error(op, `Attempt to get length of a ${variable.data_type} value`);
 				}
-				break
+
+				break;
 			}
 
 			case OpCode.Return:
 			{
-				this.ip = this.call_stack.pop() ?? this.program.length
-				this.locals_stack = this.locals_stack.slice(0, this.call_stack.pop())
-				this.locals_capture = []
-				break
+				this.ip = this.call_stack.pop() ?? this.program.length;
+				this.locals_stack = this.locals_stack.slice(0, this.call_stack.pop());
+				this.locals_capture = [];
+				break;
 			}
 
 			case OpCode.LoadIndex:
 			{
-				const table = this.stack_pop_maybe()
+				const table = this.stack_pop_maybe();
 
 				if (isNil(table))
 				{
-					this.runtime_error(op, 'Attempt to index a nil value')
+					this.runtime_error(op, "Attempt to index a nil value");
 				}
 
 				assertVariableKind(table, VariableKind.Table);
 
-				const i_var = this.stack_pop_maybe()
+				const i_var = this.stack_pop_maybe();
 
 				if (isNil(i_var))
 				{
-					this.runtime_error(op, 'Attempt to index with a nil value')
+					this.runtime_error(op, "Attempt to index with a nil value");
 				}
 
-				const i = index(i_var)
+				const i = index(i_var);
 
 				if (i === undefined)
-					this.runtime_error(op, 'Invalid index, must be a number or string')
+				{
+					this.runtime_error(op, "Invalid index, must be a number or string");
+				}
 
-				this.stack.push(table.table.get(i) ?? nil)
-				break
+				this.stack.push(table.table.get(i) ?? nil);
+				break;
 			}
 
 			case OpCode.StoreIndex:
 			{
-				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1
-				const table = this.stack_get(- 1 - count * 2)
+				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1;
+				const table = this.stack_get(-1 - count * 2);
 
 				assertVariableKind(table, VariableKind.Table);
 
 				for (let i = 0; i < count; ++i)
 				{
-					const key = index(this.stack_pop_maybe())
-					const value = this.stack_pop_maybe()
+					const key = index(this.stack_pop_maybe());
+					const value = this.stack_pop_maybe();
 
 					if (key === undefined)
-						return this.runtime_error(op, 'Invalid key, must be a number or string')
+					{
+						return this.runtime_error(op, "Invalid key, must be a number or string");
+					}
 
-					table.table.set(key, value)
+					table.table.set(key, value);
 				}
 
-				break
+				break;
 			}
 
 			case OpCode.Store:
 			{
-				const name = isVariableKind(arg, VariableKind.String) ? arg.string : ''
-				const value = this.stack_pop_maybe()
-				const local = [...this.locals_capture, ...this.locals_stack].findLast(x => x.has(name))
+				const name = isVariableKind(arg, VariableKind.String) ? arg.string : "";
+				const value = this.stack_pop_maybe();
+				const local = [...this.locals_capture, ...this.locals_stack].findLast(
+					(x) =>
+					{
+						return x.has(name);
+					}
+				);
 
 				if (local !== undefined)
-					local.set(name, value)
+				{
+					local.set(name, value);
+				}
 				else
-					this.globals.set(name, value)
-				break
+				{
+					this.globals.set(name, value);
+				}
+
+				break;
 			}
 
 			case OpCode.Push:
 			{
 				if (this.locals_stack.length > 0 && isVariableKind(arg, VariableKind.Function))
-					arg.locals = [...this.locals_stack]
-				this.stack.push(arg ?? nil)
-				break
+				{
+					arg.locals = [...this.locals_stack];
+				}
+
+				this.stack.push(arg ?? nil);
+				break;
 			}
 
 			case OpCode.Load:
 			{
-				const name =  isVariableKind(arg, VariableKind.String) ? arg.string : ''
+				const name = isVariableKind(arg, VariableKind.String) ? arg.string : "";
 				const local = [...this.locals_capture, ...this.locals_stack]
-					.map(x => x.get(name))
-					.findLast(x => !isNil(x))
+					.map(
+						(x) =>
+						{
+							return x.get(name);
+						}
+					)
+					.findLast(
+						(x) =>
+						{
+							return !isNil(x);
+						}
+					);
 
-				const global = this.globals.get(name)
-				this.stack.push(local ?? global ?? nil)
-				break
+				const global = this.globals.get(name);
+
+				this.stack.push(local ?? global ?? nil);
+				break;
 			}
 
 			case OpCode.Call:
 			{
 				const x = this.stack_pop_maybe();
-				const count = isVariableKind(x, VariableKind.Number) ? x.number : 0
-				const func_var = this.stack_pop_maybe()
+				const count = isVariableKind(x, VariableKind.Number) ? x.number : 0;
+				const func_var = this.stack_pop_maybe();
 
 				switch (func_var.data_type)
 				{
 					case VariableKind.NativeFunction:
 					{
-						const args = this.stack.splice(this.stack.length - count, count)
+						const args = this.stack.splice(this.stack.length - count, count);
+
 						if (func_var.native_function !== undefined)
 						{
-							const result = await this.call_native_function(func_var.native_function, ...args)
+							const result = await this.call_native_function(func_var.native_function, ...args);
 
 							if (result instanceof Error)
-								return result
+							{
+								return result;
+							}
 
-							this.stack.push(...result)
+							this.stack.push(...result);
 						}
 
 						if (this.error !== undefined)
 						{
-							const error = this.error
-							this.error = undefined
-							return error
+							const error = this.error;
+
+							this.error = undefined;
+
+							return error;
 						}
-						break
+
+						break;
 					}
 
 					case VariableKind.Function:
 					{
-						this.stack.push(make_number(count))
-						this.call_stack.push(this.locals_stack.length, this.ip)
-						this.locals_stack.push(new Map())
-						this.locals_capture = func_var.locals ?? []
-						this.ip = func_var.function_id ?? this.ip
-						break
+						this.stack.push(make_number(count));
+						this.call_stack.push(this.locals_stack.length, this.ip);
+						this.locals_stack.push(new Map());
+						this.locals_capture = func_var.locals ?? [];
+						this.ip = func_var.function_id ?? this.ip;
+						break;
 					}
 
 					default:
 					{
-						return this.runtime_error(op, `Object of type '${ func_var.data_type }' is not callable`)
+						return this.runtime_error(op, `Object of type '${func_var.data_type}' is not callable`);
 					}
 				}
 
-				break
+				break;
 			}
 
 			case OpCode.ArgumentCount:
 			{
 				const x = this.stack_pop_maybe();
-				const got = isVariableKind(x, VariableKind.Number) ? x.number : 0
-				const expected = isVariableKind(arg, VariableKind.Number) ? arg.number : 0
-				this.force_stack_height(expected, got)
-				break
+				const got = isVariableKind(x, VariableKind.Number) ? x.number : 0;
+				const expected = isVariableKind(arg, VariableKind.Number) ? arg.number : 0;
+
+				this.force_stack_height(expected, got);
+				break;
 			}
 
 			case OpCode.StartStackChange:
 			{
-				this.assign_height_stack.push(this.stack.length)
-				break
+				this.assign_height_stack.push(this.stack.length);
+				break;
 			}
 
 			case OpCode.EndStackChange:
 			{
-				const got = this.stack.length - (this.assign_height_stack.pop() ?? 0)
-				const expected = isVariableKind(arg, VariableKind.Number) ? arg.number : 0
-				this.force_stack_height(expected, got)
-				break
+				const got = this.stack.length - (this.assign_height_stack.pop() ?? 0);
+				const expected = isVariableKind(arg, VariableKind.Number) ? arg.number : 0;
+
+				this.force_stack_height(expected, got);
+				break;
 			}
 		}
 
-		return undefined
+		return undefined;
 	}
 
 	async step(options?: LuaOptions): Promise<Error | undefined>
 	{
 		if (this.error !== undefined)
-			return this.error
+		{
+			return this.error;
+		}
 
 		if (this.ip >= this.program.length)
-			return
+		{
+			return undefined;
+		}
 
-		const op = this.program[this.ip]
-		++this.ip
+		const op = this.program[this.ip];
+
+		++this.ip;
 
 		if (op === undefined)
-			return this.runtime_error(op, 'Instruction pointer out of bounds')
+		{
+			this.runtime_error(op, "Instruction pointer out of bounds");
+		}
 
 		if (options?.trace || options?.trace_instructions)
 		{
-			const arg = op.arg !== undefined ? std.variable_to_string(op.arg) : ''
-			console.log(this.ip - 1, op_code_name(op.code), arg)
+			const arg = op.arg !== undefined ? std.variable_to_string(op.arg) : "";
+
+			console.log(this.ip - 1, op_code_name(op.code), arg);
 		}
 
-		const result = await this.run_instruction(op)
+		const result = await this.run_instruction(op);
 
 		if (result !== undefined)
-			return result
+		{
+			return result;
+		}
 
 		if (options?.trace || options?.trace_stack)
-			console.log(this.ip - 1, ...this.stack.map(x => std.variable_to_string(x)))
+		{
+			console.log(
+				this.ip - 1,
+				...this.stack.map(
+					(x) =>
+					{
+						return std.variable_to_string(x);
+					}
+				)
+			);
+		}
 
-		return undefined
+		return undefined;
 	}
 }

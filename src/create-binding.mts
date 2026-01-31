@@ -1,4 +1,4 @@
-import { assertArray, assertDefined, isInstanceOf, isNullish, ValidationError } from "@vitruvius-labs/ts-predicate";
+import { ValidationError, assertArray, assertDefined, isInstanceOf, isNullish } from "@vitruvius-labs/ts-predicate";
 import type { Engine } from "./engine.mjs";
 import { make_variable } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
@@ -18,8 +18,8 @@ export type ParameterOptionEnum = typeof ParameterOptionEnum[keyof typeof Parame
 
 export interface ParameterDescriptorInterface<T = unknown>
 {
-	test: (value: unknown) => asserts value is T,
-	option?: ParameterOptionEnum,
+	test: (value: unknown) => asserts value is T;
+	option?: ParameterOptionEnum;
 }
 
 function sanitize_parameters(input: Array<unknown>, descriptors: Array<ParameterDescriptorInterface>): Array<unknown>
