@@ -24,6 +24,7 @@ import { op_code_name } from "./opcode/op-code-name/op-code-name.mjs";
 import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs";
 import { index } from "./engine/index/index.mjs";
 import type { LuaOptionsInterface } from "./engine/interface/lua-options.interface.mjs";
+import { table_size } from "./lib/table-size/table-size.mjs";
 
 function is_true(val: Variable | undefined): boolean
 {
@@ -696,7 +697,7 @@ export class Engine
 						this.stack.push(make_number(variable.string.length));
 						break;
 					case VariableKind.Table:
-						this.stack.push(make_number(std.table_size(variable)));
+						this.stack.push(make_number(table_size(variable)));
 						break;
 
 					default:

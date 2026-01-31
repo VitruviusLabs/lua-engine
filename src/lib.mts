@@ -16,6 +16,7 @@ import type { VariableNativeFunction } from "./variable/definition/interface/var
 import type { NativeFunction } from "./boundary/definition/type/native-function.type.mjs";
 import type { VariableTableMapType } from "./variable/definition/type/variable-table-map.type.mjs";
 import { RuntimeError } from "./runtime-error.mjs";
+import { table_size } from "./lib/table-size/table-size.mjs";
 
 function optional_parameter<K extends VariableKindEnum>(
 	expected_kind: K,
@@ -32,23 +33,6 @@ function optional_parameter<K extends VariableKindEnum>(
 	const value: unknown = VariableUnwrapUtility.unwrap(parameter);
 
 	return value as VariableValueType<K>;
-}
-
-export function table_size(value: VariableTable): number
-{
-	let size: number = 0;
-
-	for (let i: number = 1; i < value.table.size; ++i)
-	{
-		if (!value.table.has(i))
-		{
-			return size;
-		}
-
-		++size;
-	}
-
-	return size;
 }
 
 export function variable_to_string(variable: Variable, tables_done: Array<Variable> = []): string
