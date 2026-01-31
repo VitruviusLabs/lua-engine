@@ -12,6 +12,7 @@ import type { TokenInterface } from "./lexer/definition/interface/token.interfac
 import { token_kind_to_string } from "./lexer/token-kind-to-string/token-kind-to-string.mjs";
 import { consume } from "./parser/consume/consume.mjs";
 import { expect } from "./parser/expect/expect.mjs";
+import { unary_type_to_expression_kind } from "./parser/unary-type-to-expression-kind/unary-type-to-expression-kind.mjs";
 
 const UNARY = [
 	TokenKindEnum.Not,
@@ -174,21 +175,6 @@ function parse_value(stream: TokenStream): ValueInterface | Error
 
 		default:
 			return error(token, `Expected value, got ${token_kind_to_string(token.kind)} instead`);
-	}
-}
-
-function unary_type_to_expression_kind(kind: TokenKindEnum): ExpressionKind
-{
-	// eslint-disable-next-line @ts/switch-exhaustiveness-check
-	switch (kind)
-	{
-		case TokenKindEnum.Not: return ExpressionKind.Not;
-		case TokenKindEnum.Subtract: return ExpressionKind.Negate;
-		case TokenKindEnum.Hash: return ExpressionKind.Length;
-		case TokenKindEnum.BitXOrNot: return ExpressionKind.BitNot;
-
-		default:
-			throw new Error();
 	}
 }
 
