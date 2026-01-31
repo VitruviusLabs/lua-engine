@@ -1,5 +1,6 @@
-import { type Chunk, type ElseIfBlock, type Expression, type Statement, StatementKind, type Value } from "./ast.mjs";
+import type { Chunk, ElseIfBlock, Expression, Statement, Value } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
+import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 import { type Token, TokenKind, type TokenStream, token_kind_to_string } from "./lexer.mjs";
 
@@ -517,7 +518,7 @@ function parse_local_statement(local: Token, values: Array<Expression>): Stateme
 	}
 
 	return {
-		kind: StatementKind.Local,
+		kind: StatementKindEnum.Local,
 		local: {
 			token: local,
 			names: names,
@@ -549,7 +550,7 @@ function parse_assign_or_expression(stream: TokenStream): Statement | Error
 		if (local instanceof Error)
 		{
 			// @TODO: Investigate as lhs[0] seems to always be undefined
-			return { kind: StatementKind.Expression, expression: lhs[0] };
+			return { kind: StatementKindEnum.Expression, expression: lhs[0] };
 		}
 
 		return parse_local_statement(local, lhs);
@@ -570,7 +571,7 @@ function parse_assign_or_expression(stream: TokenStream): Statement | Error
 	}
 
 	return {
-		kind: StatementKind.Assignment,
+		kind: StatementKindEnum.Assignment,
 		assignment: {
 			local: !(local instanceof Error),
 			lhs: lhs.reverse(),
@@ -621,7 +622,7 @@ function parse_return(stream: TokenStream): Statement | Error
 	}
 
 	return {
-		kind: StatementKind.Return,
+		kind: StatementKindEnum.Return,
 		return: {
 			values: values,
 			token: ret,
@@ -639,7 +640,7 @@ function parse_break(stream: TokenStream): Statement | Error
 	}
 
 	return {
-		kind: StatementKind.Break,
+		kind: StatementKindEnum.Break,
 	};
 }
 
@@ -726,7 +727,7 @@ function parse_if(stream: TokenStream): Statement | Error
 	}
 
 	return {
-		kind: StatementKind.If,
+		kind: StatementKindEnum.If,
 		if: {
 			condition: condition,
 			body: body,
@@ -770,7 +771,7 @@ function parse_while(stream: TokenStream): Statement | Error
 	consume(stream, TokenKind.End);
 
 	return {
-		kind: StatementKind.While,
+		kind: StatementKindEnum.While,
 		while: {
 			condition: condition,
 			body: body,
@@ -833,7 +834,7 @@ function parse_numeric_for(index: Token, stream: TokenStream): Statement | Error
 	consume(stream, TokenKind.End);
 
 	return {
-		kind: StatementKind.NumericFor,
+		kind: StatementKindEnum.NumericFor,
 		numeric_for: {
 			index: index,
 			start: start,
@@ -910,7 +911,7 @@ function parse_for(stream: TokenStream): Statement | Error
 	consume(stream, TokenKind.End);
 
 	return {
-		kind: StatementKind.For,
+		kind: StatementKindEnum.For,
 		for: {
 			items: items,
 			iterator: iterator,
@@ -951,7 +952,7 @@ function parse_repeat(stream: TokenStream): Statement | Error
 	}
 
 	return {
-		kind: StatementKind.Repeat,
+		kind: StatementKindEnum.Repeat,
 		repeat: {
 			body: body,
 			condition: condition,
@@ -984,7 +985,7 @@ function parse_do(stream: TokenStream): Statement | Error
 	}
 
 	return {
-		kind: StatementKind.Do,
+		kind: StatementKindEnum.Do,
 		do: {
 			body: body,
 			token: do_token,
@@ -1075,7 +1076,7 @@ function parse_local_function(table_name: Token, stream: TokenStream): Statement
 	}
 
 	return {
-		kind: StatementKind.Assignment,
+		kind: StatementKindEnum.Assignment,
 		assignment: {
 			token: table_name,
 			local: false,
@@ -1139,7 +1140,7 @@ function parse_function(stream: TokenStream): Statement | Error
 	}
 
 	return {
-		kind: StatementKind.Assignment,
+		kind: StatementKindEnum.Assignment,
 		assignment: {
 			token: name,
 			local: false,
@@ -1195,7 +1196,7 @@ function parse_statement(stream: TokenStream, end_tokens: Array<TokenKind>): Sta
 		case TokenKind.Semicolon:
 			stream.next();
 
-			return { kind: StatementKind.Empty };
+			return { kind: StatementKindEnum.Empty };
 
 		default:
 		{

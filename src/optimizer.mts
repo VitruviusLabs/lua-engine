@@ -1,5 +1,6 @@
-import { type Assignment, type Chunk, type Expression, type For, type IfBlock, type NumericFor, type Repeat, type Statement, StatementKind, type Value, type While } from "./ast.mjs";
+import type { Assignment, Chunk, Expression, For, IfBlock, NumericFor, Repeat, Statement, Value, While } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
+import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 
 const CONSTANT_VALUES = [
@@ -556,38 +557,37 @@ export function optimize_chunk(chunk: Chunk, parent_constants?: Map<string, Valu
 
 	for (const statement of chunk.statements)
 	{
-		// eslint-disable-next-line @ts/switch-exhaustiveness-check
 		switch (statement.kind)
 		{
-			case StatementKind.Assignment:
+			case StatementKindEnum.Assignment:
 				optimize_assignment(statement.assignment, constants);
 				break;
 
-			case StatementKind.Expression:
+			case StatementKindEnum.Expression:
 				optimize_expression(statement.expression, constants);
 				break;
 
-			case StatementKind.If:
+			case StatementKindEnum.If:
 				optimize_if(statement.if, constants);
 				break;
 
-			case StatementKind.While:
+			case StatementKindEnum.While:
 				optimize_while(statement.if, constants);
 				break;
 
-			case StatementKind.For:
+			case StatementKindEnum.For:
 				optimize_for(statement.for, constants);
 				break;
 
-			case StatementKind.NumericFor:
+			case StatementKindEnum.NumericFor:
 				optimize_numeric_for(statement.numeric_for, constants);
 				break;
 
-			case StatementKind.Repeat:
+			case StatementKindEnum.Repeat:
 				optimize_repeat(statement.repeat, constants);
 				break;
 
-			case StatementKind.Do:
+			case StatementKindEnum.Do:
 				if (statement.do !== undefined)
 				{
 					optimize_chunk(statement.do.body, constants);
@@ -595,7 +595,7 @@ export function optimize_chunk(chunk: Chunk, parent_constants?: Map<string, Valu
 
 				break;
 
-			case StatementKind.Return:
+			case StatementKindEnum.Return:
 				for (const expression of statement.return?.values ?? [])
 				{
 					optimize_expression(expression, constants);
@@ -603,8 +603,8 @@ export function optimize_chunk(chunk: Chunk, parent_constants?: Map<string, Valu
 
 				break;
 
-			case StatementKind.Local:
-			case StatementKind.Break:
+			case StatementKindEnum.Local:
+			case StatementKindEnum.Break:
 				break;
 		}
 	}

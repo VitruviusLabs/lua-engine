@@ -4,13 +4,13 @@ import type { Op, Program } from "./opcode.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Assignment, Local, Return } from "./ast.mjs";
 
-import { StatementKind } from "./ast.mjs";
 import { OpCode } from "./opcode.mjs";
 import { make_boolean, make_number, make_string } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
 import { nil } from "./variable/nil.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
+import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<Op>>): number
 {
@@ -721,9 +721,9 @@ function compile_chunk(chunk: Chunk, functions: Array<Array<Op>>): ChunkResult
 
 		switch (statement.kind)
 		{
-			case StatementKind.Empty:
+			case StatementKindEnum.Empty:
 				break;
-			case StatementKind.Expression:
+			case StatementKindEnum.Expression:
 				ops.push(...compile_expression(statement.expression, functions));
 
 				if (statement.expression === undefined)
@@ -741,34 +741,34 @@ function compile_chunk(chunk: Chunk, functions: Array<Array<Op>>): ChunkResult
 				}
 
 				break;
-			case StatementKind.Assignment:
+			case StatementKindEnum.Assignment:
 				ops.push(...compile_assignment(statement.assignment, functions));
 				break;
-			case StatementKind.Local:
+			case StatementKindEnum.Local:
 				ops.push(...compile_local(statement.local));
 				break;
-			case StatementKind.If:
+			case StatementKindEnum.If:
 				ops.push(...compile_if(statement.if, functions));
 				break;
-			case StatementKind.While:
+			case StatementKindEnum.While:
 				ops.push(...compile_while(statement.while, functions));
 				break;
-			case StatementKind.For:
+			case StatementKindEnum.For:
 				ops.push(...compile_for(statement.for, functions));
 				break;
-			case StatementKind.NumericFor:
+			case StatementKindEnum.NumericFor:
 				ops.push(...compile_numeric_for(statement.numeric_for, functions));
 				break;
-			case StatementKind.Repeat:
+			case StatementKindEnum.Repeat:
 				ops.push(...compile_repeat(statement.repeat, functions));
 				break;
-			case StatementKind.Do:
+			case StatementKindEnum.Do:
 				ops.push(...compile_do(statement.do, functions));
 				break;
-			case StatementKind.Return:
+			case StatementKindEnum.Return:
 				ops.push(...compile_return(statement.return, functions));
 				break;
-			case StatementKind.Break:
+			case StatementKindEnum.Break:
 				ops.push({ code: OpCode.Break, debug: { line: 0, column: 0 } });
 				break;
 		}

@@ -1,15 +1,5 @@
+import type { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import type { Token } from "./lexer.mjs";
-
-export enum ValueKind
-{
-	NilLiteral,
-	NumberLiteral,
-	BooleanLiteral,
-	StringLiteral,
-	TableLiteral,
-	Function,
-	Variable,
-}
 
 export interface LuaFunction
 {
@@ -28,42 +18,6 @@ export interface Value
 	table?: Map<Expression, Expression> | undefined;
 	function?: LuaFunction | undefined;
 	identifier?: string | undefined;
-}
-
-export enum ExpressionKind
-{
-	Value,
-	Call,
-	Index,
-
-	Addition,
-	Subtract,
-	Multiplication,
-	Division,
-	FloorDivision,
-	Modulo,
-	Exponent,
-	Concat,
-
-	BitAnd,
-	BitOr,
-	BitXOr,
-	BitNot,
-	BitShiftLeft,
-	BitShiftRight,
-
-	Equals,
-	NotEquals,
-	LessThan,
-	LessThanEquals,
-	GreaterThan,
-	GreaterThanEquals,
-	And,
-	Or,
-
-	Not,
-	Negate,
-	Length,
 }
 
 export interface Expression
@@ -152,26 +106,9 @@ export interface Return
 	token: Token;
 }
 
-export enum StatementKind
-{
-	Invalid,
-	Empty,
-	Expression,
-	Assignment,
-	Local,
-	If,
-	While,
-	For,
-	NumericFor,
-	Repeat,
-	Do,
-	Return,
-	Break,
-}
-
 export interface Statement
 {
-	kind: StatementKind;
+	kind: StatementKindEnum;
 	expression?: Expression | undefined;
 	assignment?: Assignment | undefined;
 	local?: Local | undefined;
