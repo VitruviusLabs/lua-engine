@@ -20,11 +20,7 @@ import { isTableInputType } from "./boundary/predicate/is-table-input-type.mjs";
 import { isTableMapKeyType } from "./boundary/predicate/is-table-map-key-type.mjs";
 import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 import { make_number } from "./runtime/make-number/make-number.mjs";
-
-export function make_string(string: string): VariableString
-{
-	return { data_type: VariableKind.String, string: string };
-}
+import { make_string } from "./runtime/make-string/make-string.mjs";
 
 export function make_table(input?: TableInputType): VariableTable
 {

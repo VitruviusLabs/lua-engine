@@ -1,4 +1,3 @@
-import { make_string } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
 import { nil } from "./variable/nil.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
@@ -22,6 +21,7 @@ import type { ChunkInterface } from "./ast/definition/interface/chunk.interface.
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
 import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 import { make_number } from "./runtime/make-number/make-number.mjs";
+import { make_string } from "./runtime/make-string/make-string.mjs";
 
 function compile_function(chunk: ChunkInterface, token: TokenInterface, parameters: Array<TokenInterface>, functions: Array<Array<OpInterface>>): number
 {
