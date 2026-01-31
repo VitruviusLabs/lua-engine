@@ -5,15 +5,9 @@ import type { ForInterface } from "./ast/definition/interface/for.interface.mjs"
 import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
 import type { LocalInterface } from "./ast/definition/interface/local.interface.mjs";
 import type { NumericForInterface } from "./ast/definition/interface/numeric-for.interface.mjs";
+import type { RepeatInterface } from "./ast/definition/interface/repeat.interface.mjs";
 import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
 import type { Token } from "./lexer.mjs";
-
-export interface Repeat
-{
-	body: Chunk;
-	condition: ExpressionInterface;
-	token: Token;
-}
 
 export interface Do
 {
@@ -37,7 +31,7 @@ export interface Statement
 	while?: WhileInterface | undefined;
 	for?: ForInterface | undefined;
 	numeric_for?: NumericForInterface | undefined;
-	repeat?: Repeat | undefined;
+	repeat?: RepeatInterface | undefined;
 	do?: Do | undefined;
 	return?: Return | undefined;
 }

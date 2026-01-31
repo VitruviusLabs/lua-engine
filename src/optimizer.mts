@@ -1,4 +1,4 @@
-import type { Chunk, Repeat, Statement } from "./ast.mjs";
+import type { Chunk, Statement } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
@@ -7,6 +7,7 @@ import type { ExpressionInterface } from "./ast/definition/interface/expression.
 import type { ForInterface } from "./ast/definition/interface/for.interface.mjs";
 import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
 import type { NumericForInterface } from "./ast/definition/interface/numeric-for.interface.mjs";
+import type { RepeatInterface } from "./ast/definition/interface/repeat.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
 
@@ -547,7 +548,7 @@ function optimize_numeric_for(numeric_for_block: NumericForInterface | undefined
 	optimize_chunk(numeric_for_block.body, constants);
 }
 
-function optimize_repeat(repeat_block: Repeat | undefined, constants: Map<string, ValueInterface>): void
+function optimize_repeat(repeat_block: RepeatInterface | undefined, constants: Map<string, ValueInterface>): void
 {
 	if (repeat_block === undefined)
 	{
