@@ -10,7 +10,7 @@ import type { TokenStream } from "./lexer.mjs";
 import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
 import { token_kind_to_string } from "./lexer/token-kind-to-string/token-kind-to-string.mjs";
-import { to_error } from "./parser/error/to-error.mjs";
+import { consume } from "./parser/consume/consume.mjs";
 import { expect } from "./parser/expect/expect.mjs";
 
 const UNARY = [
@@ -32,20 +32,6 @@ const ORDERS = [
 	[TokenKindEnum.Multiply, TokenKindEnum.Division, TokenKindEnum.FloorDivision, TokenKindEnum.Modulo],
 	[TokenKindEnum.Exponent],
 ];
-
-function consume(stream: TokenStream, kind: TokenKindEnum): boolean
-{
-	const token = stream.peek();
-
-	if (token.kind !== kind)
-	{
-		return false;
-	}
-
-	stream.next();
-
-	return true;
-}
 
 function parse_table_key(stream: TokenStream): ExpressionInterface | Error
 {
