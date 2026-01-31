@@ -1,16 +1,4 @@
-export enum State {
-	Initial = "initial",
-	Identifier = "identifier",
-	StringLiteral = "string-literal",
-	StringLiteralEscape = "string-literal-escape",
-	MultiLineString = "multi-line-string",
-	NumberLiteral = "number-literal",
-	NumberLiteralDot = "number-literal-dot",
-	NumberLiteralExpSign = "number-literal-exp-sign",
-	NumberLiteralExp = "number-literal-exp",
-	NumberHex = "number-hex",
-	Comment = "comment",
-}
+import { StateEnum } from "./lexer/definition/enum/state.enum.mjs";
 
 export enum TokenKind {
 	EOF = "EOF",
@@ -217,7 +205,7 @@ export class TokenStream
 	private readonly processing_stream: Array<string>;
 	private readonly peek_queue: Array<Token>;
 
-	private state: State;
+	private state: StateEnum;
 	private end_of_stream: boolean = false;
 	private buffer: string;
 	private token_start_debug: Debug;
@@ -227,7 +215,7 @@ export class TokenStream
 
 	constructor()
 	{
-		this.state = State.Initial;
+		this.state = StateEnum.Initial;
 		this.processing_stream = [];
 		this.buffer = "";
 		this.token_start_debug = { line: 0, column: 0 };
@@ -311,14 +299,14 @@ this.consume();
 
 			if (double === "--")
 			{
-				this.state = State.Comment;
+				this.state = StateEnum.Comment;
 
 				return;
 			}
 
 			if (double === "[[")
 			{
-				this.state = State.MultiLineString;
+				this.state = StateEnum.MultiLineString;
 				this.start_token();
 				this.consume();
 				this.consume();
@@ -368,7 +356,7 @@ this.consume();
 		{
 			this.start_token();
 			this.consume();
-			this.state = State.StringLiteral;
+			this.state = StateEnum.StringLiteral;
 
 			return;
 		}
@@ -376,7 +364,7 @@ this.consume();
 		if (/[a-zA-Z_]/.test(c))
 		{
 			this.start_token();
-			this.state = State.Identifier;
+			this.state = StateEnum.Identifier;
 
 			return;
 		}
@@ -384,7 +372,7 @@ this.consume();
 		if (/[0-9]/.test(c))
 		{
 			this.start_token();
-			this.state = State.NumberLiteral;
+			this.state = StateEnum.NumberLiteral;
 		}
 	}
 
@@ -402,14 +390,14 @@ this.consume();
 				debug: this.token_start_debug,
 			});
 
-			this.state = State.Initial;
+			this.state = StateEnum.Initial;
 
 			return;
 		}
 
 		if (c === "\\")
 		{
-			this.state = State.StringLiteralEscape;
+			this.state = StateEnum.StringLiteralEscape;
 
 			return;
 		}
@@ -422,7 +410,7 @@ this.consume();
 		const c = this.current();
 
 		this.consume();
-		this.state = State.StringLiteral;
+		this.state = StateEnum.StringLiteral;
 
 		switch (c)
 		{
@@ -452,7 +440,7 @@ this.consume();
 			});
 
 			this.consume();
-			this.state = State.Initial;
+			this.state = StateEnum.Initial;
 
 			return;
 		}
@@ -474,7 +462,7 @@ this.consume();
 				debug: this.token_start_debug,
 			});
 
-			this.state = State.Initial;
+			this.state = StateEnum.Initial;
 
 			return;
 		}
@@ -499,7 +487,7 @@ this.consume();
 		{
 			this.buffer = this.buffer + c;
 			this.consume();
-			this.state = State.NumberLiteralDot;
+			this.state = StateEnum.NumberLiteralDot;
 
 			return;
 		}
@@ -508,7 +496,7 @@ this.consume();
 		{
 			this.buffer = this.buffer + c;
 			this.consume();
-			this.state = State.NumberLiteralExp;
+			this.state = StateEnum.NumberLiteralExp;
 
 			return;
 		}
@@ -523,13 +511,13 @@ this.consume();
 					debug: this.token_start_debug,
 				});
 
-				this.state = State.Initial;
+				this.state = StateEnum.Initial;
 
 				return;
 			}
 
 			this.buffer = this.buffer + c;
-			this.state = State.NumberHex;
+			this.state = StateEnum.NumberHex;
 			this.consume();
 
 			return;
@@ -541,7 +529,7 @@ this.consume();
 			debug: this.token_start_debug,
 		});
 
-		this.state = State.Initial;
+		this.state = StateEnum.Initial;
 	}
 
 	private number_dot()
@@ -559,7 +547,7 @@ this.consume();
 		if (c === "e" || c === "E")
 		{
 			this.buffer = this.buffer + c;
-			this.state = State.NumberLiteralExpSign;
+			this.state = StateEnum.NumberLiteralExpSign;
 			this.consume();
 
 			return;
@@ -571,7 +559,7 @@ this.consume();
 			debug: this.token_start_debug,
 		});
 
-		this.state = State.Initial;
+		this.state = StateEnum.Initial;
 	}
 
 	private number_exp_sign()
@@ -582,7 +570,7 @@ this.consume();
 		{
 			this.buffer = this.buffer + c;
 			this.consume();
-			this.state = State.NumberLiteralExp;
+			this.state = StateEnum.NumberLiteralExp;
 
 			return;
 		}
@@ -593,7 +581,7 @@ this.consume();
 			debug: this.token_start_debug,
 		});
 
-		this.state = State.Initial;
+		this.state = StateEnum.Initial;
 	}
 
 	private number_exp()
@@ -614,7 +602,7 @@ this.consume();
 			debug: this.token_start_debug,
 		});
 
-		this.state = State.Initial;
+		this.state = StateEnum.Initial;
 	}
 
 	private number_hex()
@@ -635,7 +623,7 @@ this.consume();
 			debug: this.token_start_debug,
 		});
 
-		this.state = State.Initial;
+		this.state = StateEnum.Initial;
 	}
 
 	private comment()
@@ -646,7 +634,7 @@ this.consume();
 
 		if (c === "\n")
 		{
-			this.state = State.Initial;
+			this.state = StateEnum.Initial;
 		}
 	}
 
@@ -656,7 +644,7 @@ this.consume();
 		{
 			this.peek_queue.push({
 				data: "",
-				kind: this.state === State.Initial
+				kind: this.state === StateEnum.Initial
 					? TokenKind.EOF
 					: TokenKind.NotFinished,
 				debug: {
@@ -670,37 +658,37 @@ this.consume();
 
 		switch (this.state)
 		{
-			case State.Initial:
+			case StateEnum.Initial:
 				this.initial();
 				break;
-			case State.Identifier:
+			case StateEnum.Identifier:
 				this.read_identifier();
 				break;
-			case State.StringLiteral:
+			case StateEnum.StringLiteral:
 				this.read_string();
 				break;
-			case State.StringLiteralEscape:
+			case StateEnum.StringLiteralEscape:
 				this.read_string_escape();
 				break;
-			case State.MultiLineString:
+			case StateEnum.MultiLineString:
 				this.read_multi_line_string();
 				break;
-			case State.NumberLiteral:
+			case StateEnum.NumberLiteral:
 				this.number();
 				break;
-			case State.NumberLiteralDot:
+			case StateEnum.NumberLiteralDot:
 				this.number_dot();
 				break;
-			case State.NumberLiteralExpSign:
+			case StateEnum.NumberLiteralExpSign:
 				this.number_exp_sign();
 				break;
-			case State.NumberLiteralExp:
+			case StateEnum.NumberLiteralExp:
 				this.number_exp();
 				break;
-			case State.NumberHex:
+			case StateEnum.NumberHex:
 				this.number_hex();
 				break;
-			case State.Comment:
+			case StateEnum.Comment:
 				this.comment();
 				break;
 		}
