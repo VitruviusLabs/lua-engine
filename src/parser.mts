@@ -10,6 +10,7 @@ import type { TokenStream } from "./lexer.mjs";
 import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
 import { token_kind_to_string } from "./lexer/token-kind-to-string/token-kind-to-string.mjs";
+import { to_error } from "./parser/error/to-error.mjs";
 
 const UNARY = [
 	TokenKindEnum.Not,
@@ -31,20 +32,13 @@ const ORDERS = [
 	[TokenKindEnum.Exponent],
 ];
 
-function error(token: TokenInterface, message: string): Error
-{
-	return new Error(
-		`${token.debug.line.toFixed(0)}:${token.debug.column.toFixed(0)}: ${message}`
-	);
-}
-
 function expect(stream: TokenStream, kind: TokenKindEnum): TokenInterface | Error
 {
 	const token = stream.peek();
 
 	if (token.kind !== kind)
 	{
-		return error(
+		return to_error(
 			token,
 			`expected '${token_kind_to_string(kind)}', got '${token_kind_to_string(token.kind)}' instead`
 		);
