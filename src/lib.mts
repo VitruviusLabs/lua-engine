@@ -18,6 +18,7 @@ import type { VariableTableMapType } from "./variable/definition/type/variable-t
 import { RuntimeError } from "./runtime-error.mjs";
 import { table_size } from "./lib/table-size/table-size.mjs";
 import { variable_to_string } from "./lib/variable-to-string/variable-to-string.mjs";
+import { print } from "./lib/print/print.mjs";
 
 function optional_parameter<K extends VariableKindEnum>(
 	expected_kind: K,
@@ -34,19 +35,6 @@ function optional_parameter<K extends VariableKindEnum>(
 	const value: unknown = VariableUnwrapUtility.unwrap(parameter);
 
 	return value as VariableValueType<K>;
-}
-
-function print(_: Engine, ...args: Array<Variable>): Array<Variable>
-{
-	// eslint-disable-next-line no-console
-	console.log(...args.map(
-		(arg): string =>
-		{
-			return variable_to_string(arg);
-		}
-	));
-
-	return [nil];
 }
 
 function type(_: Engine, variable: Variable): Array<Variable>
