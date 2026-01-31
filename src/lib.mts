@@ -5,7 +5,7 @@ import { isVariableKind } from "./variable/predicate/is-variable-kind.mjs";
 import { assertVariableKind } from "./variable/predicate/assert-variable-kind.mjs";
 import { nil } from "./variable/nil.mjs";
 import type { Engine } from "./engine.mjs";
-import { make_boolean, make_number, make_string, make_variable } from "./runtime.mjs";
+import { make_number, make_string, make_variable } from "./runtime.mjs";
 import { ValidationError, assertArray, assertPopulatedArray, isCallable, isInteger, unary } from "@vitruvius-labs/ts-predicate";
 import type { VariableNumber } from "./variable/definition/interface/variable-number.interface.mjs";
 import { assertVariable } from "./variable/predicate/assert-variable.mjs";
@@ -20,6 +20,7 @@ import { table_size } from "./lib/table-size/table-size.mjs";
 import { variable_to_string } from "./lib/variable-to-string/variable-to-string.mjs";
 import { print } from "./lib/print/print.mjs";
 import { type } from "./lib/type/type.mjs";
+import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 
 function optional_parameter<K extends VariableKindEnum>(
 	expected_kind: K,

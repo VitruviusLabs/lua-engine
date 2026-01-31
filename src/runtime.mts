@@ -9,7 +9,6 @@ import {
 } from "@vitruvius-labs/ts-predicate";
 
 import type { Variable } from "./variable/definition/type/variable.type.mjs";
-import type { VariableBoolean } from "./variable/definition/interface/variable-boolean.interface.mjs";
 import type { VariableNumber } from "./variable/definition/interface/variable-number.interface.mjs";
 import type { VariableString } from "./variable/definition/interface/variable-string.interface.mjs";
 import type { VariableTable } from "./variable/definition/interface/variable-table.interface.mjs";
@@ -20,11 +19,7 @@ import { isVariable } from "./variable/predicate/is-variable.mjs";
 import { nil } from "./variable/nil.mjs";
 import { isTableInputType } from "./boundary/predicate/is-table-input-type.mjs";
 import { isTableMapKeyType } from "./boundary/predicate/is-table-map-key-type.mjs";
-
-export function make_boolean(boolean: boolean): VariableBoolean
-{
-	return { data_type: VariableKind.Boolean, boolean: boolean };
-}
+import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 
 export function make_number(number: number): VariableNumber
 {

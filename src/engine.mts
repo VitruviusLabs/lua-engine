@@ -1,6 +1,6 @@
 import { assertUnion, unary } from "@vitruvius-labs/ts-predicate";
 
-import { make_boolean, make_number, make_string, make_table } from "./runtime.mjs";
+import { make_number, make_string, make_table } from "./runtime.mjs";
 import { TokenStream } from "./lexer.mjs";
 import { parse } from "./parser.mjs";
 import { compile } from "./compiler.mjs";
@@ -26,6 +26,7 @@ import { index } from "./engine/index/index.mjs";
 import type { LuaOptionsInterface } from "./engine/interface/lua-options.interface.mjs";
 import { table_size } from "./lib/table-size/table-size.mjs";
 import { variable_to_string } from "./lib/variable-to-string/variable-to-string.mjs";
+import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 
 function is_true(val: Variable | undefined): boolean
 {
