@@ -12,6 +12,8 @@ import type { TokenInterface } from "./lexer/definition/interface/token.interfac
 import { token_kind_to_string } from "./lexer/token-kind-to-string/token-kind-to-string.mjs";
 import { consume } from "./parser/consume/consume.mjs";
 import { expect } from "./parser/expect/expect.mjs";
+import { parse_function_params } from "./parser/parse-function-params/parse-function-params.mjs";
+import { parse } from "./parser/parse/parse.mjs";
 import { unary_type_to_expression_kind } from "./parser/unary-type-to-expression-kind/unary-type-to-expression-kind.mjs";
 
 const UNARY = [
@@ -950,44 +952,6 @@ function parse_do(stream: TokenStream): StatementInterface | Error
 			token: do_token,
 		},
 	};
-}
-
-function parse_function_params(stream: TokenStream): Array<TokenInterface> | Error
-{
-	const open_brace = expect(stream, TokenKindEnum.OpenBrace);
-
-	if (open_brace instanceof Error)
-	{
-		return open_brace;
-	}
-
-	const params: Array<TokenInterface> = [];
-
-	while (stream.peek().kind !== TokenKindEnum.CloseBrace)
-	{
-		const param = expect(stream, TokenKindEnum.Identifier);
-
-		if (param instanceof Error)
-		{
-			break;
-		}
-
-		params.push(param);
-
-		if (!consume(stream, TokenKindEnum.Comma))
-		{
-			break;
-		}
-	}
-
-	const close_brace = expect(stream, TokenKindEnum.CloseBrace);
-
-	if (close_brace instanceof Error)
-	{
-		return close_brace;
-	}
-
-	return params;
 }
 
 function parse_function_value(function_token: TokenInterface, stream: TokenStream): ValueInterface | Error
