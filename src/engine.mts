@@ -22,26 +22,7 @@ import { assertVariable } from "./variable/predicate/assert-variable.mjs";
 import { OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
 import { op_code_name } from "./opcode/op-code-name/op-code-name.mjs";
 import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs";
-
-function index(val: Variable | undefined): string | number | undefined
-{
-	if (val === undefined)
-	{
-		return undefined;
-	}
-
-	if (val.data_type === VariableKind.String)
-	{
-		return val.string;
-	}
-
-	if (val.data_type === VariableKind.Number)
-	{
-		return val.number;
-	}
-
-	return undefined;
-}
+import { index } from "./engine/index/index.mjs";
 
 function is_true(val: Variable | undefined): boolean
 {
