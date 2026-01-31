@@ -1,5 +1,5 @@
 import type { Chunk } from "./ast.mjs";
-import type { Do, For, NumericFor, Repeat, While } from "./ast.mjs";
+import type { Do, For, NumericFor, Repeat } from "./ast.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Return } from "./ast.mjs";
 
@@ -17,6 +17,7 @@ import type { ExpressionInterface } from "./ast/definition/interface/expression.
 import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
 import type { LocalInterface } from "./ast/definition/interface/local.interface.mjs";
 import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
+import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
@@ -521,7 +522,7 @@ function replace_breaks(code: Array<OpInterface>, offset_from_end: number): void
 	}
 }
 
-function compile_while(while_block: While | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_while(while_block: WhileInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (while_block === undefined)
 	{
