@@ -19,6 +19,7 @@ import { RuntimeError } from "./runtime-error.mjs";
 import { table_size } from "./lib/table-size/table-size.mjs";
 import { variable_to_string } from "./lib/variable-to-string/variable-to-string.mjs";
 import { print } from "./lib/print/print.mjs";
+import { type } from "./lib/type/type.mjs";
 
 function optional_parameter<K extends VariableKindEnum>(
 	expected_kind: K,
@@ -35,11 +36,6 @@ function optional_parameter<K extends VariableKindEnum>(
 	const value: unknown = VariableUnwrapUtility.unwrap(parameter);
 
 	return value as VariableValueType<K>;
-}
-
-function type(_: Engine, variable: Variable): Array<Variable>
-{
-	return [make_string(variable.data_type)];
 }
 
 function inext(_: Engine, table: Variable, previous_index: Variable): Array<Variable>
