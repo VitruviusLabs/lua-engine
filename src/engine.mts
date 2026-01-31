@@ -1,7 +1,7 @@
 import { assertUnion, unary } from "@vitruvius-labs/ts-predicate";
 
 import type { Op } from "./opcode.mjs";
-import { OpCode, op_code_name } from "./opcode.mjs";
+import { op_code_name } from "./opcode.mjs";
 import { make_boolean, make_number, make_string, make_table } from "./runtime.mjs";
 import { TokenStream } from "./lexer.mjs";
 import { parse } from "./parser.mjs";
@@ -21,6 +21,7 @@ import type { VariableFunction } from "./variable/definition/interface/variable-
 import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs";
 import { equals } from "./variable/equals.mjs";
 import { assertVariable } from "./variable/predicate/assert-variable.mjs";
+import { OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
 
 function index(val: Variable | undefined): string | number | undefined
 {
@@ -378,7 +379,7 @@ export class Engine
 
 		switch (code)
 		{
-			case OpCode.Pop:
+			case OpCodeEnum.Pop:
 			{
 				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1;
 
@@ -386,7 +387,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Dup:
+			case OpCodeEnum.Dup:
 			{
 				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1;
 				const items = this.stack.splice(this.stack.length - count, count);
@@ -395,7 +396,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Swap:
+			case OpCodeEnum.Swap:
 			{
 				const x = this.stack.splice(this.stack.length - 2, 1);
 
@@ -403,13 +404,13 @@ export class Engine
 				break;
 			}
 
-			case OpCode.IterUpdateState:
+			case OpCodeEnum.IterUpdateState:
 			{
 				this.stack[this.stack.length - 2] = this.stack_get(-1);
 				break;
 			}
 
-			case OpCode.IterNext:
+			case OpCodeEnum.IterNext:
 			{
 				const state = this.stack_get(-1);
 				const control = this.stack_get(-2);
@@ -441,7 +442,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.IterJumpIfDone:
+			case OpCodeEnum.IterJumpIfDone:
 			{
 				if (isVariableKind(arg, VariableKind.Number) && isNil(this.stack_get(-1)))
 				{
@@ -451,7 +452,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Add:
+			case OpCodeEnum.Add:
 				this.operation(
 					(x, y) =>
 					{
@@ -460,7 +461,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.Subtract:
+			case OpCodeEnum.Subtract:
 				this.operation(
 					(x, y) =>
 					{
@@ -469,7 +470,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.Multiply:
+			case OpCodeEnum.Multiply:
 				this.operation(
 					(x, y) =>
 					{
@@ -478,7 +479,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.Divide:
+			case OpCodeEnum.Divide:
 				this.operation(
 					(x, y) =>
 					{
@@ -487,7 +488,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.FloorDivide:
+			case OpCodeEnum.FloorDivide:
 				this.operation(
 					(x, y) =>
 					{
@@ -496,7 +497,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.Modulo:
+			case OpCodeEnum.Modulo:
 				this.operation(
 					(x, y) =>
 					{
@@ -505,7 +506,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.Exponent:
+			case OpCodeEnum.Exponent:
 				this.operation(
 					(x, y) =>
 					{
@@ -515,7 +516,7 @@ export class Engine
 
 				break;
 
-			case OpCode.LessThan:
+			case OpCodeEnum.LessThan:
 				this.compare(
 					(x, y) =>
 					{
@@ -524,7 +525,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.LessThanEquals:
+			case OpCodeEnum.LessThanEquals:
 				this.compare(
 					(x, y) =>
 					{
@@ -533,7 +534,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.GreaterThan:
+			case OpCodeEnum.GreaterThan:
 				this.compare(
 					(x, y) =>
 					{
@@ -542,7 +543,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.GreaterThanEquals:
+			case OpCodeEnum.GreaterThanEquals:
 				this.compare(
 					(x, y) =>
 					{
@@ -552,7 +553,7 @@ export class Engine
 
 				break;
 
-			case OpCode.BitAnd:
+			case OpCodeEnum.BitAnd:
 				this.operation(
 					(x, y) =>
 					{
@@ -561,7 +562,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.BitOr:
+			case OpCodeEnum.BitOr:
 				this.operation(
 					(x, y) =>
 					{
@@ -570,7 +571,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.BitXOr:
+			case OpCodeEnum.BitXOr:
 				this.operation(
 					(x, y) =>
 					{
@@ -579,7 +580,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.BitShiftLeft:
+			case OpCodeEnum.BitShiftLeft:
 				this.operation(
 					(x, y) =>
 					{
@@ -588,7 +589,7 @@ export class Engine
 				);
 
 				break;
-			case OpCode.BitShiftRight:
+			case OpCodeEnum.BitShiftRight:
 				this.operation(
 					(x, y) =>
 					{
@@ -598,7 +599,7 @@ export class Engine
 
 				break;
 
-			case OpCode.Concat:
+			case OpCodeEnum.Concat:
 			{
 				const x = this.stack_pop();
 				const y = this.stack_pop();
@@ -609,7 +610,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Equals:
+			case OpCodeEnum.Equals:
 			{
 				const x = this.stack_pop();
 				const y = this.stack_pop();
@@ -618,7 +619,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.NotEquals:
+			case OpCodeEnum.NotEquals:
 			{
 				const x = this.stack_pop();
 				const y = this.stack_pop();
@@ -627,7 +628,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.And:
+			case OpCodeEnum.And:
 			{
 				const x = this.stack_pop();
 				const y = this.stack_pop();
@@ -638,7 +639,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Or:
+			case OpCodeEnum.Or:
 			{
 				const x = this.stack_pop();
 				const y = this.stack_pop();
@@ -649,23 +650,23 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Not:
+			case OpCodeEnum.Not:
 				this.stack.push(make_boolean(!is_true(this.stack_pop())));
 				break;
 
-			case OpCode.BitNot:
+			case OpCodeEnum.BitNot:
 				this.stack.push(make_number(~this.stack_pop_kind(VariableKind.Number).number));
 				break;
 
-			case OpCode.Negate:
+			case OpCodeEnum.Negate:
 				this.stack.push(make_number(-this.stack_pop_kind(VariableKind.Number).number));
 				break;
 
-			case OpCode.IsNotNil:
+			case OpCodeEnum.IsNotNil:
 				this.stack.push(make_boolean(!isNil(this.stack_pop())));
 				break;
 
-			case OpCode.Jump:
+			case OpCodeEnum.Jump:
 				if (isVariableKind(arg, VariableKind.Number))
 				{
 					this.ip = this.ip + arg.number;
@@ -673,7 +674,7 @@ export class Engine
 
 				break;
 
-			case OpCode.JumpIfNot:
+			case OpCodeEnum.JumpIfNot:
 				if (isVariableKind(arg, VariableKind.Number) && !is_true(this.stack_pop()))
 				{
 					this.ip = this.ip + arg.number;
@@ -681,7 +682,7 @@ export class Engine
 
 				break;
 
-			case OpCode.JumpIf:
+			case OpCodeEnum.JumpIf:
 				if (isVariableKind(arg, VariableKind.Number) && is_true(this.stack_pop()))
 				{
 					this.ip = this.ip + arg.number;
@@ -689,7 +690,7 @@ export class Engine
 
 				break;
 
-			case OpCode.MakeLocal:
+			case OpCodeEnum.MakeLocal:
 				const last_locals = this.locals_stack.at(-1);
 
 				if (last_locals)
@@ -699,19 +700,19 @@ export class Engine
 
 				break;
 
-			case OpCode.NewTable:
+			case OpCodeEnum.NewTable:
 				this.stack.push(make_table());
 				break;
 
-			case OpCode.StartBlock:
+			case OpCodeEnum.StartBlock:
 				this.locals_stack.push(new Map());
 				break;
 
-			case OpCode.EndBlock:
+			case OpCodeEnum.EndBlock:
 				this.locals_stack.pop();
 				break;
 
-			case OpCode.Length:
+			case OpCodeEnum.Length:
 			{
 				const variable = this.stack_pop_maybe();
 
@@ -731,7 +732,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Return:
+			case OpCodeEnum.Return:
 			{
 				this.ip = this.call_stack.pop() ?? this.program.length;
 				this.locals_stack = this.locals_stack.slice(0, this.call_stack.pop());
@@ -739,7 +740,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.LoadIndex:
+			case OpCodeEnum.LoadIndex:
 			{
 				const table = this.stack_pop_maybe();
 
@@ -768,7 +769,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.StoreIndex:
+			case OpCodeEnum.StoreIndex:
 			{
 				const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1;
 				const table = this.stack_get(-1 - count * 2);
@@ -791,7 +792,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Store:
+			case OpCodeEnum.Store:
 			{
 				const name = isVariableKind(arg, VariableKind.String) ? arg.string : "";
 				const value = this.stack_pop_maybe();
@@ -814,7 +815,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Push:
+			case OpCodeEnum.Push:
 			{
 				if (this.locals_stack.length > 0 && isVariableKind(arg, VariableKind.Function))
 				{
@@ -825,7 +826,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Load:
+			case OpCodeEnum.Load:
 			{
 				const name = isVariableKind(arg, VariableKind.String) ? arg.string : "";
 				const local = [...this.locals_capture, ...this.locals_stack]
@@ -848,7 +849,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.Call:
+			case OpCodeEnum.Call:
 			{
 				const x = this.stack_pop_maybe();
 				const count = isVariableKind(x, VariableKind.Number) ? x.number : 0;
@@ -903,7 +904,7 @@ export class Engine
 				break;
 			}
 
-			case OpCode.ArgumentCount:
+			case OpCodeEnum.ArgumentCount:
 			{
 				const x = this.stack_pop_maybe();
 				const got = isVariableKind(x, VariableKind.Number) ? x.number : 0;
@@ -913,13 +914,13 @@ export class Engine
 				break;
 			}
 
-			case OpCode.StartStackChange:
+			case OpCodeEnum.StartStackChange:
 			{
 				this.assign_height_stack.push(this.stack.length);
 				break;
 			}
 
-			case OpCode.EndStackChange:
+			case OpCodeEnum.EndStackChange:
 			{
 				const got = this.stack.length - (this.assign_height_stack.pop() ?? 0);
 				const expected = isVariableKind(arg, VariableKind.Number) ? arg.number : 0;

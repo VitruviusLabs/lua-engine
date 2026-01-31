@@ -4,29 +4,29 @@ import type { Op, Program } from "./opcode.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Assignment, Local, Return } from "./ast.mjs";
 
-import { OpCode } from "./opcode.mjs";
 import { make_boolean, make_number, make_string } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
 import { nil } from "./variable/nil.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
+import { OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<Op>>): number
 {
 	const ops: Array<Op> = [];
 
-	ops.push({ code: OpCode.ArgumentCount, arg: make_number(parameters.length), debug: token.debug });
+	ops.push({ code: OpCodeEnum.ArgumentCount, arg: make_number(parameters.length), debug: token.debug });
 
 	for (const parameter of parameters.reverse())
 	{
-		ops.push({ code: OpCode.MakeLocal, arg: make_string(parameter.data), debug: parameter.debug });
-		ops.push({ code: OpCode.Store, arg: make_string(parameter.data), debug: parameter.debug });
+		ops.push({ code: OpCodeEnum.MakeLocal, arg: make_string(parameter.data), debug: parameter.debug });
+		ops.push({ code: OpCodeEnum.Store, arg: make_string(parameter.data), debug: parameter.debug });
 	}
 
 	ops.push(...compile_block(chunk, functions));
-	ops.push({ code: OpCode.Push, arg: nil, debug: token.debug });
-	ops.push({ code: OpCode.Return, arg: make_number(0), debug: token.debug });
+	ops.push({ code: OpCodeEnum.Push, arg: nil, debug: token.debug });
+	ops.push({ code: OpCodeEnum.Return, arg: make_number(0), debug: token.debug });
 
 	functions.push(ops);
 
@@ -45,18 +45,18 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 	switch (value.kind)
 	{
 		case ValueKindEnum.NilLiteral:
-			return [{ code: OpCode.Push, arg: nil, debug: debug }];
+			return [{ code: OpCodeEnum.Push, arg: nil, debug: debug }];
 		case ValueKindEnum.BooleanLiteral:
-			return [{ code: OpCode.Push, arg: make_boolean(value.boolean ?? false), debug: debug }];
+			return [{ code: OpCodeEnum.Push, arg: make_boolean(value.boolean ?? false), debug: debug }];
 		case ValueKindEnum.NumberLiteral:
-			return [{ code: OpCode.Push, arg: make_number(value.number ?? 0), debug: debug }];
+			return [{ code: OpCodeEnum.Push, arg: make_number(value.number ?? 0), debug: debug }];
 		case ValueKindEnum.StringLiteral:
-			return [{ code: OpCode.Push, arg: make_string(value.string ?? ""), debug: debug }];
+			return [{ code: OpCodeEnum.Push, arg: make_string(value.string ?? ""), debug: debug }];
 
 		case ValueKindEnum.FunctionLike:
 		{
 			return [{
-				code: OpCode.Push,
+				code: OpCodeEnum.Push,
 				arg: {
 					data_type: VariableKind.Function,
 					function_id: compile_function(
@@ -74,7 +74,7 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 		{
 			const output: Array<Op> = [];
 
-			output.push({ code: OpCode.NewTable, debug: debug });
+			output.push({ code: OpCodeEnum.NewTable, debug: debug });
 
 			for (const [key, expression] of [...value.table?.entries() ?? []].reverse())
 			{
@@ -82,7 +82,7 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 				output.push(...compile_expression(key, functions));
 			}
 
-			output.push({ code: OpCode.StoreIndex, arg: make_number(value.table?.size ?? 0), debug: debug });
+			output.push({ code: OpCodeEnum.StoreIndex, arg: make_number(value.table?.size ?? 0), debug: debug });
 
 			return output;
 		}
@@ -90,7 +90,7 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 		case ValueKindEnum.Variable:
 		{
 			return [{
-				code: OpCode.Load,
+				code: OpCodeEnum.Load,
 				arg: { data_type: VariableKind.String, string: value.identifier ?? "" },
 				debug: debug,
 			}];
@@ -100,7 +100,7 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 
 function compile_operation(
 	expression: Expression,
-	operation: OpCode,
+	operation: OpCodeEnum,
 	functions: Array<Array<Op>>
 ): Array<Op>
 {
@@ -140,8 +140,8 @@ function compile_call(
 	}
 
 	ops.push(...compile_expression(func, functions));
-	ops.push({ code: OpCode.Push, arg: make_number(args.length), debug: debug });
-	ops.push({ code: OpCode.Call, debug: debug });
+	ops.push({ code: OpCodeEnum.Push, arg: make_number(args.length), debug: debug });
+	ops.push({ code: OpCodeEnum.Call, debug: debug });
 
 	return ops;
 }
@@ -161,14 +161,14 @@ function compile_index(
 
 	ops.push(...compile_expression(index, functions));
 	ops.push(...compile_expression(target, functions));
-	ops.push({ code: OpCode.LoadIndex, debug: target.token.debug });
+	ops.push({ code: OpCodeEnum.LoadIndex, debug: target.token.debug });
 
 	return ops;
 }
 
 function compile_unary_operation(
 	expression: Expression | undefined,
-	operation: OpCode,
+	operation: OpCodeEnum,
 	functions: Array<Array<Op>>
 ): Array<Op>
 {
@@ -202,58 +202,58 @@ function compile_expression(expression: Expression | undefined, functions: Array
 			return compile_index(expression.expression, expression.index, functions);
 
 		case ExpressionKind.Addition:
-			return compile_operation(expression, OpCode.Add, functions);
+			return compile_operation(expression, OpCodeEnum.Add, functions);
 		case ExpressionKind.Subtract:
-			return compile_operation(expression, OpCode.Subtract, functions);
+			return compile_operation(expression, OpCodeEnum.Subtract, functions);
 		case ExpressionKind.Multiplication:
-			return compile_operation(expression, OpCode.Multiply, functions);
+			return compile_operation(expression, OpCodeEnum.Multiply, functions);
 		case ExpressionKind.Division:
-			return compile_operation(expression, OpCode.Divide, functions);
+			return compile_operation(expression, OpCodeEnum.Divide, functions);
 		case ExpressionKind.FloorDivision:
-			return compile_operation(expression, OpCode.FloorDivide, functions);
+			return compile_operation(expression, OpCodeEnum.FloorDivide, functions);
 		case ExpressionKind.Modulo:
-			return compile_operation(expression, OpCode.Modulo, functions);
+			return compile_operation(expression, OpCodeEnum.Modulo, functions);
 		case ExpressionKind.Exponent:
-			return compile_operation(expression, OpCode.Exponent, functions);
+			return compile_operation(expression, OpCodeEnum.Exponent, functions);
 		case ExpressionKind.Concat:
-			return compile_operation(expression, OpCode.Concat, functions);
+			return compile_operation(expression, OpCodeEnum.Concat, functions);
 
 		case ExpressionKind.BitAnd:
-			return compile_operation(expression, OpCode.BitAnd, functions);
+			return compile_operation(expression, OpCodeEnum.BitAnd, functions);
 		case ExpressionKind.BitOr:
-			return compile_operation(expression, OpCode.BitOr, functions);
+			return compile_operation(expression, OpCodeEnum.BitOr, functions);
 		case ExpressionKind.BitXOr:
-			return compile_operation(expression, OpCode.BitXOr, functions);
+			return compile_operation(expression, OpCodeEnum.BitXOr, functions);
 		case ExpressionKind.BitShiftLeft:
-			return compile_operation(expression, OpCode.BitShiftLeft, functions);
+			return compile_operation(expression, OpCodeEnum.BitShiftLeft, functions);
 		case ExpressionKind.BitShiftRight:
-			return compile_operation(expression, OpCode.BitShiftRight, functions);
+			return compile_operation(expression, OpCodeEnum.BitShiftRight, functions);
 
 		case ExpressionKind.Equals:
-			return compile_operation(expression, OpCode.Equals, functions);
+			return compile_operation(expression, OpCodeEnum.Equals, functions);
 		case ExpressionKind.NotEquals:
-			return compile_operation(expression, OpCode.NotEquals, functions);
+			return compile_operation(expression, OpCodeEnum.NotEquals, functions);
 		case ExpressionKind.LessThan:
-			return compile_operation(expression, OpCode.LessThan, functions);
+			return compile_operation(expression, OpCodeEnum.LessThan, functions);
 		case ExpressionKind.LessThanEquals:
-			return compile_operation(expression, OpCode.LessThanEquals, functions);
+			return compile_operation(expression, OpCodeEnum.LessThanEquals, functions);
 		case ExpressionKind.GreaterThan:
-			return compile_operation(expression, OpCode.GreaterThan, functions);
+			return compile_operation(expression, OpCodeEnum.GreaterThan, functions);
 		case ExpressionKind.GreaterThanEquals:
-			return compile_operation(expression, OpCode.GreaterThanEquals, functions);
+			return compile_operation(expression, OpCodeEnum.GreaterThanEquals, functions);
 		case ExpressionKind.And:
-			return compile_operation(expression, OpCode.And, functions);
+			return compile_operation(expression, OpCodeEnum.And, functions);
 		case ExpressionKind.Or:
-			return compile_operation(expression, OpCode.Or, functions);
+			return compile_operation(expression, OpCodeEnum.Or, functions);
 
 		case ExpressionKind.Not:
-			return compile_unary_operation(expression, OpCode.Not, functions);
+			return compile_unary_operation(expression, OpCodeEnum.Not, functions);
 		case ExpressionKind.Negate:
-			return compile_unary_operation(expression, OpCode.Negate, functions);
+			return compile_unary_operation(expression, OpCodeEnum.Negate, functions);
 		case ExpressionKind.Length:
-			return compile_unary_operation(expression, OpCode.Length, functions);
+			return compile_unary_operation(expression, OpCodeEnum.Length, functions);
 		case ExpressionKind.BitNot:
-			return compile_unary_operation(expression, OpCode.BitNot, functions);
+			return compile_unary_operation(expression, OpCodeEnum.BitNot, functions);
 	}
 }
 
@@ -267,14 +267,14 @@ function compile_assignment(assignment: Assignment | undefined, functions: Array
 	const ops: Array<Op> = [];
 	const debug = assignment.token.debug;
 
-	ops.push({ code: OpCode.StartStackChange, debug: debug });
+	ops.push({ code: OpCodeEnum.StartStackChange, debug: debug });
 
 	for (const rhs of assignment.rhs)
 	{
 		ops.push(...compile_expression(rhs, functions));
 	}
 
-	ops.push({ code: OpCode.EndStackChange, arg: make_number(assignment.lhs.length), debug: debug });
+	ops.push({ code: OpCodeEnum.EndStackChange, arg: make_number(assignment.lhs.length), debug: debug });
 
 	for (const lhs of assignment.lhs)
 	{
@@ -293,10 +293,10 @@ function compile_assignment(assignment: Assignment | undefined, functions: Array
 
 				if (assignment.local)
 				{
-					ops.push({ code: OpCode.MakeLocal, arg: identifier, debug: debug });
+					ops.push({ code: OpCodeEnum.MakeLocal, arg: identifier, debug: debug });
 				}
 
-				ops.push({ code: OpCode.Store, arg: identifier, debug: debug });
+				ops.push({ code: OpCodeEnum.Store, arg: identifier, debug: debug });
 				break;
 			}
 
@@ -305,10 +305,10 @@ function compile_assignment(assignment: Assignment | undefined, functions: Array
 				// FIXME: Throw error here if `assignment.local` is true. I think?
 
 				ops.push(...compile_expression(lhs.expression, functions));
-				ops.push({ code: OpCode.Swap, debug: debug });
+				ops.push({ code: OpCodeEnum.Swap, debug: debug });
 				ops.push(...compile_expression(lhs.index, functions));
-				ops.push({ code: OpCode.StoreIndex, debug: debug });
-				ops.push({ code: OpCode.Pop, debug: debug });
+				ops.push({ code: OpCodeEnum.StoreIndex, debug: debug });
+				ops.push({ code: OpCodeEnum.Pop, debug: debug });
 				break;
 			}
 
@@ -331,7 +331,7 @@ function compile_local(local: Local | undefined): Array<Op>
 		(name): Op =>
 		{
 			return {
-				code: OpCode.MakeLocal,
+				code: OpCodeEnum.MakeLocal,
 				arg: {
 					data_type: VariableKind.String,
 					string: name.data,
@@ -381,7 +381,7 @@ function compile_inverted_conditional_jump(condition: Expression | undefined, ju
 		default:
 		{
 			ops.push(...compile_expression(condition, functions));
-			ops.push({ code: OpCode.JumpIf, arg: make_number(jump_by), debug: debug });
+			ops.push({ code: OpCodeEnum.JumpIf, arg: make_number(jump_by), debug: debug });
 			break;
 		}
 	}
@@ -428,7 +428,7 @@ function compile_conditional_jump(condition: Expression | undefined, jump_by: nu
 		default:
 		{
 			ops.push(...compile_expression(condition, functions));
-			ops.push({ code: OpCode.JumpIfNot, arg: make_number(jump_by), debug: debug });
+			ops.push({ code: OpCodeEnum.JumpIfNot, arg: make_number(jump_by), debug: debug });
 			break;
 		}
 	}
@@ -468,7 +468,7 @@ function compile_if(if_block: IfBlock | undefined, functions: Array<Array<Op>>):
 			0
 		) + else_chunk.length;
 
-		ops.push({ code: OpCode.Jump, arg: make_number(offset), debug: token.debug });
+		ops.push({ code: OpCodeEnum.Jump, arg: make_number(offset), debug: token.debug });
 		if_else_chunks.push(ops);
 	}
 
@@ -476,7 +476,7 @@ function compile_if(if_block: IfBlock | undefined, functions: Array<Array<Op>>):
 	const ops: Array<Op> = [];
 	const body = compile_block(if_block.body, functions);
 
-	ops.push({ code: OpCode.StartBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.StartBlock, debug: debug });
 	ops.push(...compile_conditional_jump(if_block.condition, body.length + 1, functions));
 	ops.push(...body);
 
@@ -488,7 +488,7 @@ function compile_if(if_block: IfBlock | undefined, functions: Array<Array<Op>>):
 		0
 	) + else_chunk.length;
 
-	ops.push({ code: OpCode.Jump, arg: make_number(offset), debug: debug });
+	ops.push({ code: OpCodeEnum.Jump, arg: make_number(offset), debug: debug });
 
 	for (const if_else_chunk of if_else_chunks)
 	{
@@ -496,7 +496,7 @@ function compile_if(if_block: IfBlock | undefined, functions: Array<Array<Op>>):
 	}
 
 	ops.push(...else_chunk);
-	ops.push({ code: OpCode.EndBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.EndBlock, debug: debug });
 
 	return ops;
 }
@@ -505,11 +505,11 @@ function replace_breaks(code: Array<Op>, offset_from_end: number): void
 {
 	for (const [i, op] of code.entries())
 	{
-		if (op.code === OpCode.Break)
+		if (op.code === OpCodeEnum.Break)
 		{
 			const offset = code.length - i - 1 + offset_from_end;
 
-			op.code = OpCode.Jump;
+			op.code = OpCodeEnum.Jump;
 			op.arg = make_number(offset);
 		}
 	}
@@ -528,11 +528,11 @@ function compile_while(while_block: While | undefined, functions: Array<Array<Op
 
 	replace_breaks(body, 1);
 
-	ops.push({ code: OpCode.StartBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.StartBlock, debug: debug });
 	ops.push(...compile_conditional_jump(while_block.condition, body.length + 1, functions));
 	ops.push(...body);
-	ops.push({ code: OpCode.Jump, arg: make_number(-ops.length - 1), debug: debug });
-	ops.push({ code: OpCode.EndBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.Jump, arg: make_number(-ops.length - 1), debug: debug });
+	ops.push({ code: OpCodeEnum.EndBlock, debug: debug });
 
 	return ops;
 }
@@ -551,35 +551,35 @@ function compile_for(for_block: For | undefined, functions: Array<Array<Op>>): A
 
 	const debug = for_block.token.debug;
 
-	ops.push({ code: OpCode.StartBlock, debug: debug });
-	ops.push({ code: OpCode.StartStackChange, debug: debug });
+	ops.push({ code: OpCodeEnum.StartBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.StartStackChange, debug: debug });
 	ops.push(...compile_expression(for_block.iterator, functions));
-	ops.push({ code: OpCode.EndStackChange, arg: make_number(3), debug: debug });
+	ops.push({ code: OpCodeEnum.EndStackChange, arg: make_number(3), debug: debug });
 
 	const after_creating_itorator = ops.length;
 
-	ops.push({ code: OpCode.StartStackChange, debug: debug });
-	ops.push({ code: OpCode.IterNext, debug: debug });
-	ops.push({ code: OpCode.IterJumpIfDone, arg: make_number(body.length + for_block.items.length + 3), debug: debug });
+	ops.push({ code: OpCodeEnum.StartStackChange, debug: debug });
+	ops.push({ code: OpCodeEnum.IterNext, debug: debug });
+	ops.push({ code: OpCodeEnum.IterJumpIfDone, arg: make_number(body.length + for_block.items.length + 3), debug: debug });
 
-	ops.push({ code: OpCode.EndStackChange, arg: make_number(for_block.items.length), debug: debug });
+	ops.push({ code: OpCodeEnum.EndStackChange, arg: make_number(for_block.items.length), debug: debug });
 
 	for (const [i, item] of [...for_block.items].reverse().entries())
 	{
 		if (i === for_block.items.length - 1)
 		{
-			ops.push({ code: OpCode.IterUpdateState, debug: debug });
+			ops.push({ code: OpCodeEnum.IterUpdateState, debug: debug });
 		}
 
-		ops.push({ code: OpCode.Store, arg: make_string(item.data), debug: item.debug });
+		ops.push({ code: OpCodeEnum.Store, arg: make_string(item.data), debug: item.debug });
 	}
 
 	ops.push(...body);
-	ops.push({ code: OpCode.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
+	ops.push({ code: OpCodeEnum.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
 
-	ops.push({ code: OpCode.EndStackChange, arg: make_number(0), debug: debug });
-	ops.push({ code: OpCode.Pop, arg: make_number(3), debug: debug });
-	ops.push({ code: OpCode.EndBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.EndStackChange, arg: make_number(0), debug: debug });
+	ops.push({ code: OpCodeEnum.Pop, arg: make_number(3), debug: debug });
+	ops.push({ code: OpCodeEnum.EndBlock, debug: debug });
 
 	return ops;
 }
@@ -588,7 +588,7 @@ function compile_step(step: Expression | undefined, functions: Array<Array<Op>>)
 {
 	if (step === undefined)
 	{
-		return [{ code: OpCode.Push, arg: make_number(1), debug: { line: 0, column: 0 } }];
+		return [{ code: OpCodeEnum.Push, arg: make_number(1), debug: { line: 0, column: 0 } }];
 	}
 
 	return compile_expression(step, functions);
@@ -609,25 +609,25 @@ function compile_numeric_for(numeric_for_block: NumericFor | undefined, function
 
 	replace_breaks(body, step.length + 4);
 
-	ops.push({ code: OpCode.StartBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.StartBlock, debug: debug });
 	ops.push(...compile_expression(numeric_for_block.start, functions));
 
 	const after_creating_itorator = ops.length;
 
-	ops.push({ code: OpCode.Dup, debug: debug });
+	ops.push({ code: OpCodeEnum.Dup, debug: debug });
 	ops.push(...compile_expression(numeric_for_block.end, functions));
-	ops.push({ code: OpCode.NotEquals, debug: debug });
-	ops.push({ code: OpCode.JumpIfNot, arg: make_number(body.length + step.length + 4), debug: debug });
+	ops.push({ code: OpCodeEnum.NotEquals, debug: debug });
+	ops.push({ code: OpCodeEnum.JumpIfNot, arg: make_number(body.length + step.length + 4), debug: debug });
 
-	ops.push({ code: OpCode.Store, arg: make_string(index), debug: debug });
+	ops.push({ code: OpCodeEnum.Store, arg: make_string(index), debug: debug });
 	ops.push(...body);
-	ops.push({ code: OpCode.Load, arg: make_string(index), debug: debug });
+	ops.push({ code: OpCodeEnum.Load, arg: make_string(index), debug: debug });
 	ops.push(...step);
-	ops.push({ code: OpCode.Add, debug: debug });
-	ops.push({ code: OpCode.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
+	ops.push({ code: OpCodeEnum.Add, debug: debug });
+	ops.push({ code: OpCodeEnum.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
 
-	ops.push({ code: OpCode.Pop, debug: debug });
-	ops.push({ code: OpCode.EndBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.Pop, debug: debug });
+	ops.push({ code: OpCodeEnum.EndBlock, debug: debug });
 
 	return ops;
 }
@@ -642,13 +642,13 @@ function compile_repeat(repeat: Repeat | undefined, functions: Array<Array<Op>>)
 	const ops: Array<Op> = [];
 	const debug = repeat.token.debug;
 
-	ops.push({ code: OpCode.StartBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.StartBlock, debug: debug });
 
 	ops.push(...compile_block(repeat.body, functions));
 	ops.push(...compile_inverted_conditional_jump(repeat.condition, 1, functions));
-	ops.push({ code: OpCode.Jump, arg: make_number(-ops.length), debug: debug });
+	ops.push({ code: OpCodeEnum.Jump, arg: make_number(-ops.length), debug: debug });
 
-	ops.push({ code: OpCode.EndBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.EndBlock, debug: debug });
 
 	return ops;
 }
@@ -663,9 +663,9 @@ function compile_do(do_block: Do | undefined, functions: Array<Array<Op>>): Arra
 	const ops: Array<Op> = [];
 	const debug = do_block.token.debug;
 
-	ops.push({ code: OpCode.StartBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.StartBlock, debug: debug });
 	ops.push(...compile_block(do_block.body, functions));
-	ops.push({ code: OpCode.EndBlock, debug: debug });
+	ops.push({ code: OpCodeEnum.EndBlock, debug: debug });
 
 	return ops;
 }
@@ -687,7 +687,7 @@ function compile_return(return_block: Return | undefined, functions: Array<Array
 	const debug = return_block.token.debug;
 	const return_count = return_block.values.length;
 
-	ops.push({ code: OpCode.Return, arg: make_number(return_count), debug: debug });
+	ops.push({ code: OpCodeEnum.Return, arg: make_number(return_count), debug: debug });
 
 	return ops;
 }
@@ -704,7 +704,7 @@ function compile_block(chunk: Chunk, functions: Array<Array<Op>>): Array<Op>
 
 	if (has_last_expression)
 	{
-		code.push({ code: OpCode.Pop, debug: { line: 0, column: 0 } });
+		code.push({ code: OpCodeEnum.Pop, debug: { line: 0, column: 0 } });
 	}
 
 	return code;
@@ -737,7 +737,7 @@ function compile_chunk(chunk: Chunk, functions: Array<Array<Op>>): ChunkResult
 				}
 				else
 				{
-					ops.push({ code: OpCode.Pop, debug: statement.expression.token.debug });
+					ops.push({ code: OpCodeEnum.Pop, debug: statement.expression.token.debug });
 				}
 
 				break;
@@ -769,7 +769,7 @@ function compile_chunk(chunk: Chunk, functions: Array<Array<Op>>): ChunkResult
 				ops.push(...compile_return(statement.return, functions));
 				break;
 			case StatementKindEnum.Break:
-				ops.push({ code: OpCode.Break, debug: { line: 0, column: 0 } });
+				ops.push({ code: OpCodeEnum.Break, debug: { line: 0, column: 0 } });
 				break;
 		}
 	}
@@ -815,14 +815,14 @@ export function compile(chunk: Chunk, extend?: Array<Op>): Program
 
 	if (extend?.length ?? 0 > 0)
 	{
-		ops.push({ code: OpCode.Pop, debug: { line: 0, column: 0 } });
+		ops.push({ code: OpCodeEnum.Pop, debug: { line: 0, column: 0 } });
 	}
 
 	ops.push(...code);
 
 	if (!has_last_expression)
 	{
-		ops.push({ code: OpCode.Push, arg: nil, debug: { line: 0, column: 0 } });
+		ops.push({ code: OpCodeEnum.Push, arg: nil, debug: { line: 0, column: 0 } });
 	}
 
 	return {
