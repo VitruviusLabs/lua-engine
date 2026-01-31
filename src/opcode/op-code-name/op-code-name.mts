@@ -1,8 +1,7 @@
-import type { Variable } from "./variable/definition/type/variable.type.mjs";
-import type { Debug } from "./lexer.mjs";
-import { OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
+import { OpCodeEnum } from "../definition/enum/op-code.enum.mjs";
 
-export function op_code_name(op_code: OpCodeEnum): string
+// eslint-disable-next-line complexity
+function op_code_name(op_code: OpCodeEnum): string
 {
 	switch (op_code)
 	{
@@ -59,13 +58,4 @@ export function op_code_name(op_code: OpCodeEnum): string
 	}
 }
 
-export interface Op {
-	code: OpCodeEnum;
-	arg?: Variable;
-	debug: Debug;
-}
-
-export interface Program {
-	code: Array<Op>;
-	start: number;
-}
+export { op_code_name };

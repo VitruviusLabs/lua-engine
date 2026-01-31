@@ -1,6 +1,5 @@
 import type { Chunk, Expression, Value } from "./ast.mjs";
 import type { Do, For, IfBlock, NumericFor, Repeat, While } from "./ast.mjs";
-import type { Op, Program } from "./opcode.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Assignment, Local, Return } from "./ast.mjs";
 
@@ -11,10 +10,12 @@ import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
+import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs";
+import type { ProgramInterface } from "./opcode/definition/interface/program.interface.mjs";
 
-function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<Op>>): number
+function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 
 	ops.push({ code: OpCodeEnum.ArgumentCount, arg: make_number(parameters.length), debug: token.debug });
 
@@ -33,7 +34,7 @@ function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, 
 	return functions.length - 1;
 }
 
-function compile_value(value: Value | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_value(value: Value | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (value === undefined)
 	{
@@ -72,7 +73,7 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 
 		case ValueKindEnum.TableLiteral:
 		{
-			const output: Array<Op> = [];
+			const output: Array<OpInterface> = [];
 
 			output.push({ code: OpCodeEnum.NewTable, debug: debug });
 
@@ -101,8 +102,8 @@ function compile_value(value: Value | undefined, functions: Array<Array<Op>>): A
 function compile_operation(
 	expression: Expression,
 	operation: OpCodeEnum,
-	functions: Array<Array<Op>>
-): Array<Op>
+	functions: Array<Array<OpInterface>>
+): Array<OpInterface>
 {
 	const { lhs, rhs } = expression;
 
@@ -111,7 +112,7 @@ function compile_operation(
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 
 	ops.push(...compile_expression(rhs, functions));
 	ops.push(...compile_expression(lhs, functions));
@@ -123,8 +124,8 @@ function compile_operation(
 function compile_call(
 	func: Expression | undefined,
 	args: Array<Expression> | undefined,
-	functions: Array<Array<Op>>
-): Array<Op>
+	functions: Array<Array<OpInterface>>
+): Array<OpInterface>
 {
 	if (func === undefined || args === undefined)
 	{
@@ -132,7 +133,7 @@ function compile_call(
 	}
 
 	const debug = func.token.debug;
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 
 	for (const arg of args)
 	{
@@ -149,15 +150,15 @@ function compile_call(
 function compile_index(
 	target: Expression | undefined,
 	index: Expression | undefined,
-	functions: Array<Array<Op>>
-): Array<Op>
+	functions: Array<Array<OpInterface>>
+): Array<OpInterface>
 {
 	if (target === undefined || index === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 
 	ops.push(...compile_expression(index, functions));
 	ops.push(...compile_expression(target, functions));
@@ -169,15 +170,15 @@ function compile_index(
 function compile_unary_operation(
 	expression: Expression | undefined,
 	operation: OpCodeEnum,
-	functions: Array<Array<Op>>
-): Array<Op>
+	functions: Array<Array<OpInterface>>
+): Array<OpInterface>
 {
 	if (expression === undefined || expression.expression === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 
 	ops.push(...compile_expression(expression.expression, functions));
 	ops.push({ code: operation, debug: expression.token.debug });
@@ -185,7 +186,7 @@ function compile_unary_operation(
 	return ops;
 }
 
-function compile_expression(expression: Expression | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_expression(expression: Expression | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (expression === undefined)
 	{
@@ -257,14 +258,14 @@ function compile_expression(expression: Expression | undefined, functions: Array
 	}
 }
 
-function compile_assignment(assignment: Assignment | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_assignment(assignment: Assignment | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (assignment === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 	const debug = assignment.token.debug;
 
 	ops.push({ code: OpCodeEnum.StartStackChange, debug: debug });
@@ -320,7 +321,7 @@ function compile_assignment(assignment: Assignment | undefined, functions: Array
 	return ops;
 }
 
-function compile_local(local: Local | undefined): Array<Op>
+function compile_local(local: Local | undefined): Array<OpInterface>
 {
 	if (local === undefined)
 	{
@@ -328,7 +329,7 @@ function compile_local(local: Local | undefined): Array<Op>
 	}
 
 	return local.names.map(
-		(name): Op =>
+		(name): OpInterface =>
 		{
 			return {
 				code: OpCodeEnum.MakeLocal,
@@ -342,14 +343,14 @@ function compile_local(local: Local | undefined): Array<Op>
 	);
 }
 
-function compile_inverted_conditional_jump(condition: Expression | undefined, jump_by: number, functions: Array<Array<Op>>): Array<Op>
+function compile_inverted_conditional_jump(condition: Expression | undefined, jump_by: number, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (condition === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 	const debug = condition.token.debug;
 
 	switch (condition.kind)
@@ -389,14 +390,14 @@ function compile_inverted_conditional_jump(condition: Expression | undefined, ju
 	return ops;
 }
 
-function compile_conditional_jump(condition: Expression | undefined, jump_by: number, functions: Array<Array<Op>>): Array<Op>
+function compile_conditional_jump(condition: Expression | undefined, jump_by: number, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (condition === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 	const debug = condition.token.debug;
 
 	switch (condition.kind)
@@ -436,25 +437,25 @@ function compile_conditional_jump(condition: Expression | undefined, jump_by: nu
 	return ops;
 }
 
-function compile_if(if_block: IfBlock | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_if(if_block: IfBlock | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (if_block === undefined)
 	{
 		throw new Error();
 	}
 
-	const else_chunk: Array<Op> = [];
+	const else_chunk: Array<OpInterface> = [];
 
 	if (if_block.else_body !== undefined)
 	{
 		else_chunk.push(...compile_block(if_block.else_body, functions));
 	}
 
-	const if_else_chunks: Array<Array<Op>> = [];
+	const if_else_chunks: Array<Array<OpInterface>> = [];
 
 	for (const { body, condition, token } of if_block.else_if_bodies.reverse())
 	{
-		const ops: Array<Op> = [];
+		const ops: Array<OpInterface> = [];
 		const if_else_body = compile_block(body, functions);
 
 		ops.push(...compile_conditional_jump(condition, if_else_body.length + 1, functions));
@@ -473,7 +474,7 @@ function compile_if(if_block: IfBlock | undefined, functions: Array<Array<Op>>):
 	}
 
 	const debug = if_block.token.debug;
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 	const body = compile_block(if_block.body, functions);
 
 	ops.push({ code: OpCodeEnum.StartBlock, debug: debug });
@@ -501,7 +502,7 @@ function compile_if(if_block: IfBlock | undefined, functions: Array<Array<Op>>):
 	return ops;
 }
 
-function replace_breaks(code: Array<Op>, offset_from_end: number): void
+function replace_breaks(code: Array<OpInterface>, offset_from_end: number): void
 {
 	for (const [i, op] of code.entries())
 	{
@@ -515,7 +516,7 @@ function replace_breaks(code: Array<Op>, offset_from_end: number): void
 	}
 }
 
-function compile_while(while_block: While | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_while(while_block: While | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (while_block === undefined)
 	{
@@ -523,7 +524,7 @@ function compile_while(while_block: While | undefined, functions: Array<Array<Op
 	}
 
 	const debug = while_block.token.debug;
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 	const body = compile_block(while_block.body, functions);
 
 	replace_breaks(body, 1);
@@ -537,14 +538,14 @@ function compile_while(while_block: While | undefined, functions: Array<Array<Op
 	return ops;
 }
 
-function compile_for(for_block: For | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_for(for_block: For | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (for_block === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 	const body = compile_block(for_block.body, functions);
 
 	replace_breaks(body, 1);
@@ -584,7 +585,7 @@ function compile_for(for_block: For | undefined, functions: Array<Array<Op>>): A
 	return ops;
 }
 
-function compile_step(step: Expression | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_step(step: Expression | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (step === undefined)
 	{
@@ -594,14 +595,14 @@ function compile_step(step: Expression | undefined, functions: Array<Array<Op>>)
 	return compile_expression(step, functions);
 }
 
-function compile_numeric_for(numeric_for_block: NumericFor | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_numeric_for(numeric_for_block: NumericFor | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (numeric_for_block === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 	const body = compile_block(numeric_for_block.body, functions);
 	const step = compile_step(numeric_for_block.step, functions);
 	const index = numeric_for_block.index.data;
@@ -632,14 +633,14 @@ function compile_numeric_for(numeric_for_block: NumericFor | undefined, function
 	return ops;
 }
 
-function compile_repeat(repeat: Repeat | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_repeat(repeat: Repeat | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (repeat === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 	const debug = repeat.token.debug;
 
 	ops.push({ code: OpCodeEnum.StartBlock, debug: debug });
@@ -653,14 +654,14 @@ function compile_repeat(repeat: Repeat | undefined, functions: Array<Array<Op>>)
 	return ops;
 }
 
-function compile_do(do_block: Do | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_do(do_block: Do | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (do_block === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 	const debug = do_block.token.debug;
 
 	ops.push({ code: OpCodeEnum.StartBlock, debug: debug });
@@ -670,14 +671,14 @@ function compile_do(do_block: Do | undefined, functions: Array<Array<Op>>): Arra
 	return ops;
 }
 
-function compile_return(return_block: Return | undefined, functions: Array<Array<Op>>): Array<Op>
+function compile_return(return_block: Return | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (return_block === undefined)
 	{
 		throw new Error();
 	}
 
-	const ops: Array<Op> = [];
+	const ops: Array<OpInterface> = [];
 
 	for (const value of return_block.values)
 	{
@@ -694,11 +695,11 @@ function compile_return(return_block: Return | undefined, functions: Array<Array
 
 interface ChunkResult
 {
-	code: Array<Op>;
+	code: Array<OpInterface>;
 	has_last_expression: boolean;
 }
 
-function compile_block(chunk: Chunk, functions: Array<Array<Op>>): Array<Op>
+function compile_block(chunk: Chunk, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	const { code, has_last_expression } = compile_chunk(chunk, functions);
 
@@ -710,7 +711,7 @@ function compile_block(chunk: Chunk, functions: Array<Array<Op>>): Array<Op>
 	return code;
 }
 
-function compile_chunk(chunk: Chunk, functions: Array<Array<Op>>): ChunkResult
+function compile_chunk(chunk: Chunk, functions: Array<Array<OpInterface>>): ChunkResult
 {
 	const ops = [];
 	let has_last_expression = false;
@@ -780,7 +781,7 @@ function compile_chunk(chunk: Chunk, functions: Array<Array<Op>>): ChunkResult
 	};
 }
 
-function link(code: Array<Op>, function_id: number, location: number): void
+function link(code: Array<OpInterface>, function_id: number, location: number): void
 {
 	for (const op of code)
 	{
@@ -792,10 +793,10 @@ function link(code: Array<Op>, function_id: number, location: number): void
 	}
 }
 
-export function compile(chunk: Chunk, extend?: Array<Op>): Program
+export function compile(chunk: Chunk, extend?: Array<OpInterface>): ProgramInterface
 {
 	const ops = [...(extend ?? [])];
-	const functions: Array<Array<Op>> = [];
+	const functions: Array<Array<OpInterface>> = [];
 	const { code, has_last_expression } = compile_chunk(chunk, functions);
 
 	const function_locations: Array<number> = [];

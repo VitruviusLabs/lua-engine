@@ -1,7 +1,5 @@
 import { assertUnion, unary } from "@vitruvius-labs/ts-predicate";
 
-import type { Op } from "./opcode.mjs";
-import { op_code_name } from "./opcode.mjs";
 import { make_boolean, make_number, make_string, make_table } from "./runtime.mjs";
 import { TokenStream } from "./lexer.mjs";
 import { parse } from "./parser.mjs";
@@ -22,6 +20,8 @@ import type { VariableNativeFunction } from "./variable/definition/interface/var
 import { equals } from "./variable/equals.mjs";
 import { assertVariable } from "./variable/predicate/assert-variable.mjs";
 import { OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
+import { op_code_name } from "./opcode/op-code-name/op-code-name.mjs";
+import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs";
 
 function index(val: Variable | undefined): string | number | undefined
 {
@@ -68,7 +68,7 @@ export interface LuaOptions
 
 export class Engine
 {
-	private program: Array<Op>;
+	private program: Array<OpInterface>;
 	private readonly globals: VariableTableMapType;
 	private start_ip: number = 0;
 
@@ -363,7 +363,7 @@ export class Engine
 		}
 	}
 
-	private runtime_error(op: Op | undefined, message: string): never
+	private runtime_error(op: OpInterface | undefined, message: string): never
 	{
 		if (op === undefined)
 		{
@@ -373,7 +373,7 @@ export class Engine
 		throw new RuntimeError(message, {}, op.debug);
 	}
 
-	private async run_instruction(op: Op): Promise<Error | undefined>
+	private async run_instruction(op: OpInterface): Promise<Error | undefined>
 	{
 		const { code, arg } = op;
 
