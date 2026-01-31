@@ -7,6 +7,7 @@ import type { NativeFunction } from "./boundary/definition/type/native-function.
 import { RuntimeError } from "./runtime-error.mjs";
 import { VariableUnwrapUtility } from "./variable/unwrap-variable.mjs";
 import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs";
+import { handle_error } from "./create-binding/handle-error/handle-error.mjs";
 
 export const ParameterOptionEnum = {
 	REQUIRED: "required",
@@ -68,24 +69,10 @@ function sanitize_parameters(input: Array<unknown>, descriptors: Array<Parameter
 	return output;
 }
 
-function handle_error(error: unknown, callable: Function): never
+export function make_function(callable: (...args: Array<unknown>) => unknown, parameters_descriptor: Array<ParameterDescriptorInterface>): VariableNativeFunction
 {
-	if (isInstanceOf(error, RuntimeError) || isInstanceOf(error, ValidationError))
-	{
-		throw error;
-	}
-
-	if (callable.name === "")
-	{
-		throw new RuntimeError("An error occurred during native anonymous function execution.", { cause: error });
-	}
-
-	throw new RuntimeError(`An error occurred during native function ${callable.name} execution.`, { cause: error });
-}
-
-export function make_function(callable: Function, parameters_descriptor: Array<ParameterDescriptorInterface>): VariableNativeFunction
-{
-	const proxy_function: NativeFunction = async (_: Engine, ...args: Array<Variable>): Promise<Array<Variable>> =>
+	// @ts-expect-error: engine is unused for now.
+	const proxy_function: NativeFunction = async (engine: Engine, ...args: Array<Variable>): Promise<Array<Variable>> =>
 	{
 		try
 		{

@@ -9,7 +9,6 @@ import {
 } from "@vitruvius-labs/ts-predicate";
 
 import type { Variable } from "./variable/definition/type/variable.type.mjs";
-import type { VariableString } from "./variable/definition/interface/variable-string.interface.mjs";
 import type { VariableTable } from "./variable/definition/interface/variable-table.interface.mjs";
 import type { TableInputType } from "./boundary/definition/type/table-input.type.mjs";
 import type { VariableTableMapType } from "./variable/definition/type/variable-table-map.type.mjs";
