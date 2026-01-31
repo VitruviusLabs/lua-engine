@@ -1,6 +1,5 @@
 import type { Chunk } from "./ast.mjs";
 import type { Token } from "./lexer.mjs";
-import type { Return } from "./ast.mjs";
 
 import { make_boolean, make_number, make_string } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
@@ -21,6 +20,7 @@ import type { ForInterface } from "./ast/definition/interface/for.interface.mjs"
 import type { NumericForInterface } from "./ast/definition/interface/numeric-for.interface.mjs";
 import type { RepeatInterface } from "./ast/definition/interface/repeat.interface.mjs";
 import type { DoInterface } from "./ast/definition/interface/do.interface.mjs";
+import type { ReturnInterface } from "./ast/definition/interface/return.interface.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
@@ -680,7 +680,7 @@ function compile_do(do_block: DoInterface | undefined, functions: Array<Array<Op
 	return ops;
 }
 
-function compile_return(return_block: Return | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_return(return_block: ReturnInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (return_block === undefined)
 	{

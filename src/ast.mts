@@ -7,14 +7,8 @@ import type { IfBlockInterface } from "./ast/definition/interface/if-block.inter
 import type { LocalInterface } from "./ast/definition/interface/local.interface.mjs";
 import type { NumericForInterface } from "./ast/definition/interface/numeric-for.interface.mjs";
 import type { RepeatInterface } from "./ast/definition/interface/repeat.interface.mjs";
+import type { ReturnInterface } from "./ast/definition/interface/return.interface.mjs";
 import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
-import type { Token } from "./lexer.mjs";
-
-export interface Return
-{
-	values: Array<ExpressionInterface>;
-	token: Token;
-}
 
 export interface Statement
 {
@@ -28,7 +22,7 @@ export interface Statement
 	numeric_for?: NumericForInterface | undefined;
 	repeat?: RepeatInterface | undefined;
 	do?: DoInterface | undefined;
-	return?: Return | undefined;
+	return?: ReturnInterface | undefined;
 }
 
 export interface Chunk
