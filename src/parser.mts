@@ -1,4 +1,5 @@
-import { type Chunk, type ElseIfBlock, type Expression, ExpressionKind, type Statement, StatementKind, type Value } from "./ast.mjs";
+import { type Chunk, type ElseIfBlock, type Expression, type Statement, StatementKind, type Value } from "./ast.mjs";
+import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 import { type Token, TokenKind, type TokenStream, token_kind_to_string } from "./lexer.mjs";
 

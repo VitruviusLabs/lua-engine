@@ -1,4 +1,5 @@
-import { type Assignment, type Chunk, type Expression, ExpressionKind, type For, type IfBlock, type NumericFor, type Repeat, type Statement, StatementKind, type Value, type While } from "./ast.mjs";
+import { type Assignment, type Chunk, type Expression, type For, type IfBlock, type NumericFor, type Repeat, type Statement, StatementKind, type Value, type While } from "./ast.mjs";
+import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
 
 const CONSTANT_VALUES = [
@@ -85,7 +86,6 @@ function compute_constant_expression(
 		return undefined;
 	}
 
-	// eslint-disable-next-line @ts/switch-exhaustiveness-check
 	switch (expression.kind)
 	{
 		case ExpressionKind.Value:

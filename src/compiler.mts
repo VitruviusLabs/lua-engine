@@ -4,12 +4,13 @@ import type { Op, Program } from "./opcode.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Assignment, Local, Return } from "./ast.mjs";
 
-import { ExpressionKind, StatementKind } from "./ast.mjs";
+import { StatementKind } from "./ast.mjs";
 import { OpCode } from "./opcode.mjs";
 import { make_boolean, make_number, make_string } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
 import { nil } from "./variable/nil.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
+import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<Op>>): number
 {
