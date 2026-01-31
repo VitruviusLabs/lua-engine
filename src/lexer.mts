@@ -81,7 +81,7 @@ export class TokenStream
 	private line: number;
 	private column: number;
 
-	constructor()
+	public constructor()
 	{
 		this.state = StateEnum.Initial;
 		this.processing_stream = [];
