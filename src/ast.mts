@@ -1,21 +1,15 @@
 import type { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
+import type { ElseIfBlockInterface } from "./ast/definition/interface/else-if-block.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { LocalInterface } from "./ast/definition/interface/local.interface.mjs";
 import type { Token } from "./lexer.mjs";
-
-export interface ElseIfBlock
-{
-	body: Chunk;
-	condition: ExpressionInterface;
-	token: Token;
-}
 
 export interface IfBlock
 {
 	condition: ExpressionInterface;
 	body: Chunk;
-	else_if_bodies: Array<ElseIfBlock>;
+	else_if_bodies: Array<ElseIfBlockInterface>;
 	else_body?: Chunk | undefined;
 	token: Token;
 }
