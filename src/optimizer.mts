@@ -1,7 +1,8 @@
-import type { Assignment, Chunk, Expression, For, IfBlock, NumericFor, Repeat, Statement, While } from "./ast.mjs";
+import type { Assignment, Chunk, For, IfBlock, NumericFor, Repeat, Statement, While } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
+import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 
 const CONSTANT_VALUES = [
@@ -12,7 +13,7 @@ const CONSTANT_VALUES = [
 ];
 
 function compute_arithmetic_operation(
-	expression: Expression,
+	expression: ExpressionInterface,
 	operation: (a: number, b: number) => number,
 	constants: Map<string, ValueInterface>
 ): ValueInterface | undefined
@@ -33,7 +34,7 @@ function compute_arithmetic_operation(
 }
 
 function compute_comparison_operation(
-	expression: Expression,
+	expression: ExpressionInterface,
 	operation: (a: number | string, b: number | string) => boolean,
 	constants: Map<string, ValueInterface>
 ): ValueInterface | undefined
@@ -54,7 +55,7 @@ function compute_comparison_operation(
 }
 
 function compute_logical_operation(
-	expression: Expression,
+	expression: ExpressionInterface,
 	operation: ExpressionKind.And | ExpressionKind.Or,
 	constants: Map<string, ValueInterface>
 ): ValueInterface | undefined
@@ -79,7 +80,7 @@ function compute_logical_operation(
 
 // @TODO: Fix complexity warning
 function compute_constant_expression(
-	expression: Expression | undefined,
+	expression: ExpressionInterface | undefined,
 	constants: Map<string, ValueInterface>
 ): ValueInterface | undefined
 {
@@ -334,7 +335,7 @@ function compute_constant_expression(
 }
 
 function optimize_expression(
-	expression: Expression | undefined,
+	expression: ExpressionInterface | undefined,
 	constants: Map<string, ValueInterface>
 ): void
 {
@@ -471,7 +472,7 @@ function remove_constant_local_assignments(
 		for (const name of constants.keys())
 		{
 			const index = assignment.lhs.findIndex(
-				(x: Expression): boolean =>
+				(x: ExpressionInterface): boolean =>
 				{
 					return x.value?.identifier === name;
 				}

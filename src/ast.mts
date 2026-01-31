@@ -1,24 +1,12 @@
 import type { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
+import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { Token } from "./lexer.mjs";
-
-export interface Expression
-{
-	kind: ExpressionKind;
-	token: Token;
-
-	lhs?: Expression;
-	rhs?: Expression;
-	value?: Value;
-	expression?: Expression;
-	index?: Expression;
-	arguments?: Array<Expression>;
-}
 
 export interface Assignment
 {
 	local: boolean;
-	lhs: Array<Expression>;
-	rhs: Array<Expression>;
+	lhs: Array<ExpressionInterface>;
+	rhs: Array<ExpressionInterface>;
 	token: Token;
 }
 
@@ -31,13 +19,13 @@ export interface Local
 export interface ElseIfBlock
 {
 	body: Chunk;
-	condition: Expression;
+	condition: ExpressionInterface;
 	token: Token;
 }
 
 export interface IfBlock
 {
-	condition: Expression;
+	condition: ExpressionInterface;
 	body: Chunk;
 	else_if_bodies: Array<ElseIfBlock>;
 	else_body?: Chunk | undefined;
@@ -46,7 +34,7 @@ export interface IfBlock
 
 export interface While
 {
-	condition: Expression;
+	condition: ExpressionInterface;
 	body: Chunk;
 	token: Token;
 }
@@ -54,7 +42,7 @@ export interface While
 export interface For
 {
 	items: Array<Token>;
-	iterator: Expression;
+	iterator: ExpressionInterface;
 	body: Chunk;
 	token: Token;
 }
@@ -62,16 +50,16 @@ export interface For
 export interface NumericFor
 {
 	index: Token;
-	start: Expression;
-	end: Expression;
-	step: Expression | undefined;
+	start: ExpressionInterface;
+	end: ExpressionInterface;
+	step: ExpressionInterface | undefined;
 	body: Chunk;
 }
 
 export interface Repeat
 {
 	body: Chunk;
-	condition: Expression;
+	condition: ExpressionInterface;
 	token: Token;
 }
 
@@ -83,14 +71,14 @@ export interface Do
 
 export interface Return
 {
-	values: Array<Expression>;
+	values: Array<ExpressionInterface>;
 	token: Token;
 }
 
 export interface Statement
 {
 	kind: StatementKindEnum;
-	expression?: Expression | undefined;
+	expression?: ExpressionInterface | undefined;
 	assignment?: Assignment | undefined;
 	local?: Local | undefined;
 	if?: IfBlock | undefined;

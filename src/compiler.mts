@@ -1,4 +1,4 @@
-import type { Chunk, Expression } from "./ast.mjs";
+import type { Chunk } from "./ast.mjs";
 import type { Do, For, IfBlock, NumericFor, Repeat, While } from "./ast.mjs";
 import type { Token } from "./lexer.mjs";
 import type { Assignment, Local, Return } from "./ast.mjs";
@@ -13,6 +13,7 @@ import { OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
 import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs";
 import type { ProgramInterface } from "./opcode/definition/interface/program.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
+import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 
 function compile_function(chunk: Chunk, token: Token, parameters: Array<Token>, functions: Array<Array<OpInterface>>): number
 {
@@ -101,7 +102,7 @@ function compile_value(value: ValueInterface | undefined, functions: Array<Array
 }
 
 function compile_operation(
-	expression: Expression,
+	expression: ExpressionInterface,
 	operation: OpCodeEnum,
 	functions: Array<Array<OpInterface>>
 ): Array<OpInterface>
@@ -123,8 +124,8 @@ function compile_operation(
 }
 
 function compile_call(
-	func: Expression | undefined,
-	args: Array<Expression> | undefined,
+	func: ExpressionInterface | undefined,
+	args: Array<ExpressionInterface> | undefined,
 	functions: Array<Array<OpInterface>>
 ): Array<OpInterface>
 {
@@ -149,8 +150,8 @@ function compile_call(
 }
 
 function compile_index(
-	target: Expression | undefined,
-	index: Expression | undefined,
+	target: ExpressionInterface | undefined,
+	index: ExpressionInterface | undefined,
 	functions: Array<Array<OpInterface>>
 ): Array<OpInterface>
 {
@@ -169,7 +170,7 @@ function compile_index(
 }
 
 function compile_unary_operation(
-	expression: Expression | undefined,
+	expression: ExpressionInterface | undefined,
 	operation: OpCodeEnum,
 	functions: Array<Array<OpInterface>>
 ): Array<OpInterface>
@@ -187,7 +188,7 @@ function compile_unary_operation(
 	return ops;
 }
 
-function compile_expression(expression: Expression | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_expression(expression: ExpressionInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (expression === undefined)
 	{
@@ -344,7 +345,7 @@ function compile_local(local: Local | undefined): Array<OpInterface>
 	);
 }
 
-function compile_inverted_conditional_jump(condition: Expression | undefined, jump_by: number, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_inverted_conditional_jump(condition: ExpressionInterface | undefined, jump_by: number, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (condition === undefined)
 	{
@@ -391,7 +392,7 @@ function compile_inverted_conditional_jump(condition: Expression | undefined, ju
 	return ops;
 }
 
-function compile_conditional_jump(condition: Expression | undefined, jump_by: number, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_conditional_jump(condition: ExpressionInterface | undefined, jump_by: number, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (condition === undefined)
 	{
@@ -586,7 +587,7 @@ function compile_for(for_block: For | undefined, functions: Array<Array<OpInterf
 	return ops;
 }
 
-function compile_step(step: Expression | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+function compile_step(step: ExpressionInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
 {
 	if (step === undefined)
 	{

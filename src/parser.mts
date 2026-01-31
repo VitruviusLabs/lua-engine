@@ -1,7 +1,8 @@
-import type { Chunk, ElseIfBlock, Expression, Statement } from "./ast.mjs";
+import type { Chunk, ElseIfBlock, Statement } from "./ast.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
+import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 import { type Token, type TokenStream, token_kind_to_string } from "./lexer.mjs";
 import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
@@ -62,7 +63,7 @@ function consume(stream: TokenStream, kind: TokenKindEnum): boolean
 	return true;
 }
 
-function parse_table_key(stream: TokenStream): Expression | Error
+function parse_table_key(stream: TokenStream): ExpressionInterface | Error
 {
 	if (consume(stream, TokenKindEnum.OpenSquare))
 	{
@@ -113,7 +114,7 @@ function parse_table(stream: TokenStream): ValueInterface | Error
 		return squigly_open;
 	}
 
-	const elements: Map<Expression, Expression> = new Map();
+	const elements: Map<ExpressionInterface, ExpressionInterface> = new Map();
 	let current_numeric_key = 1;
 
 	while (stream.peek().kind !== TokenKindEnum.SquiglyClose)
@@ -221,7 +222,7 @@ function unary_type_to_expression_kind(kind: TokenKindEnum): ExpressionKind
 	}
 }
 
-function parse_unary_operator(stream: TokenStream): Expression | Error
+function parse_unary_operator(stream: TokenStream): ExpressionInterface | Error
 {
 	const operator_token = stream.next();
 	const operator = unary_type_to_expression_kind(operator_token.kind);
@@ -240,7 +241,7 @@ function parse_unary_operator(stream: TokenStream): Expression | Error
 	};
 }
 
-function parse_value_expression(stream: TokenStream): Expression | Error
+function parse_value_expression(stream: TokenStream): ExpressionInterface | Error
 {
 	if (consume(stream, TokenKindEnum.OpenBrace))
 	{
@@ -282,10 +283,10 @@ function parse_value_expression(stream: TokenStream): Expression | Error
 	return parse_access_expression(expression_value, stream);
 }
 
-function parse_call(func: Expression, stream: TokenStream): Expression | Error
+function parse_call(func: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
 {
 	const open_brace = stream.next();
-	const args: Array<Expression> = [];
+	const args: Array<ExpressionInterface> = [];
 
 	while (stream.peek().kind !== TokenKindEnum.CloseBrace)
 	{
@@ -319,7 +320,7 @@ function parse_call(func: Expression, stream: TokenStream): Expression | Error
 	}, stream);
 }
 
-function parse_index(table: Expression, stream: TokenStream): Expression | Error
+function parse_index(table: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
 {
 	const open_square = stream.next();
 	const index = parse_expression(stream);
@@ -347,7 +348,7 @@ function parse_index(table: Expression, stream: TokenStream): Expression | Error
 	);
 }
 
-function parse_dot(table: Expression, stream: TokenStream): Expression | Error
+function parse_dot(table: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
 {
 	const dot = stream.next();
 	const index = expect(stream, TokenKindEnum.Identifier);
@@ -373,7 +374,7 @@ function parse_dot(table: Expression, stream: TokenStream): Expression | Error
 	}, stream);
 }
 
-function parse_single_argument_call(func: Expression, stream: TokenStream): Expression | Error
+function parse_single_argument_call(func: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
 {
 	const argument = parse_expression(stream);
 
@@ -390,7 +391,7 @@ function parse_single_argument_call(func: Expression, stream: TokenStream): Expr
 	};
 }
 
-function parse_access_expression(expression: Expression, stream: TokenStream): Expression | Error
+function parse_access_expression(expression: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
 {
 	// eslint-disable-next-line @ts/switch-exhaustiveness-check
 	switch (stream.peek().kind)
@@ -449,7 +450,7 @@ function operation_type_to_expression_kind(
 function parse_operation(
 	stream: TokenStream,
 	order: number
-): Expression | Error
+): ExpressionInterface | Error
 {
 	if (order >= ORDERS.length)
 	{
@@ -493,7 +494,7 @@ function parse_operation(
 	return lhs;
 }
 
-function parse_expression(stream: TokenStream): Expression | Error
+function parse_expression(stream: TokenStream): ExpressionInterface | Error
 {
 	if (stream.peek().kind === TokenKindEnum.BitXOrNot)
 	{
@@ -503,7 +504,7 @@ function parse_expression(stream: TokenStream): Expression | Error
 	return parse_operation(stream, 0);
 }
 
-function parse_local_statement(local: Token, values: Array<Expression>): Statement | Error
+function parse_local_statement(local: Token, values: Array<ExpressionInterface>): Statement | Error
 {
 	const names: Array<Token> = [];
 
@@ -531,7 +532,7 @@ function parse_local_statement(local: Token, values: Array<Expression>): Stateme
 function parse_assign_or_expression(stream: TokenStream): Statement | Error
 {
 	const local = expect(stream, TokenKindEnum.Local);
-	const lhs: Array<Expression> = [];
+	const lhs: Array<ExpressionInterface> = [];
 
 	while (lhs.length === 0 || consume(stream, TokenKindEnum.Comma))
 	{
@@ -558,7 +559,7 @@ function parse_assign_or_expression(stream: TokenStream): Statement | Error
 		return parse_local_statement(local, lhs);
 	}
 
-	const rhs: Array<Expression> = [];
+	const rhs: Array<ExpressionInterface> = [];
 
 	while (rhs.length === 0 || consume(stream, TokenKindEnum.Comma))
 	{
@@ -592,7 +593,7 @@ function parse_return(stream: TokenStream): Statement | Error
 		return ret;
 	}
 
-	const values: Array<Expression> = [];
+	const values: Array<ExpressionInterface> = [];
 
 	while (values.length === 0 || consume(stream, TokenKindEnum.Comma))
 	{
@@ -805,7 +806,7 @@ function parse_numeric_for(index: Token, stream: TokenStream): Statement | Error
 		return end;
 	}
 
-	let step: Expression | undefined = undefined;
+	let step: ExpressionInterface | undefined = undefined;
 
 	if (consume(stream, TokenKindEnum.Comma))
 	{
