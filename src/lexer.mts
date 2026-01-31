@@ -1,15 +1,11 @@
 import { StateEnum } from "./lexer/definition/enum/state.enum.mjs";
 import { TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
-
-export interface Debug {
-	line: number;
-	column: number;
-}
+import type { DebugInterface } from "./lexer/definition/interface/debug.interface.mjs";
 
 export interface Token {
 	data: string;
 	kind: TokenKindEnum;
-	debug: Debug;
+	debug: DebugInterface;
 }
 
 const single_token_map: Map<string, TokenKindEnum> = new Map([
@@ -85,7 +81,7 @@ export class TokenStream
 	private state: StateEnum;
 	private end_of_stream: boolean = false;
 	private buffer: string;
-	private token_start_debug: Debug;
+	private token_start_debug: DebugInterface;
 
 	private line: number;
 	private column: number;

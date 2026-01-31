@@ -1,11 +1,11 @@
-import type { Debug } from "./lexer.mjs";
+import type { DebugInterface } from "./lexer/definition/interface/debug.interface.mjs";
 
 class RuntimeError extends Error
 {
 	protected readonly line: number | undefined = undefined;
 	protected readonly column: number | undefined = undefined;
 
-	public constructor(message: string, options?: ErrorOptions, debug?: Debug)
+	public constructor(message: string, options?: ErrorOptions, debug?: DebugInterface)
 	{
 		super(message, options);
 
