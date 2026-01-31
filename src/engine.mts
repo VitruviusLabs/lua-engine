@@ -23,6 +23,7 @@ import { OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
 import { op_code_name } from "./opcode/op-code-name/op-code-name.mjs";
 import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs";
 import { index } from "./engine/index/index.mjs";
+import type { LuaOptionsInterface } from "./engine/interface/lua-options.interface.mjs";
 
 function is_true(val: Variable | undefined): boolean
 {
@@ -37,14 +38,6 @@ function is_true(val: Variable | undefined): boolean
 	}
 
 	return true;
-}
-
-export interface LuaOptions
-{
-	trace?: boolean;
-	trace_instructions?: boolean;
-	trace_stack?: boolean;
-	locals?: Map<string, Variable>;
 }
 
 export class Engine
@@ -213,7 +206,7 @@ export class Engine
 		return return_values;
 	}
 
-	async run_for_steps(steps: number, options?: LuaOptions): Promise<Variable | Error | undefined>
+	async run_for_steps(steps: number, options?: LuaOptionsInterface): Promise<Variable | Error | undefined>
 	{
 		if (this.error !== undefined)
 		{
@@ -247,7 +240,7 @@ export class Engine
 		return this.stack_get(0);
 	}
 
-	async run(options?: LuaOptions): Promise<Variable | Error>
+	async run(options?: LuaOptionsInterface): Promise<Variable | Error>
 	{
 		const result = await this.run_for_steps(1000, options);
 
@@ -914,7 +907,7 @@ export class Engine
 		return undefined;
 	}
 
-	async step(options?: LuaOptions): Promise<Error | undefined>
+	async step(options?: LuaOptionsInterface): Promise<Error | undefined>
 	{
 		if (this.error !== undefined)
 		{
