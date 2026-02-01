@@ -2,18 +2,8 @@ import { State, type StateEnum } from "./lexer/definition/enum/state.enum.mjs";
 import { TokenKind, type TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 import type { DebugInterface } from "./lexer/definition/interface/debug.interface.mjs";
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
+import { get_double_token } from "./lexer/get-double-token/get-double-token.mjs";
 import { get_single_token } from "./lexer/get-single-token/get-single-token.mjs";
-
-const double_token_map: Map<string, TokenKindEnum> = new Map([
-	["==", TokenKind.Equals],
-	["<=", TokenKind.LessThanEquals],
-	[">=", TokenKind.GreaterThanEquals],
-	["~=", TokenKind.NotEquals],
-	["..", TokenKind.Concat],
-	["//", TokenKind.FloorDivision],
-	["<<", TokenKind.BitShiftLeft],
-	[">>", TokenKind.BitShiftRight],
-]);
 
 const keyword_map: Map<string, TokenKindEnum> = new Map([
 	["function", TokenKind.FunctionLike],
@@ -174,7 +164,7 @@ export class TokenStream
 				return;
 			}
 
-			const dobule_token_type = double_token_map.get(double);
+			const dobule_token_type = get_double_token(double);
 
 			if (dobule_token_type !== undefined)
 			{
