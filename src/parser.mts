@@ -21,20 +21,7 @@ import { parse } from "./parser/parse/parse.mjs";
 import { unary_type_to_expression_kind } from "./parser/unary-type-to-expression-kind/unary-type-to-expression-kind.mjs";
 import { getDebug } from "./lexer/utility/get-debug.mjs";
 import { isUnaryOperatorToken } from "./parser/is-unary-operator/is-unary-operator.mjs";
-
-const ORDERS = [
-	[TokenKind.Or],
-	[TokenKind.And],
-	[TokenKind.LessThan, TokenKind.LessThanEquals, TokenKind.GreaterThan, TokenKind.GreaterThanEquals, TokenKind.Equals, TokenKind.NotEquals],
-	[TokenKind.BitOr],
-	[TokenKind.BitAnd],
-	[TokenKind.BitXOrNot],
-	[TokenKind.BitShiftLeft, TokenKind.BitShiftRight],
-	[TokenKind.Concat],
-	[TokenKind.Addition, TokenKind.Subtract],
-	[TokenKind.Multiply, TokenKind.Division, TokenKind.FloorDivision, TokenKind.Modulo],
-	[TokenKind.Exponent],
-];
+import { get_orders } from "./parser/get-orders/get-orders.mjs";
 
 function parse_table_key(stream: TokenStream): ExpressionInterface | Error
 {
@@ -379,7 +366,7 @@ function parse_operation(
 	order: number
 ): ExpressionInterface | Error
 {
-	if (order >= ORDERS.length)
+	if (order >= get_orders().length)
 	{
 		return parse_value_expression(stream);
 	}
@@ -391,7 +378,7 @@ function parse_operation(
 		return lhs;
 	}
 
-	const orders_order = ORDERS[order];
+	const orders_order = get_orders()[order];
 
 	if (orders_order === undefined)
 	{
