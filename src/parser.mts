@@ -20,12 +20,7 @@ import { parse_local_statement } from "./parser/parse-local-statement/parse-loca
 import { parse } from "./parser/parse/parse.mjs";
 import { unary_type_to_expression_kind } from "./parser/unary-type-to-expression-kind/unary-type-to-expression-kind.mjs";
 import { getDebug } from "./lexer/utility/get-debug.mjs";
-
-const UNARY = [
-	TokenKind.Not,
-	TokenKind.Subtract,
-	TokenKind.Hash,
-];
+import { isUnaryOperatorToken } from "./parser/is-unary-operator/is-unary-operator.mjs";
 
 const ORDERS = [
 	[TokenKind.Or],
@@ -228,7 +223,7 @@ function parse_value_expression(stream: TokenStream): ExpressionInterface | Erro
 		return sub_expression;
 	}
 
-	if (isEnumValue(stream.peek().kind, UNARY))
+	if (isUnaryOperatorToken(stream.peek().kind))
 	{
 		return parse_unary_operator(stream);
 	}
