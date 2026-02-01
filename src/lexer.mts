@@ -1,35 +1,10 @@
 import { State, type StateEnum } from "./lexer/definition/enum/state.enum.mjs";
-import { TokenKind, type TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
+import { TokenKind } from "./lexer/definition/enum/token-kind.enum.mjs";
 import type { DebugInterface } from "./lexer/definition/interface/debug.interface.mjs";
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
 import { get_double_token } from "./lexer/get-double-token/get-double-token.mjs";
+import { get_keyword } from "./lexer/get-keyword/get-keyword.mjs";
 import { get_single_token } from "./lexer/get-single-token/get-single-token.mjs";
-
-const keyword_map: Map<string, TokenKindEnum> = new Map([
-	["function", TokenKind.FunctionLike],
-	["if", TokenKind.If],
-	["while", TokenKind.While],
-	["for", TokenKind.For],
-	["repeat", TokenKind.Repeat],
-	["in", TokenKind.In],
-	["do", TokenKind.Do],
-	["then", TokenKind.Then],
-	["elseif", TokenKind.ElseIf],
-	["else", TokenKind.Else],
-	["until", TokenKind.Until],
-	["end", TokenKind.End],
-	["return", TokenKind.Return],
-	["break", TokenKind.Break],
-
-	["and", TokenKind.And],
-	["or", TokenKind.Or],
-	["not", TokenKind.Not],
-
-	["true", TokenKind.BooleanLiteral],
-	["false", TokenKind.BooleanLiteral],
-	["nil", TokenKind.NilLiteral],
-	["local", TokenKind.Local],
-]);
 
 export class TokenStream
 {
@@ -304,7 +279,7 @@ export class TokenStream
 
 		if (!/[a-zA-Z0-9_]/.test(c))
 		{
-			const kind = keyword_map.get(this.buffer);
+			const kind = get_keyword(this.buffer);
 
 			this.peek_queue.push({
 				data: this.buffer,
