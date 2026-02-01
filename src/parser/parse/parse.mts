@@ -1,6 +1,6 @@
 import type { ChunkInterface } from "../../ast/definition/interface/chunk.interface.mjs";
 import type { TokenStream } from "../../lexer.mjs";
-import { TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
+import { TokenKind, type TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
 import { parse_statement } from "../parse-statement/parse-statement.mjs";
 
 function parse(stream: TokenStream, ...end_tokens: Array<TokenKindEnum>): ChunkInterface | Error
@@ -9,7 +9,7 @@ function parse(stream: TokenStream, ...end_tokens: Array<TokenKindEnum>): ChunkI
 
 	if (end_tokens.length === 0)
 	{
-		end_tokens.push(TokenKindEnum.EOF);
+		end_tokens.push(TokenKind.EOF);
 	}
 
 	for (;;)

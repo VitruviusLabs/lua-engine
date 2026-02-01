@@ -1,7 +1,7 @@
-import { StatementKindEnum } from "../../ast/definition/enum/statement-kind.enum.mjs";
+import { StatementKind } from "../../ast/definition/enum/statement-kind.enum.mjs";
 import type { StatementInterface } from "../../ast/definition/interface/statement.interface.mjs";
 import type { TokenStream } from "../../lexer.mjs";
-import { TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
+import { TokenKind, type TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
 import { token_kind_to_string } from "../../lexer/token-kind-to-string/token-kind-to-string.mjs";
 import { parse_assign_or_expression, parse_do, parse_for, parse_function, parse_if, parse_repeat, parse_return, parse_while } from "../../parser.mjs";
 import { to_error } from "../error/to-error.mjs";
@@ -14,34 +14,34 @@ function parse_statement(stream: TokenStream, end_tokens: Array<TokenKindEnum>):
 	// eslint-disable-next-line @ts/switch-exhaustiveness-check
 	switch (token.kind)
 	{
-		case TokenKindEnum.Identifier:
-		case TokenKindEnum.NilLiteral:
-		case TokenKindEnum.StringLiteral:
-		case TokenKindEnum.NumberLiteral:
-		case TokenKindEnum.BooleanLiteral:
-		case TokenKindEnum.SquiglyOpen:
-		case TokenKindEnum.Local:
+		case TokenKind.Identifier:
+		case TokenKind.NilLiteral:
+		case TokenKind.StringLiteral:
+		case TokenKind.NumberLiteral:
+		case TokenKind.BooleanLiteral:
+		case TokenKind.SquiglyOpen:
+		case TokenKind.Local:
 			return parse_assign_or_expression(stream);
-		case TokenKindEnum.Return:
+		case TokenKind.Return:
 			return parse_return(stream);
-		case TokenKindEnum.Break:
+		case TokenKind.Break:
 			return parse_break(stream);
-		case TokenKindEnum.If:
+		case TokenKind.If:
 			return parse_if(stream);
-		case TokenKindEnum.While:
+		case TokenKind.While:
 			return parse_while(stream);
-		case TokenKindEnum.For:
+		case TokenKind.For:
 			return parse_for(stream);
-		case TokenKindEnum.Repeat:
+		case TokenKind.Repeat:
 			return parse_repeat(stream);
-		case TokenKindEnum.Do:
+		case TokenKind.Do:
 			return parse_do(stream);
-		case TokenKindEnum.FunctionLike:
+		case TokenKind.FunctionLike:
 			return parse_function(stream);
-		case TokenKindEnum.Semicolon:
+		case TokenKind.Semicolon:
 			stream.next();
 
-			return { kind: StatementKindEnum.Empty };
+			return { kind: StatementKind.Empty };
 
 		default:
 		{

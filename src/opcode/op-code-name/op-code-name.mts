@@ -1,60 +1,110 @@
-import { OpCodeEnum } from "../definition/enum/op-code.enum.mjs";
+import { OpCode, type OpCodeEnum } from "../definition/enum/op-code.enum.mjs";
 
-// eslint-disable-next-line complexity
+// eslint-disable-next-line complexity, max-lines-per-function
 function op_code_name(op_code: OpCodeEnum): string
 {
 	switch (op_code)
 	{
-		case OpCodeEnum.Load: return "Load";
-		case OpCodeEnum.Store: return "Store";
-		case OpCodeEnum.Push: return "Push";
-		case OpCodeEnum.Pop: return "Pop";
-		case OpCodeEnum.Dup: return "Dup";
-		case OpCodeEnum.Swap: return "Swap";
-		case OpCodeEnum.IterUpdateState: return "IterUpdateState";
-		case OpCodeEnum.IterNext: return "IterNext";
-		case OpCodeEnum.IterJumpIfDone: return "IterJumpIfDone";
-		case OpCodeEnum.NewTable: return "NewTable";
-		case OpCodeEnum.LoadIndex: return "LoadIndex";
-		case OpCodeEnum.StoreIndex: return "StoreIndex";
-		case OpCodeEnum.Add: return "Add";
-		case OpCodeEnum.Subtract: return "Subtract";
-		case OpCodeEnum.Multiply: return "Multiply";
-		case OpCodeEnum.Divide: return "Divide";
-		case OpCodeEnum.FloorDivide: return "FloorDivide";
-		case OpCodeEnum.Modulo: return "Modulo";
-		case OpCodeEnum.Exponent: return "Exponent";
-		case OpCodeEnum.Concat: return "Concat";
-		case OpCodeEnum.BitAnd: return "BitAnd";
-		case OpCodeEnum.BitOr: return "BitOr";
-		case OpCodeEnum.BitXOr: return "BitXOr";
-		case OpCodeEnum.BitNot: return "BitNot";
-		case OpCodeEnum.BitShiftLeft: return "BitShiftLeft";
-		case OpCodeEnum.BitShiftRight: return "BitShiftRight";
-		case OpCodeEnum.Equals: return "Equals";
-		case OpCodeEnum.NotEquals: return "NotEquals";
-		case OpCodeEnum.LessThan: return "LessThan";
-		case OpCodeEnum.LessThanEquals: return "LessThanEquals";
-		case OpCodeEnum.GreaterThan: return "GreaterThan";
-		case OpCodeEnum.GreaterThanEquals: return "GreaterThanEquals";
-		case OpCodeEnum.And: return "And";
-		case OpCodeEnum.Or: return "Or";
-		case OpCodeEnum.Not: return "Not";
-		case OpCodeEnum.Negate: return "Negate";
-		case OpCodeEnum.Length: return "Length";
-		case OpCodeEnum.IsNotNil: return "IsNotNil";
-		case OpCodeEnum.StartBlock: return "StartBlock";
-		case OpCodeEnum.EndBlock: return "EndBlock";
-		case OpCodeEnum.MakeLocal: return "MakeLocal";
-		case OpCodeEnum.Call: return "Call";
-		case OpCodeEnum.Return: return "Return";
-		case OpCodeEnum.Jump: return "Jump";
-		case OpCodeEnum.JumpIfNot: return "JumpIfNot";
-		case OpCodeEnum.JumpIf: return "JumpIf";
-		case OpCodeEnum.StartStackChange: return "StartStackChange";
-		case OpCodeEnum.EndStackChange: return "EndStackChange";
-		case OpCodeEnum.ArgumentCount: return "ArgumentCount";
-		case OpCodeEnum.Break: return "Break[Debug]";
+		case OpCode.Load:
+			return "Load";
+		case OpCode.Store:
+			return "Store";
+		case OpCode.Push:
+			return "Push";
+		case OpCode.Pop:
+			return "Pop";
+		case OpCode.Dup:
+			return "Dup";
+		case OpCode.Swap:
+			return "Swap";
+		case OpCode.IterUpdateState:
+			return "IterUpdateState";
+		case OpCode.IterNext:
+			return "IterNext";
+		case OpCode.IterJumpIfDone:
+			return "IterJumpIfDone";
+		case OpCode.NewTable:
+			return "NewTable";
+		case OpCode.LoadIndex:
+			return "LoadIndex";
+		case OpCode.StoreIndex:
+			return "StoreIndex";
+		case OpCode.Add:
+			return "Add";
+		case OpCode.Subtract:
+			return "Subtract";
+		case OpCode.Multiply:
+			return "Multiply";
+		case OpCode.Divide:
+			return "Divide";
+		case OpCode.FloorDivide:
+			return "FloorDivide";
+		case OpCode.Modulo:
+			return "Modulo";
+		case OpCode.Exponent:
+			return "Exponent";
+		case OpCode.Concat:
+			return "Concat";
+		case OpCode.BitAnd:
+			return "BitAnd";
+		case OpCode.BitOr:
+			return "BitOr";
+		case OpCode.BitXOr:
+			return "BitXOr";
+		case OpCode.BitNot:
+			return "BitNot";
+		case OpCode.BitShiftLeft:
+			return "BitShiftLeft";
+		case OpCode.BitShiftRight:
+			return "BitShiftRight";
+		case OpCode.Equals:
+			return "Equals";
+		case OpCode.NotEquals:
+			return "NotEquals";
+		case OpCode.LessThan:
+			return "LessThan";
+		case OpCode.LessThanEquals:
+			return "LessThanEquals";
+		case OpCode.GreaterThan:
+			return "GreaterThan";
+		case OpCode.GreaterThanEquals:
+			return "GreaterThanEquals";
+		case OpCode.And:
+			return "And";
+		case OpCode.Or:
+			return "Or";
+		case OpCode.Not:
+			return "Not";
+		case OpCode.Negate:
+			return "Negate";
+		case OpCode.Length:
+			return "Length";
+		case OpCode.IsNotNil:
+			return "IsNotNil";
+		case OpCode.StartBlock:
+			return "StartBlock";
+		case OpCode.EndBlock:
+			return "EndBlock";
+		case OpCode.MakeLocal:
+			return "MakeLocal";
+		case OpCode.Call:
+			return "Call";
+		case OpCode.Return:
+			return "Return";
+		case OpCode.Jump:
+			return "Jump";
+		case OpCode.JumpIfNot:
+			return "JumpIfNot";
+		case OpCode.JumpIf:
+			return "JumpIf";
+		case OpCode.StartStackChange:
+			return "StartStackChange";
+		case OpCode.EndStackChange:
+			return "EndStackChange";
+		case OpCode.ArgumentCount:
+			return "ArgumentCount";
+		case OpCode.Break:
+			return "Break[Debug]";
 	}
 }
 

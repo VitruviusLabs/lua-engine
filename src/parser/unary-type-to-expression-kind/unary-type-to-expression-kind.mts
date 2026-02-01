@@ -1,14 +1,19 @@
-import { ExpressionKind } from "../../ast/definition/enum/expression-kind.enum.mjs";
-import { TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
+import { ExpressionKind, type ExpressionKindEnum } from "../../ast/definition/enum/expression-kind.enum.mjs";
+import { TokenKind, type TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
 
-function unary_type_to_expression_kind(kind: TokenKindEnum): ExpressionKind
+function unary_type_to_expression_kind(kind: TokenKindEnum): ExpressionKindEnum
 {
+	// eslint-disable-next-line @ts/switch-exhaustiveness-check -- Only unary expressions
 	switch (kind)
 	{
-		case TokenKindEnum.Not: return ExpressionKind.Not;
-		case TokenKindEnum.Subtract: return ExpressionKind.Negate;
-		case TokenKindEnum.Hash: return ExpressionKind.Length;
-		case TokenKindEnum.BitXOrNot: return ExpressionKind.BitNot;
+		case TokenKind.Not:
+			return ExpressionKind.Not;
+		case TokenKind.Subtract:
+			return ExpressionKind.Negate;
+		case TokenKind.Hash:
+			return ExpressionKind.Length;
+		case TokenKind.BitXOrNot:
+			return ExpressionKind.BitNot;
 
 		default:
 			throw new Error();

@@ -1,12 +1,12 @@
-import { StatementKindEnum } from "../../ast/definition/enum/statement-kind.enum.mjs";
+import { StatementKind } from "../../ast/definition/enum/statement-kind.enum.mjs";
 import type { StatementInterface } from "../../ast/definition/interface/statement.interface.mjs";
 import type { TokenStream } from "../../lexer.mjs";
-import { TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
+import { TokenKind } from "../../lexer/definition/enum/token-kind.enum.mjs";
 import { expect } from "../expect/expect.mjs";
 
 function parse_break(stream: TokenStream): StatementInterface | Error
 {
-	const break_token = expect(stream, TokenKindEnum.Break);
+	const break_token = expect(stream, TokenKind.Break);
 
 	if (break_token instanceof Error)
 	{
@@ -14,7 +14,7 @@ function parse_break(stream: TokenStream): StatementInterface | Error
 	}
 
 	return {
-		kind: StatementKindEnum.Break,
+		kind: StatementKind.Break,
 	};
 }
 

@@ -1,37 +1,58 @@
-import { ExpressionKind } from "../../ast/definition/enum/expression-kind.enum.mjs";
-import { TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
+import { ExpressionKind, type ExpressionKindEnum } from "../../ast/definition/enum/expression-kind.enum.mjs";
+import { TokenKind, type TokenKindEnum } from "../../lexer/definition/enum/token-kind.enum.mjs";
 
 function operation_type_to_expression_kind(
 	operation_type: TokenKindEnum
-): ExpressionKind
+): ExpressionKindEnum
 {
-	// eslint-disable-next-line @ts/switch-exhaustiveness-check
+	// eslint-disable-next-line @ts/switch-exhaustiveness-check -- Not all operations are expressions
 	switch (operation_type)
 	{
-		case TokenKindEnum.Addition: return ExpressionKind.Addition;
-		case TokenKindEnum.Subtract: return ExpressionKind.Subtract;
-		case TokenKindEnum.Multiply: return ExpressionKind.Multiplication;
-		case TokenKindEnum.Division: return ExpressionKind.Division;
-		case TokenKindEnum.FloorDivision: return ExpressionKind.FloorDivision;
-		case TokenKindEnum.Modulo: return ExpressionKind.Modulo;
-		case TokenKindEnum.Exponent: return ExpressionKind.Exponent;
-		case TokenKindEnum.Concat: return ExpressionKind.Concat;
-		case TokenKindEnum.BitAnd: return ExpressionKind.BitAnd;
-		case TokenKindEnum.BitOr: return ExpressionKind.BitOr;
-		case TokenKindEnum.BitXOrNot: return ExpressionKind.BitXOr;
-		case TokenKindEnum.BitShiftLeft: return ExpressionKind.BitShiftLeft;
-		case TokenKindEnum.BitShiftRight: return ExpressionKind.BitShiftRight;
-		case TokenKindEnum.LessThan: return ExpressionKind.LessThan;
-		case TokenKindEnum.LessThanEquals: return ExpressionKind.LessThanEquals;
-		case TokenKindEnum.GreaterThan: return ExpressionKind.GreaterThan;
-		case TokenKindEnum.GreaterThanEquals: return ExpressionKind.GreaterThanEquals;
-		case TokenKindEnum.Equals: return ExpressionKind.Equals;
-		case TokenKindEnum.NotEquals: return ExpressionKind.NotEquals;
-		case TokenKindEnum.And: return ExpressionKind.And;
-		case TokenKindEnum.Or: return ExpressionKind.Or;
+		case TokenKind.Addition:
+			return ExpressionKind.Addition;
+		case TokenKind.Subtract:
+			return ExpressionKind.Subtract;
+		case TokenKind.Multiply:
+			return ExpressionKind.Multiplication;
+		case TokenKind.Division:
+			return ExpressionKind.Division;
+		case TokenKind.FloorDivision:
+			return ExpressionKind.FloorDivision;
+		case TokenKind.Modulo:
+			return ExpressionKind.Modulo;
+		case TokenKind.Exponent:
+			return ExpressionKind.Exponent;
+		case TokenKind.Concat:
+			return ExpressionKind.Concat;
+		case TokenKind.BitAnd:
+			return ExpressionKind.BitAnd;
+		case TokenKind.BitOr:
+			return ExpressionKind.BitOr;
+		case TokenKind.BitXOrNot:
+			return ExpressionKind.BitXOr;
+		case TokenKind.BitShiftLeft:
+			return ExpressionKind.BitShiftLeft;
+		case TokenKind.BitShiftRight:
+			return ExpressionKind.BitShiftRight;
+		case TokenKind.LessThan:
+			return ExpressionKind.LessThan;
+		case TokenKind.LessThanEquals:
+			return ExpressionKind.LessThanEquals;
+		case TokenKind.GreaterThan:
+			return ExpressionKind.GreaterThan;
+		case TokenKind.GreaterThanEquals:
+			return ExpressionKind.GreaterThanEquals;
+		case TokenKind.Equals:
+			return ExpressionKind.Equals;
+		case TokenKind.NotEquals:
+			return ExpressionKind.NotEquals;
+		case TokenKind.And:
+			return ExpressionKind.And;
+		case TokenKind.Or:
+			return ExpressionKind.Or;
 
 		default:
-			throw new Error();
+			throw new Error(`"${operation_type}" is not an expression operation.`);
 	}
 }
 

@@ -1,62 +1,120 @@
-import { TokenKindEnum } from "../definition/enum/token-kind.enum.mjs";
+import { TokenKind, type TokenKindEnum } from "../definition/enum/token-kind.enum.mjs";
 
-// eslint-disable-next-line complexity
+// eslint-disable-next-line complexity, max-lines-per-function
 function token_kind_to_string(kind: TokenKindEnum): string
 {
 	switch (kind)
 	{
-		case TokenKindEnum.EOF: return "EOF";
-		case TokenKindEnum.NotFinished: return "NotFinished";
-		case TokenKindEnum.Identifier: return "Identifier";
-		case TokenKindEnum.StringLiteral: return "StringLiteral";
-		case TokenKindEnum.BooleanLiteral: return "BooleanLiteral";
-		case TokenKindEnum.NumberLiteral: return "NumberLiteral";
-		case TokenKindEnum.NilLiteral: return "nil";
-		case TokenKindEnum.OpenBrace: return "(";
-		case TokenKindEnum.CloseBrace: return ")";
-		case TokenKindEnum.OpenSquare: return "[";
-		case TokenKindEnum.CloseSquare: return "]";
-		case TokenKindEnum.SquiglyOpen: return "{";
-		case TokenKindEnum.SquiglyClose: return "}";
-		case TokenKindEnum.Addition: return "+";
-		case TokenKindEnum.Subtract: return "-";
-		case TokenKindEnum.Multiply: return "*";
-		case TokenKindEnum.Division: return "/";
-		case TokenKindEnum.FloorDivision: return "//";
-		case TokenKindEnum.Modulo: return "%";
-		case TokenKindEnum.Exponent: return "^";
-		case TokenKindEnum.BitAnd: return "&";
-		case TokenKindEnum.BitOr: return "|";
-		case TokenKindEnum.BitXOrNot: return "~";
-		case TokenKindEnum.BitShiftLeft: return "<<";
-		case TokenKindEnum.BitShiftRight: return ">>";
-		case TokenKindEnum.LessThan: return "<";
-		case TokenKindEnum.GreaterThan: return ">";
-		case TokenKindEnum.And: return "and";
-		case TokenKindEnum.Or: return "or";
-		case TokenKindEnum.Not: return "not";
-		case TokenKindEnum.Assign: return "=";
-		case TokenKindEnum.Semicolon: return ";";
-		case TokenKindEnum.Comma: return ",";
-		case TokenKindEnum.Dot: return ".";
-		case TokenKindEnum.FunctionLike: return "function";
-		case TokenKindEnum.If: return "if";
-		case TokenKindEnum.While: return "while";
-		case TokenKindEnum.For: return "for";
-		case TokenKindEnum.Repeat: return "repeat";
-		case TokenKindEnum.In: return "in";
-		case TokenKindEnum.Do: return "do";
-		case TokenKindEnum.Then: return "then";
-		case TokenKindEnum.ElseIf: return "elseif";
-		case TokenKindEnum.Else: return "else";
-		case TokenKindEnum.Until: return "until";
-		case TokenKindEnum.End: return "end";
-		case TokenKindEnum.Return: return "return";
-		case TokenKindEnum.Break: return "break";
-		case TokenKindEnum.Local: return "local";
-
-		default:
-			return "unknown token";
+		case TokenKind.EOF:
+			return "EOF";
+		case TokenKind.NotFinished:
+			return "NotFinished";
+		case TokenKind.Identifier:
+			return "Identifier";
+		case TokenKind.StringLiteral:
+			return "StringLiteral";
+		case TokenKind.BooleanLiteral:
+			return "BooleanLiteral";
+		case TokenKind.NumberLiteral:
+			return "NumberLiteral";
+		case TokenKind.NilLiteral:
+			return "nil";
+		case TokenKind.OpenBrace:
+			return "(";
+		case TokenKind.CloseBrace:
+			return ")";
+		case TokenKind.OpenSquare:
+			return "[";
+		case TokenKind.CloseSquare:
+			return "]";
+		case TokenKind.SquiglyOpen:
+			return "{";
+		case TokenKind.SquiglyClose:
+			return "}";
+		case TokenKind.Addition:
+			return "+";
+		case TokenKind.Subtract:
+			return "-";
+		case TokenKind.Multiply:
+			return "*";
+		case TokenKind.Division:
+			return "/";
+		case TokenKind.FloorDivision:
+			return "//";
+		case TokenKind.Modulo:
+			return "%";
+		case TokenKind.Exponent:
+			return "^";
+		case TokenKind.BitAnd:
+			return "&";
+		case TokenKind.BitOr:
+			return "|";
+		case TokenKind.BitXOrNot:
+			return "~";
+		case TokenKind.BitShiftLeft:
+			return "<<";
+		case TokenKind.BitShiftRight:
+			return ">>";
+		case TokenKind.Equals:
+			return "==";
+		case TokenKind.NotEquals:
+			return "~=";
+		case TokenKind.LessThan:
+			return "<";
+		case TokenKind.LessThanEquals:
+			return "<=";
+		case TokenKind.GreaterThan:
+			return ">";
+		case TokenKind.GreaterThanEquals:
+			return ">=";
+		case TokenKind.And:
+			return "and";
+		case TokenKind.Or:
+			return "or";
+		case TokenKind.Not:
+			return "not";
+		case TokenKind.Assign:
+			return "=";
+		case TokenKind.Semicolon:
+			return ";";
+		case TokenKind.Comma:
+			return ",";
+		case TokenKind.Dot:
+			return ".";
+		case TokenKind.FunctionLike:
+			return "function";
+		case TokenKind.If:
+			return "if";
+		case TokenKind.While:
+			return "while";
+		case TokenKind.For:
+			return "for";
+		case TokenKind.Repeat:
+			return "repeat";
+		case TokenKind.In:
+			return "in";
+		case TokenKind.Do:
+			return "do";
+		case TokenKind.Then:
+			return "then";
+		case TokenKind.ElseIf:
+			return "elseif";
+		case TokenKind.Else:
+			return "else";
+		case TokenKind.Until:
+			return "until";
+		case TokenKind.End:
+			return "end";
+		case TokenKind.Return:
+			return "return";
+		case TokenKind.Break:
+			return "break";
+		case TokenKind.Local:
+			return "local";
+		case TokenKind.Concat:
+			return "..";
+		case TokenKind.Hash:
+			return "#";
 	}
 }
 

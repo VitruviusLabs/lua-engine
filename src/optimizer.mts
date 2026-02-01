@@ -1,6 +1,7 @@
+import { isEnumValue } from "@vitruvius-labs/ts-predicate";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
-import { StatementKindEnum } from "./ast/definition/enum/statement-kind.enum.mjs";
-import { ValueKindEnum } from "./ast/definition/enum/value-kind.enum.mjs";
+import { StatementKind } from "./ast/definition/enum/statement-kind.enum.mjs";
+import { ValueKind } from "./ast/definition/enum/value-kind.enum.mjs";
 import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
 import type { ChunkInterface } from "./ast/definition/interface/chunk.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
@@ -13,10 +14,10 @@ import type { ValueInterface } from "./ast/definition/interface/value.interface.
 import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
 
 const CONSTANT_VALUES = [
-	ValueKindEnum.NilLiteral,
-	ValueKindEnum.NumberLiteral,
-	ValueKindEnum.BooleanLiteral,
-	ValueKindEnum.StringLiteral,
+	ValueKind.NilLiteral,
+	ValueKind.NumberLiteral,
+	ValueKind.BooleanLiteral,
+	ValueKind.StringLiteral,
 ];
 
 function compute_arithmetic_operation(
@@ -34,7 +35,7 @@ function compute_arithmetic_operation(
 	}
 
 	return {
-		kind: ValueKindEnum.NumberLiteral,
+		kind: ValueKind.NumberLiteral,
 		number: operation(lhs.number ?? 0, rhs.number ?? 0),
 		token: expression.token,
 	};
@@ -55,7 +56,7 @@ function compute_comparison_operation(
 	}
 
 	return {
-		kind: ValueKindEnum.BooleanLiteral,
+		kind: ValueKind.BooleanLiteral,
 		boolean: operation(lhs.number ?? 0, rhs.number ?? 0),
 		token: expression.token,
 	};
@@ -63,7 +64,7 @@ function compute_comparison_operation(
 
 function compute_logical_operation(
 	expression: ExpressionInterface,
-	operation: ExpressionKind.And | ExpressionKind.Or,
+	operation: typeof ExpressionKind.And | typeof ExpressionKind.Or,
 	constants: Map<string, ValueInterface>
 ): ValueInterface | undefined
 {
@@ -75,7 +76,7 @@ function compute_logical_operation(
 		return undefined;
 	}
 
-	const lhs_falsy: boolean = lhs.kind === ValueKindEnum.NilLiteral || lhs.kind === ValueKindEnum.BooleanLiteral && !(lhs.boolean ?? true);
+	const lhs_falsy: boolean = lhs.kind === ValueKind.NilLiteral || lhs.kind === ValueKind.BooleanLiteral && !(lhs.boolean ?? true);
 
 	if (operation === ExpressionKind.And)
 	{
@@ -86,6 +87,7 @@ function compute_logical_operation(
 }
 
 // @TODO: Fix complexity warning
+// eslint-disable-next-line max-lines-per-function, complexity
 function compute_constant_expression(
 	expression: ExpressionInterface | undefined,
 	constants: Map<string, ValueInterface>
@@ -107,12 +109,12 @@ function compute_constant_expression(
 
 			const value = expression.value;
 
-			if (CONSTANT_VALUES.includes(value.kind))
+			if (isEnumValue(value.kind, CONSTANT_VALUES))
 			{
 				return value;
 			}
 
-			if (value.kind === ValueKindEnum.Variable && constants.has(value.identifier ?? ""))
+			if (value.kind === ValueKind.Variable && constants.has(value.identifier ?? ""))
 			{
 				return constants.get(value.identifier ?? "");
 			}
@@ -311,7 +313,7 @@ function compute_constant_expression(
 			}
 
 			return {
-				kind: ValueKindEnum.BooleanLiteral,
+				kind: ValueKind.BooleanLiteral,
 				boolean: !(lhs.boolean ?? false),
 				token: expression.token,
 			};
@@ -327,7 +329,7 @@ function compute_constant_expression(
 			}
 
 			return {
-				kind: ValueKindEnum.NumberLiteral,
+				kind: ValueKind.NumberLiteral,
 				number: -(lhs.number ?? 0),
 				token: expression.token,
 			};
@@ -336,7 +338,10 @@ function compute_constant_expression(
 		case ExpressionKind.Length:
 			return undefined;
 
-		default:
+		case ExpressionKind.Call:
+			return undefined;
+
+		case ExpressionKind.Index:
 			return undefined;
 	}
 }
@@ -568,35 +573,35 @@ export function optimize_chunk(chunk: ChunkInterface, parent_constants?: Map<str
 	{
 		switch (statement.kind)
 		{
-			case StatementKindEnum.Assignment:
+			case StatementKind.Assignment:
 				optimize_assignment(statement.assignment, constants);
 				break;
 
-			case StatementKindEnum.Expression:
+			case StatementKind.Expression:
 				optimize_expression(statement.expression, constants);
 				break;
 
-			case StatementKindEnum.If:
+			case StatementKind.If:
 				optimize_if(statement.if, constants);
 				break;
 
-			case StatementKindEnum.While:
+			case StatementKind.While:
 				optimize_while(statement.if, constants);
 				break;
 
-			case StatementKindEnum.For:
+			case StatementKind.For:
 				optimize_for(statement.for, constants);
 				break;
 
-			case StatementKindEnum.NumericFor:
+			case StatementKind.NumericFor:
 				optimize_numeric_for(statement.numeric_for, constants);
 				break;
 
-			case StatementKindEnum.Repeat:
+			case StatementKind.Repeat:
 				optimize_repeat(statement.repeat, constants);
 				break;
 
-			case StatementKindEnum.Do:
+			case StatementKind.Do:
 				if (statement.do !== undefined)
 				{
 					optimize_chunk(statement.do.body, constants);
@@ -604,7 +609,7 @@ export function optimize_chunk(chunk: ChunkInterface, parent_constants?: Map<str
 
 				break;
 
-			case StatementKindEnum.Return:
+			case StatementKind.Return:
 				for (const expression of statement.return?.values ?? [])
 				{
 					optimize_expression(expression, constants);
@@ -612,8 +617,8 @@ export function optimize_chunk(chunk: ChunkInterface, parent_constants?: Map<str
 
 				break;
 
-			case StatementKindEnum.Local:
-			case StatementKindEnum.Break:
+			case StatementKind.Local:
+			case StatementKind.Break:
 				break;
 		}
 	}
