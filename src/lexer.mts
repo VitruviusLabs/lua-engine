@@ -93,6 +93,23 @@ export class TokenStream
 		this.peek_queue = [];
 	}
 
+	public peek(count = 1): TokenInterface
+	{
+		while (this.peek_queue.length < count)
+		{
+			this.on_char();
+		}
+
+		const token = this.peek_queue[count - 1];
+
+		if (token === undefined)
+		{
+			throw new Error();
+		}
+
+		return token;
+	}
+
 	private current(): string | undefined
 	{
 		if (this.processing_stream.length > 0)
@@ -576,22 +593,5 @@ this.consume();
 		}
 
 		return this.peek_queue.shift() as TokenInterface;
-	}
-
-	peek(count = 1): TokenInterface
-	{
-		while (this.peek_queue.length < count)
-		{
-			this.on_char();
-		}
-
-		const token = this.peek_queue[count - 1];
-
-		if (token === undefined)
-		{
-			throw new Error();
-		}
-
-		return token;
 	}
 }

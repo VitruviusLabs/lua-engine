@@ -126,7 +126,7 @@ function compile_operation(
 
 	ops.push(...compile_expression(rhs, functions));
 	ops.push(...compile_expression(lhs, functions));
-	ops.push({ code: operation, debug: expression.token.debug });
+	ops.push({ code: operation, debug: expression.token.peek().debug });
 
 	return ops;
 }
@@ -142,7 +142,7 @@ function compile_call(
 		throw new Error();
 	}
 
-	const debug = func.token.debug;
+	const debug = func.token.peek().debug;
 	const ops: Array<OpInterface> = [];
 
 	for (const arg of args)
@@ -172,7 +172,7 @@ function compile_index(
 
 	ops.push(...compile_expression(index, functions));
 	ops.push(...compile_expression(target, functions));
-	ops.push({ code: OpCodeEnum.LoadIndex, debug: target.token.debug });
+	ops.push({ code: OpCodeEnum.LoadIndex, debug: target.token.peek().debug });
 
 	return ops;
 }
@@ -191,7 +191,7 @@ function compile_unary_operation(
 	const ops: Array<OpInterface> = [];
 
 	ops.push(...compile_expression(expression.expression, functions));
-	ops.push({ code: operation, debug: expression.token.debug });
+	ops.push({ code: operation, debug: expression.token.peek().debug });
 
 	return ops;
 }
@@ -289,7 +289,7 @@ function compile_assignment(assignment: AssignmentInterface | undefined, functio
 
 	for (const lhs of assignment.lhs)
 	{
-		const debug = lhs.token.debug;
+		const debug = lhs.token.peek().debug;
 
 		switch (lhs.kind)
 		{
@@ -361,7 +361,7 @@ function compile_inverted_conditional_jump(condition: ExpressionInterface | unde
 	}
 
 	const ops: Array<OpInterface> = [];
-	const debug = condition.token.debug;
+	const debug = condition.token.peek().debug;
 
 	switch (condition.kind)
 	{
@@ -408,7 +408,7 @@ function compile_conditional_jump(condition: ExpressionInterface | undefined, ju
 	}
 
 	const ops: Array<OpInterface> = [];
-	const debug = condition.token.debug;
+	const debug = condition.token.peek().debug;
 
 	switch (condition.kind)
 	{
@@ -748,7 +748,7 @@ function compile_chunk(chunk: ChunkInterface, functions: Array<Array<OpInterface
 				}
 				else
 				{
-					ops.push({ code: OpCodeEnum.Pop, debug: statement.expression.token.debug });
+					ops.push({ code: OpCodeEnum.Pop, debug: statement.expression.token.peek().debug });
 				}
 
 				break;

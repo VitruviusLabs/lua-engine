@@ -93,9 +93,11 @@ function parse_table(stream: TokenStream): ValueInterface | Error
 	const elements: Map<ExpressionInterface, ExpressionInterface> = new Map();
 	let current_numeric_key = 1;
 
-	while (stream.peek().kind !== TokenKindEnum.SquiglyClose)
+	let tokenInterface: TokenInterface = stream.peek();
+
+	do
 	{
-		const element = parse_table_key(stream);
+		const element: ExpressionInterface | Error = parse_table_key(stream);
 
 		if (element instanceof Error)
 		{
@@ -118,7 +120,7 @@ function parse_table(stream: TokenStream): ValueInterface | Error
 			const key_token = {
 				kind: TokenKindEnum.NumberLiteral,
 				data: current_numeric_key.toString(),
-				debug: element.token.debug,
+				debug: tokenInterface.debug,
 			};
 
 			const key = {
@@ -139,7 +141,9 @@ function parse_table(stream: TokenStream): ValueInterface | Error
 		{
 			break;
 		}
-	}
+
+		tokenInterface = stream.peek();
+	} while (tokenInterface.kind !== TokenKindEnum.SquiglyClose);
 
 	const close_squigly = expect(stream, TokenKindEnum.SquiglyClose);
 
