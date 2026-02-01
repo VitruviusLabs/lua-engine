@@ -2,34 +2,7 @@ import { State, type StateEnum } from "./lexer/definition/enum/state.enum.mjs";
 import { TokenKind, type TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 import type { DebugInterface } from "./lexer/definition/interface/debug.interface.mjs";
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
-
-const single_token_map: Map<string, TokenKindEnum> = new Map([
-	["(", TokenKind.OpenBrace],
-	[")", TokenKind.CloseBrace],
-	["[", TokenKind.OpenSquare],
-	["]", TokenKind.CloseSquare],
-	["{", TokenKind.SquiglyOpen],
-	["}", TokenKind.SquiglyClose],
-
-	["+", TokenKind.Addition],
-	["-", TokenKind.Subtract],
-	["*", TokenKind.Multiply],
-	["/", TokenKind.Division],
-	["%", TokenKind.Modulo],
-	["^", TokenKind.Exponent],
-	["&", TokenKind.BitAnd],
-	["|", TokenKind.BitOr],
-	["~", TokenKind.BitXOrNot],
-
-	["<", TokenKind.LessThan],
-	[">", TokenKind.GreaterThan],
-
-	["=", TokenKind.Assign],
-	[";", TokenKind.Semicolon],
-	[",", TokenKind.Comma],
-	[".", TokenKind.Dot],
-	["#", TokenKind.Hash],
-]);
+import { get_single_token } from "./lexer/get-single-token/get-single-token.mjs";
 
 const double_token_map: Map<string, TokenKindEnum> = new Map([
 	["==", TokenKind.Equals],
@@ -221,7 +194,7 @@ export class TokenStream
 			}
 		}
 
-		const single_token_type = single_token_map.get(c);
+		const single_token_type = get_single_token(c);
 
 		if (single_token_type !== undefined)
 		{
