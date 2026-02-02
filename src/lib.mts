@@ -6,7 +6,7 @@ import { assertVariableKind } from "./variable/predicate/assert-variable-kind.mj
 import { nil } from "./variable/nil.mjs";
 import type { Engine } from "./engine.mjs";
 import { make_variable } from "./runtime.mjs";
-import { ValidationError, assertArray, assertPopulatedArray, isCallable, isInteger, unary } from "@vitruvius-labs/ts-predicate";
+import { ValidationError, assertArray, assertInteger, assertPopulatedArray, isCallable, isInteger, unary } from "@vitruvius-labs/ts-predicate";
 import type { VariableNumber } from "./variable/definition/interface/variable-number.interface.mjs";
 import { assertVariable } from "./variable/predicate/assert-variable.mjs";
 import { VariableUnwrapUtility } from "./variable/unwrap-variable.mjs";
@@ -935,22 +935,22 @@ function math_ult(_: Engine, m: Variable, n: Variable): Array<Variable>
 	assertVariableKind(m, VariableKind.Number);
 	assertVariableKind(n, VariableKind.Number);
 
-	const buffer = Buffer.from(new ArrayBuffer(8));
+	assertInteger(m.number);
+	assertInteger(n.number);
 
-	buffer.writeInt32LE(m.number);
-	buffer.writeInt32LE(n.number, 4);
+	if ((m.number < 0) !== (n.number < 0))
+	{
+		return [make_boolean(n.number < 0)];
+	}
 
-	const m_unsigned = buffer.readUInt32LE();
-	const n_unsigned = buffer.readUInt32LE(4);
-
-	return [make_boolean(m_unsigned < n_unsigned)];
+	return [make_boolean(m.number < n.number)];
 }
 
-function fwrap(fn: NativeFunction): VariableNativeFunction
+function fwrap(callable: NativeFunction): VariableNativeFunction
 {
 	return {
 		data_type: VariableKind.NativeFunction,
-		native_function: fn,
+		native_function: callable,
 	};
 }
 
