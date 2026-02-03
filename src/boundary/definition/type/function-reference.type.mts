@@ -1,6 +1,6 @@
 interface FunctionReferenceType
 {
-	function_id: number | undefined;
+	function_id: number;
 }
 
 export type { FunctionReferenceType };

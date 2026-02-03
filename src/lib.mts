@@ -237,7 +237,7 @@ async function find(engine: Engine, table: Variable, matches: Variable): Promise
 
 	for (const [key, value] of entries)
 	{
-		const result = await engine.call(matches, value);
+		const result: Array<Variable> | Error = await engine.call(matches, value);
 
 		if (result instanceof Error)
 		{
@@ -248,7 +248,10 @@ async function find(engine: Engine, table: Variable, matches: Variable): Promise
 
 		assertVariableKind(matching, VariableKind.Boolean);
 
-		return [make_variable(key)];
+		if (matching.boolean)
+		{
+			return [make_variable(key)];
+		}
 	}
 
 	return [nil];

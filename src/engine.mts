@@ -1,5 +1,4 @@
-import { assertUnion, unary } from "@vitruvius-labs/ts-predicate";
-
+import { ValidationError, assertUnion, unary } from "@vitruvius-labs/ts-predicate";
 import { make_table } from "./runtime.mjs";
 import { TokenStream } from "./lexer.mjs";
 import { parse } from "./parser.mjs";
@@ -47,8 +46,8 @@ function is_true(val: Variable | undefined): boolean
 
 export class Engine
 {
-	private program: Array<OpInterface>;
 	private readonly globals: VariableTableMapType;
+	private program: Array<OpInterface>;
 	private start_ip: number = 0;
 
 	private ip: number = 0;
@@ -281,7 +280,7 @@ export class Engine
 
 	private stack_pop(): Variable
 	{
-		const value = this.stack.pop();
+		const value: Variable | undefined = this.stack.pop();
 
 		assertVariable(value);
 
@@ -321,12 +320,26 @@ export class Engine
 		this.stack.push(make_number(op(x.number, y.number)));
 	}
 
-	private compare(op: (x: number, y: number) => boolean): void
+	private compare(callable: (x: number | string, y: number | string) => boolean): void
 	{
-		const x = this.stack_pop_kind(VariableKind.Number);
-		const y = this.stack_pop_kind(VariableKind.Number);
+		const x: Variable = this.stack_pop();
+		const y: Variable = this.stack_pop();
 
-		this.stack.push(make_boolean(op(x.number, y.number)));
+		if (isVariableKind(x, VariableKind.Number) && isVariableKind(y, VariableKind.Number))
+		{
+			this.stack.push(make_boolean(callable(x.number, y.number)));
+
+			return;
+		}
+
+		if (isVariableKind(x, VariableKind.String) && isVariableKind(y, VariableKind.String))
+		{
+			this.stack.push(make_boolean(callable(x.string, y.string)));
+
+			return;
+		}
+
+		throw new ValidationError(`Cannot compare values of type '${x.data_type}' and '${y.data_type}'`);
 	}
 
 	private force_stack_height(expected: number, got: number): void
@@ -433,7 +446,7 @@ export class Engine
 
 			case OpCode.Add:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x + y;
 					}
@@ -442,7 +455,7 @@ export class Engine
 				break;
 			case OpCode.Subtract:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x - y;
 					}
@@ -451,7 +464,7 @@ export class Engine
 				break;
 			case OpCode.Multiply:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x * y;
 					}
@@ -460,7 +473,7 @@ export class Engine
 				break;
 			case OpCode.Divide:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x / y;
 					}
@@ -469,7 +482,7 @@ export class Engine
 				break;
 			case OpCode.FloorDivide:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return Math.floor(x / y);
 					}
@@ -478,7 +491,7 @@ export class Engine
 				break;
 			case OpCode.Modulo:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x % y;
 					}
@@ -487,7 +500,7 @@ export class Engine
 				break;
 			case OpCode.Exponent:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return Math.pow(x, y);
 					}
@@ -497,7 +510,7 @@ export class Engine
 
 			case OpCode.LessThan:
 				this.compare(
-					(x, y) =>
+					(x: number | string, y: number | string): boolean =>
 					{
 						return x < y;
 					}
@@ -506,7 +519,7 @@ export class Engine
 				break;
 			case OpCode.LessThanEquals:
 				this.compare(
-					(x, y) =>
+					(x: number | string, y: number | string): boolean =>
 					{
 						return x <= y;
 					}
@@ -515,7 +528,7 @@ export class Engine
 				break;
 			case OpCode.GreaterThan:
 				this.compare(
-					(x, y) =>
+					(x: number | string, y: number | string): boolean =>
 					{
 						return x > y;
 					}
@@ -524,7 +537,7 @@ export class Engine
 				break;
 			case OpCode.GreaterThanEquals:
 				this.compare(
-					(x, y) =>
+					(x: number | string, y: number | string): boolean =>
 					{
 						return x >= y;
 					}
@@ -534,7 +547,7 @@ export class Engine
 
 			case OpCode.BitAnd:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x & y;
 					}
@@ -543,7 +556,7 @@ export class Engine
 				break;
 			case OpCode.BitOr:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x | y;
 					}
@@ -552,7 +565,7 @@ export class Engine
 				break;
 			case OpCode.BitXOr:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x ^ y;
 					}
@@ -561,7 +574,7 @@ export class Engine
 				break;
 			case OpCode.BitShiftLeft:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x << y;
 					}
@@ -570,7 +583,7 @@ export class Engine
 				break;
 			case OpCode.BitShiftRight:
 				this.operation(
-					(x, y) =>
+					(x: number, y: number): number =>
 					{
 						return x >> y;
 					}

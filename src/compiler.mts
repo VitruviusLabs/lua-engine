@@ -25,6 +25,7 @@ import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 import { make_number } from "./runtime/make-number/make-number.mjs";
 import { make_string } from "./runtime/make-string/make-string.mjs";
 import { getDebug } from "./lexer/utility/get-debug.mjs";
+import { isVariableKind } from "./variable/predicate/is-variable-kind.mjs";
 
 function compile_function(chunk: ChunkInterface, token: TokenInterface | TokenStream, parameters: Array<TokenInterface>, functions: Array<Array<OpInterface>>): number
 {
@@ -811,8 +812,7 @@ function link(code: Array<OpInterface>, function_id: number, location: number): 
 {
 	for (const op of code)
 	{
-		if (op.arg?.data_type === VariableKind.Function
-			&& op.arg?.function_id === function_id)
+		if (isVariableKind(op.arg, VariableKind.Function) && op.arg.function_id === function_id)
 		{
 			op.arg.function_id = location;
 		}
