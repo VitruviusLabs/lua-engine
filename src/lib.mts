@@ -215,8 +215,6 @@ function table_sort(engine: Engine, table: Variable, by: Variable): Array<Variab
 		([_, a], [__, b]) =>
 		{
 			const result = engine.call(by, a, b)
-			if (result instanceof Error)
-				return 0
 
 			const comparison = result.at(0)
 			assertVariableKind(comparison, VariableKind.Number);
@@ -237,12 +235,7 @@ async function find(engine: Engine, table: Variable, matches: Variable): Promise
 
 	for (const [key, value] of entries)
 	{
-		const result: Array<Variable> | Error = await engine.call(matches, value);
-
-		if (result instanceof Error)
-		{
-			throw result;
-		}
+		const result: Array<Variable> = await engine.call(matches, value);
 
 		const matching: Variable | undefined = result.at(0);
 

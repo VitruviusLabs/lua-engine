@@ -4,13 +4,13 @@ import type { TokenInterface } from "../../lexer/definition/interface/token.inte
 import { token_kind_to_string } from "../../lexer/token-kind-to-string/token-kind-to-string.mjs";
 import { to_error } from "../error/to-error.mjs";
 
-function expect(stream: TokenStream, kind: TokenKindEnum): TokenInterface | Error
+function expect(stream: TokenStream, kind: TokenKindEnum): TokenInterface
 {
 	const token = stream.peek();
 
 	if (token.kind !== kind)
 	{
-		return to_error(
+		to_error(
 			token,
 			`expected '${token_kind_to_string(kind)}', got '${token_kind_to_string(token.kind)}' instead`
 		);

@@ -4,25 +4,15 @@ import type { TokenInterface } from "../../lexer/definition/interface/token.inte
 import { consume } from "../consume/consume.mjs";
 import { expect } from "../expect/expect.mjs";
 
-function parse_function_params(stream: TokenStream): Array<TokenInterface> | Error
+function parse_function_params(stream: TokenStream): Array<TokenInterface>
 {
-	const open_brace = expect(stream, TokenKind.OpenBrace);
-
-	if (open_brace instanceof Error)
-	{
-		return open_brace;
-	}
+	expect(stream, TokenKind.OpenBrace);
 
 	const params: Array<TokenInterface> = [];
 
 	while (stream.peek().kind !== TokenKind.CloseBrace)
 	{
 		const param = expect(stream, TokenKind.Identifier);
-
-		if (param instanceof Error)
-		{
-			break;
-		}
 
 		params.push(param);
 
@@ -32,12 +22,7 @@ function parse_function_params(stream: TokenStream): Array<TokenInterface> | Err
 		}
 	}
 
-	const close_brace = expect(stream, TokenKind.CloseBrace);
-
-	if (close_brace instanceof Error)
-	{
-		return close_brace;
-	}
+	expect(stream, TokenKind.CloseBrace);
 
 	return params;
 }

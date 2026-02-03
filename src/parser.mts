@@ -23,33 +23,18 @@ import { getDebug } from "./lexer/utility/get-debug.mjs";
 import { isUnaryOperatorToken } from "./parser/is-unary-operator/is-unary-operator.mjs";
 import { get_orders } from "./parser/get-orders/get-orders.mjs";
 
-function parse_table_key(stream: TokenStream): ExpressionInterface | Error
+function parse_table_key(stream: TokenStream): ExpressionInterface
 {
 	if (consume(stream, TokenKind.OpenSquare))
 	{
 		const element = parse_expression(stream);
 
-		if (element instanceof Error)
-		{
-			return element;
-		}
-
-		const close_square = expect(stream, TokenKind.CloseSquare);
-
-		if (close_square instanceof Error)
-		{
-			return close_square;
-		}
+		expect(stream, TokenKind.CloseSquare);
 
 		return element;
 	}
 
 	const value = parse_value(stream);
-
-	if (value instanceof Error)
-	{
-		return value;
-	}
 
 	if (value.kind === ValueKind.Variable)
 	{
@@ -65,37 +50,22 @@ function parse_table_key(stream: TokenStream): ExpressionInterface | Error
 	};
 }
 
-function parse_table(stream: TokenStream): ValueInterface | Error
+function parse_table(stream: TokenStream): ValueInterface
 {
 	const squigly_open = expect(stream, TokenKind.SquiglyOpen);
-
-	if (squigly_open instanceof Error)
-	{
-		return squigly_open;
-	}
 
 	const elements: Map<ExpressionInterface, ExpressionInterface> = new Map();
 	let current_numeric_key = 1;
 
 	while (stream.peek().kind !== TokenKind.SquiglyClose)
 	{
-		const element: ExpressionInterface | Error = parse_table_key(stream);
-
-		if (element instanceof Error)
-		{
-			return element;
-		}
+		const element: ExpressionInterface = parse_table_key(stream);
 
 		const is_assign: boolean = consume(stream, TokenKind.Assign);
 
 		if (is_assign)
 		{
 			const value = parse_expression(stream);
-
-			if (value instanceof Error)
-			{
-				return value;
-			}
 
 			elements.set(element, value);
 		}
@@ -128,12 +98,7 @@ function parse_table(stream: TokenStream): ValueInterface | Error
 		}
 	}
 
-	const close_squigly = expect(stream, TokenKind.SquiglyClose);
-
-	if (close_squigly instanceof Error)
-	{
-		return close_squigly;
-	}
+	expect(stream, TokenKind.SquiglyClose);
 
 	return {
 		kind: ValueKind.TableLiteral,
@@ -142,7 +107,7 @@ function parse_table(stream: TokenStream): ValueInterface | Error
 	};
 }
 
-function parse_value(stream: TokenStream): ValueInterface | Error
+function parse_value(stream: TokenStream): ValueInterface
 {
 	const token = stream.peek();
 
@@ -166,21 +131,16 @@ function parse_value(stream: TokenStream): ValueInterface | Error
 			return parse_function_value(stream.next(), stream);
 
 		default:
-			return to_error(token, `Expected value, got ${token_kind_to_string(token.kind)} instead`);
+			to_error(token, `Expected value, got ${token_kind_to_string(token.kind)} instead`);
 	}
 }
 
-function parse_unary_operator(stream: TokenStream): ExpressionInterface | Error
+function parse_unary_operator(stream: TokenStream): ExpressionInterface
 {
 	const operator_token = stream.next();
 	const operator = unary_type_to_expression_kind(operator_token.kind);
 
 	const expression = parse_expression(stream);
-
-	if (expression instanceof Error)
-	{
-		return expression;
-	}
 
 	return {
 		kind: operator,
@@ -189,23 +149,13 @@ function parse_unary_operator(stream: TokenStream): ExpressionInterface | Error
 	};
 }
 
-function parse_value_expression(stream: TokenStream): ExpressionInterface | Error
+function parse_value_expression(stream: TokenStream): ExpressionInterface
 {
 	if (consume(stream, TokenKind.OpenBrace))
 	{
 		const sub_expression = parse_expression(stream);
 
-		if (sub_expression instanceof Error)
-		{
-			return sub_expression;
-		}
-
-		const close_brace = expect(stream, TokenKind.CloseBrace);
-
-		if (close_brace instanceof Error)
-		{
-			return close_brace;
-		}
+		expect(stream, TokenKind.CloseBrace);
 
 		return sub_expression;
 	}
@@ -217,11 +167,6 @@ function parse_value_expression(stream: TokenStream): ExpressionInterface | Erro
 
 	const value = parse_value(stream);
 
-	if (value instanceof Error)
-	{
-		return value;
-	}
-
 	const expression_value = {
 		kind: ExpressionKind.Value,
 		token: value.token,
@@ -231,7 +176,7 @@ function parse_value_expression(stream: TokenStream): ExpressionInterface | Erro
 	return parse_access_expression(expression_value, stream);
 }
 
-function parse_call(callable: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
+function parse_call(callable: ExpressionInterface, stream: TokenStream): ExpressionInterface
 {
 	const open_brace: TokenInterface = stream.next();
 	const args: Array<ExpressionInterface> = [];
@@ -239,11 +184,6 @@ function parse_call(callable: ExpressionInterface, stream: TokenStream): Express
 	while (stream.peek().kind !== TokenKind.CloseBrace)
 	{
 		const argument = parse_expression(stream);
-
-		if (argument instanceof Error)
-		{
-			break;
-		}
 
 		args.push(argument);
 
@@ -253,12 +193,7 @@ function parse_call(callable: ExpressionInterface, stream: TokenStream): Express
 		}
 	}
 
-	const close_brace = expect(stream, TokenKind.CloseBrace);
-
-	if (close_brace instanceof Error)
-	{
-		return close_brace;
-	}
+	expect(stream, TokenKind.CloseBrace);
 
 	return parse_access_expression({
 		kind: ExpressionKind.Call,
@@ -268,22 +203,12 @@ function parse_call(callable: ExpressionInterface, stream: TokenStream): Express
 	}, stream);
 }
 
-function parse_index(table: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
+function parse_index(table: ExpressionInterface, stream: TokenStream): ExpressionInterface
 {
 	const open_square = stream.next();
 	const index = parse_expression(stream);
 
-	if (index instanceof Error)
-	{
-		return index;
-	}
-
-	const close_square = expect(stream, TokenKind.CloseSquare);
-
-	if (close_square instanceof Error)
-	{
-		return close_square;
-	}
+	expect(stream, TokenKind.CloseSquare);
 
 	return parse_access_expression(
 		{
@@ -296,15 +221,10 @@ function parse_index(table: ExpressionInterface, stream: TokenStream): Expressio
 	);
 }
 
-function parse_dot(table: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
+function parse_dot(table: ExpressionInterface, stream: TokenStream): ExpressionInterface
 {
 	const dot = stream.next();
 	const index = expect(stream, TokenKind.Identifier);
-
-	if (index instanceof Error)
-	{
-		return index;
-	}
 
 	return parse_access_expression({
 		kind: ExpressionKind.Index,
@@ -322,14 +242,9 @@ function parse_dot(table: ExpressionInterface, stream: TokenStream): ExpressionI
 	}, stream);
 }
 
-function parse_single_argument_call(callable: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
+function parse_single_argument_call(callable: ExpressionInterface, stream: TokenStream): ExpressionInterface
 {
 	const argument = parse_expression(stream);
-
-	if (argument instanceof Error)
-	{
-		return argument;
-	}
 
 	return {
 		kind: ExpressionKind.Call,
@@ -339,7 +254,7 @@ function parse_single_argument_call(callable: ExpressionInterface, stream: Token
 	};
 }
 
-function parse_access_expression(expression: ExpressionInterface, stream: TokenStream): ExpressionInterface | Error
+function parse_access_expression(expression: ExpressionInterface, stream: TokenStream): ExpressionInterface
 {
 	// eslint-disable-next-line @ts/switch-exhaustiveness-check
 	switch (stream.peek().kind)
@@ -364,7 +279,7 @@ function parse_access_expression(expression: ExpressionInterface, stream: TokenS
 function parse_operation(
 	stream: TokenStream,
 	order: number
-): ExpressionInterface | Error
+): ExpressionInterface
 {
 	if (order >= get_orders().length)
 	{
@@ -372,11 +287,6 @@ function parse_operation(
 	}
 
 	let lhs = parse_operation(stream, order + 1);
-
-	if (lhs instanceof Error)
-	{
-		return lhs;
-	}
 
 	const orders_order = get_orders()[order];
 
@@ -389,11 +299,6 @@ function parse_operation(
 	{
 		const operation_type = stream.next();
 		const rhs = parse_operation(stream, order + 1);
-
-		if (rhs instanceof Error)
-		{
-			return rhs;
-		}
 
 		const expression_kind = operation_type_to_expression_kind(operation_type.kind);
 
@@ -408,7 +313,7 @@ function parse_operation(
 	return lhs;
 }
 
-function parse_expression(stream: TokenStream): ExpressionInterface | Error
+function parse_expression(stream: TokenStream): ExpressionInterface
 {
 	if (stream.peek().kind === TokenKind.BitXOrNot)
 	{
@@ -418,97 +323,102 @@ function parse_expression(stream: TokenStream): ExpressionInterface | Error
 	return parse_operation(stream, 0);
 }
 
-function parse_assign_or_expression(stream: TokenStream): StatementInterface | Error
+function parse_assign_or_expression(stream: TokenStream): StatementInterface
 {
-	const local = expect(stream, TokenKind.Local);
 	const lhs: Array<ExpressionInterface> = [];
 
 	while (lhs.length === 0 || consume(stream, TokenKind.Comma))
 	{
 		const lvalue = parse_expression(stream);
 
-		if (lvalue instanceof Error)
-		{
-			return lvalue;
-		}
-
 		lhs.push(lvalue);
 	}
 
-	const assign = expect(stream, TokenKind.Assign);
-
-	if (assign instanceof Error)
+	try
 	{
-		if (local instanceof Error)
+		const assign = expect(stream, TokenKind.Assign);
+		const rhs: Array<ExpressionInterface> = [];
+
+		while (rhs.length === 0 || consume(stream, TokenKind.Comma))
+		{
+			const rvalue = parse_expression(stream);
+
+			rhs.push(rvalue);
+		}
+
+		let is_local: boolean = false;
+
+		try
+		{
+			expect(stream, TokenKind.Local);
+
+			is_local = true;
+		}
+		catch
+		{
+			// Do Nothing
+		}
+
+		return {
+			kind: StatementKind.Assignment,
+			assignment: {
+				local: is_local,
+				lhs: lhs.reverse(),
+				rhs: rhs,
+				token: assign,
+			},
+		};
+	}
+	catch
+	{
+		try
+		{
+			const local = expect(stream, TokenKind.Local);
+
+			return parse_local_statement(local, lhs);
+		}
+		catch
 		{
 			// @TODO: Investigate as lhs[0] seems to always be undefined
 			return { kind: StatementKind.Expression, expression: lhs[0] };
 		}
-
-		return parse_local_statement(local, lhs);
 	}
-
-	const rhs: Array<ExpressionInterface> = [];
-
-	while (rhs.length === 0 || consume(stream, TokenKind.Comma))
-	{
-		const rvalue = parse_expression(stream);
-
-		if (rvalue instanceof Error)
-		{
-			return rvalue;
-		}
-
-		rhs.push(rvalue);
-	}
-
-	return {
-		kind: StatementKind.Assignment,
-		assignment: {
-			local: !(local instanceof Error),
-			lhs: lhs.reverse(),
-			rhs: rhs,
-			token: assign,
-		},
-	};
 }
 
-function parse_return(stream: TokenStream): StatementInterface | Error
+function parse_return(stream: TokenStream): StatementInterface
 {
-	const ret = expect(stream, TokenKind.Return);
-
-	if (ret instanceof Error)
-	{
-		return ret;
-	}
+	const result = expect(stream, TokenKind.Return);
 
 	const values: Array<ExpressionInterface> = [];
 
 	while (values.length === 0 || consume(stream, TokenKind.Comma))
 	{
-		const value = parse_expression(stream);
-
-		if (value instanceof Error)
+		try
 		{
+			const value = parse_expression(stream);
+
+			values.push(value);
+		}
+		catch (error)
+		{
+			// @TODO: Why this handling?
 			if (values.length > 0)
 			{
-				return value;
+				throw error;
 			}
 
 			break;
 		}
-
-		values.push(value);
 	}
 
 	if (values.length === 0)
 	{
 		values.push({
 			kind: ExpressionKind.Value,
-			token: ret,
+			token: result,
 			value: {
 				kind: ValueKind.NilLiteral,
-				token: ret,
+				token: result,
 			},
 		});
 	}
@@ -517,92 +427,48 @@ function parse_return(stream: TokenStream): StatementInterface | Error
 		kind: StatementKind.Return,
 		return: {
 			values: values,
-			token: ret,
+			token: result,
 		},
 	};
 }
 
-function parse_if(stream: TokenStream): StatementInterface | Error
+function parse_if(stream: TokenStream): StatementInterface
 {
 	const if_token = expect(stream, TokenKind.If);
 
-	if (if_token instanceof Error)
-	{
-		return if_token;
-	}
-
 	const condition = parse_expression(stream);
 
-	if (condition instanceof Error)
-	{
-		return condition;
-	}
-
-	const then = expect(stream, TokenKind.Then);
-
-	if (then instanceof Error)
-	{
-		return then;
-	}
+	expect(stream, TokenKind.Then);
 
 	const body = parse(stream, TokenKind.Else, TokenKind.ElseIf, TokenKind.End);
 
-	if (body instanceof Error)
-	{
-		return body;
-	}
-
 	const else_if_bodies: Array<ElseIfBlockInterface> = [];
-	let else_body: ChunkInterface | undefined = undefined;
 
 	while (consume(stream, TokenKind.ElseIf))
 	{
-		const condition = parse_expression(stream);
+		const else_if_condition = parse_expression(stream);
 
-		if (condition instanceof Error)
-		{
-			return condition;
-		}
+		const else_if_then = expect(stream, TokenKind.Then);
 
-		const then = expect(stream, TokenKind.Then);
-
-		if (then instanceof Error)
-		{
-			return then;
-		}
-
-		const chunk = parse(stream, TokenKind.End, TokenKind.ElseIf, TokenKind.Else);
-
-		if (chunk instanceof Error)
-		{
-			return chunk;
-		}
+		const else_if_chunk = parse(stream, TokenKind.End, TokenKind.ElseIf, TokenKind.Else);
 
 		else_if_bodies.push({
-			body: chunk,
-			condition: condition,
-			token: then,
+			body: else_if_chunk,
+			condition: else_if_condition,
+			token: else_if_then,
 		});
 	}
+
+	let else_body: ChunkInterface | undefined = undefined;
 
 	if (consume(stream, TokenKind.Else))
 	{
 		const chunk = parse(stream, TokenKind.End);
 
-		if (chunk instanceof Error)
-		{
-			return chunk;
-		}
-
 		else_body = chunk;
 	}
 
-	const end = expect(stream, TokenKind.End);
-
-	if (end instanceof Error)
-	{
-		return end;
-	}
+	expect(stream, TokenKind.End);
 
 	return {
 		kind: StatementKind.If,
@@ -616,35 +482,15 @@ function parse_if(stream: TokenStream): StatementInterface | Error
 	};
 }
 
-function parse_while(stream: TokenStream): StatementInterface | Error
+function parse_while(stream: TokenStream): StatementInterface
 {
 	const while_token = expect(stream, TokenKind.While);
 
-	if (while_token instanceof Error)
-	{
-		return while_token;
-	}
-
 	const condition = parse_expression(stream);
 
-	if (condition instanceof Error)
-	{
-		return condition;
-	}
-
-	const do_token = expect(stream, TokenKind.Do);
-
-	if (do_token instanceof Error)
-	{
-		return do_token;
-	}
+	expect(stream, TokenKind.Do);
 
 	const body = parse(stream, TokenKind.End);
-
-	if (body instanceof Error)
-	{
-		return body;
-	}
 
 	consume(stream, TokenKind.End);
 
@@ -658,28 +504,13 @@ function parse_while(stream: TokenStream): StatementInterface | Error
 	};
 }
 
-function parse_numeric_for(index: TokenInterface, stream: TokenStream): StatementInterface | Error
+function parse_numeric_for(index: TokenInterface, stream: TokenStream): StatementInterface
 {
 	const start = parse_expression(stream);
 
-	if (start instanceof Error)
-	{
-		return start;
-	}
-
-	const comma = expect(stream, TokenKind.Comma);
-
-	if (comma instanceof Error)
-	{
-		return comma;
-	}
+	expect(stream, TokenKind.Comma);
 
 	const end = parse_expression(stream);
-
-	if (end instanceof Error)
-	{
-		return end;
-	}
 
 	let step: ExpressionInterface | undefined = undefined;
 
@@ -687,27 +518,12 @@ function parse_numeric_for(index: TokenInterface, stream: TokenStream): Statemen
 	{
 		const expression = parse_expression(stream);
 
-		if (expression instanceof Error)
-		{
-			return expression;
-		}
-
 		step = expression;
 	}
 
-	const do_token = expect(stream, TokenKind.Do);
-
-	if (do_token instanceof Error)
-	{
-		return do_token;
-	}
+	expect(stream, TokenKind.Do);
 
 	const body = parse(stream, TokenKind.End);
-
-	if (body instanceof Error)
-	{
-		return body;
-	}
 
 	consume(stream, TokenKind.End);
 
@@ -723,25 +539,15 @@ function parse_numeric_for(index: TokenInterface, stream: TokenStream): Statemen
 	};
 }
 
-function parse_for(stream: TokenStream): StatementInterface | Error
+function parse_for(stream: TokenStream): StatementInterface
 {
 	const for_token = expect(stream, TokenKind.For);
-
-	if (for_token instanceof Error)
-	{
-		return for_token;
-	}
 
 	const items: Array<TokenInterface> = [];
 
 	while (items.length === 0 || consume(stream, TokenKind.Comma))
 	{
 		const item = expect(stream, TokenKind.Identifier);
-
-		if (item instanceof Error)
-		{
-			return item;
-		}
 
 		items.push(item);
 	}
@@ -752,39 +558,19 @@ function parse_for(stream: TokenStream): StatementInterface | Error
 
 		if (token === undefined)
 		{
-			throw new Error();
+			throw new Error("Missing token for 'for' loop");
 		}
 
 		return parse_numeric_for(token, stream);
 	}
 
-	const in_token = expect(stream, TokenKind.In);
-
-	if (in_token instanceof Error)
-	{
-		return in_token;
-	}
+	expect(stream, TokenKind.In);
 
 	const iterator = parse_expression(stream);
 
-	if (iterator instanceof Error)
-	{
-		return iterator;
-	}
-
-	const do_token = expect(stream, TokenKind.Do);
-
-	if (do_token instanceof Error)
-	{
-		return do_token;
-	}
+	expect(stream, TokenKind.Do);
 
 	const body = parse(stream, TokenKind.End);
-
-	if (body instanceof Error)
-	{
-		return body;
-	}
 
 	consume(stream, TokenKind.End);
 
@@ -799,35 +585,15 @@ function parse_for(stream: TokenStream): StatementInterface | Error
 	};
 }
 
-function parse_repeat(stream: TokenStream): StatementInterface | Error
+function parse_repeat(stream: TokenStream): StatementInterface
 {
 	const repeat_token = expect(stream, TokenKind.Repeat);
 
-	if (repeat_token instanceof Error)
-	{
-		return repeat_token;
-	}
-
 	const body = parse(stream, TokenKind.Until);
 
-	if (body instanceof Error)
-	{
-		return body;
-	}
-
-	const until_token = expect(stream, TokenKind.Until);
-
-	if (until_token instanceof Error)
-	{
-		return until_token;
-	}
+	expect(stream, TokenKind.Until);
 
 	const condition = parse_expression(stream);
-
-	if (condition instanceof Error)
-	{
-		return condition;
-	}
 
 	return {
 		kind: StatementKind.Repeat,
@@ -839,28 +605,13 @@ function parse_repeat(stream: TokenStream): StatementInterface | Error
 	};
 }
 
-function parse_do(stream: TokenStream): StatementInterface | Error
+function parse_do(stream: TokenStream): StatementInterface
 {
 	const do_token = expect(stream, TokenKind.Do);
 
-	if (do_token instanceof Error)
-	{
-		return do_token;
-	}
-
 	const body = parse(stream, TokenKind.End);
 
-	if (body instanceof Error)
-	{
-		return body;
-	}
-
-	const end_token = expect(stream, TokenKind.End);
-
-	if (end_token instanceof Error)
-	{
-		return end_token;
-	}
+	expect(stream, TokenKind.End);
 
 	return {
 		kind: StatementKind.Do,
@@ -871,21 +622,11 @@ function parse_do(stream: TokenStream): StatementInterface | Error
 	};
 }
 
-function parse_function_value(function_token: TokenInterface, stream: TokenStream): ValueInterface | Error
+function parse_function_value(function_token: TokenInterface, stream: TokenStream): ValueInterface
 {
 	const params = parse_function_params(stream);
 
-	if (params instanceof Error)
-	{
-		return params;
-	}
-
 	const body = parse(stream, TokenKind.End);
-
-	if (body instanceof Error)
-	{
-		return body;
-	}
 
 	consume(stream, TokenKind.End);
 
@@ -899,21 +640,11 @@ function parse_function_value(function_token: TokenInterface, stream: TokenStrea
 	};
 }
 
-function parse_local_function(table_name: TokenInterface, stream: TokenStream): StatementInterface | Error
+function parse_local_function(table_name: TokenInterface, stream: TokenStream): StatementInterface
 {
 	const local_name = expect(stream, TokenKind.Identifier);
 
-	if (local_name instanceof Error)
-	{
-		return local_name;
-	}
-
 	const function_value = parse_function_value(local_name, stream);
-
-	if (function_value instanceof Error)
-	{
-		return function_value;
-	}
 
 	return {
 		kind: StatementKind.Assignment,
@@ -951,21 +682,11 @@ function parse_local_function(table_name: TokenInterface, stream: TokenStream): 
 	};
 }
 
-function parse_function(stream: TokenStream): StatementInterface | Error
+function parse_function(stream: TokenStream): StatementInterface
 {
-	const function_token = expect(stream, TokenKind.FunctionLike);
-
-	if (function_token instanceof Error)
-	{
-		return function_token;
-	}
+	expect(stream, TokenKind.FunctionLike);
 
 	const name = expect(stream, TokenKind.Identifier);
-
-	if (name instanceof Error)
-	{
-		return name;
-	}
 
 	if (consume(stream, TokenKind.Dot))
 	{
@@ -973,11 +694,6 @@ function parse_function(stream: TokenStream): StatementInterface | Error
 	}
 
 	const function_value = parse_function_value(name, stream);
-
-	if (function_value instanceof Error)
-	{
-		return function_value;
-	}
 
 	return {
 		kind: StatementKind.Assignment,

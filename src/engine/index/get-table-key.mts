@@ -1,6 +1,6 @@
 import { type Variable, VariableKind } from "../../_index.mjs";
 
-function index(value: Variable | undefined): string | number | undefined
+function getTableKey(value: Variable | undefined): string | number | undefined
 {
 	if (value === undefined)
 	{
@@ -20,4 +20,4 @@ function index(value: Variable | undefined): string | number | undefined
 	return undefined;
 }
 
-export { index };
+export { getTableKey };

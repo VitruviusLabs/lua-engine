@@ -6,7 +6,7 @@ import type { TokenStream } from "../../lexer.mjs";
 import type { TokenInterface } from "../../lexer/definition/interface/token.interface.mjs";
 import { to_error } from "../error/to-error.mjs";
 
-function parse_local_statement(local: TokenInterface, values: Array<ExpressionInterface>): StatementInterface | Error
+function parse_local_statement(local: TokenInterface, values: Array<ExpressionInterface>): StatementInterface
 {
 	const names: Array<TokenInterface | TokenStream> = [];
 
@@ -16,7 +16,7 @@ function parse_local_statement(local: TokenInterface, values: Array<ExpressionIn
 
 		if (value === undefined || value.kind !== ValueKind.Variable)
 		{
-			return to_error(expression.token, "Invalid local name");
+			to_error(expression.token, "Invalid local name");
 		}
 
 		names.push(value.token);

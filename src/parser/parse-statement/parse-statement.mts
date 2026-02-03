@@ -7,7 +7,7 @@ import { parse_assign_or_expression, parse_do, parse_for, parse_function, parse_
 import { to_error } from "../error/to-error.mjs";
 import { parse_break } from "../parse_break/parse-break.mjs";
 
-function parse_statement(stream: TokenStream, end_tokens: Array<TokenKindEnum>): StatementInterface | Error | undefined
+function parse_statement(stream: TokenStream, end_tokens: Array<TokenKindEnum>): StatementInterface | undefined
 {
 	const token = stream.peek();
 

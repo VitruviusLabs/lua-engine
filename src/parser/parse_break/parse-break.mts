@@ -4,14 +4,9 @@ import type { TokenStream } from "../../lexer.mjs";
 import { TokenKind } from "../../lexer/definition/enum/token-kind.enum.mjs";
 import { expect } from "../expect/expect.mjs";
 
-function parse_break(stream: TokenStream): StatementInterface | Error
+function parse_break(stream: TokenStream): StatementInterface
 {
-	const break_token = expect(stream, TokenKind.Break);
-
-	if (break_token instanceof Error)
-	{
-		return break_token;
-	}
+	expect(stream, TokenKind.Break);
 
 	return {
 		kind: StatementKind.Break,

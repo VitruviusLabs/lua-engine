@@ -1,109 +1,109 @@
-import { OpCode, type OpCodeEnum } from "../definition/enum/op-code.enum.mjs";
+import { OperationCode, type OperationCodeEnum } from "../definition/enum/operation-code.enum.mjs";
 
 // eslint-disable-next-line complexity, max-lines-per-function
-function op_code_name(op_code: OpCodeEnum): string
+function op_code_name(op_code: OperationCodeEnum): string
 {
 	switch (op_code)
 	{
-		case OpCode.Load:
+		case OperationCode.Load:
 			return "Load";
-		case OpCode.Store:
+		case OperationCode.Store:
 			return "Store";
-		case OpCode.Push:
+		case OperationCode.Push:
 			return "Push";
-		case OpCode.Pop:
+		case OperationCode.Pop:
 			return "Pop";
-		case OpCode.Dup:
+		case OperationCode.Dup:
 			return "Dup";
-		case OpCode.Swap:
+		case OperationCode.Swap:
 			return "Swap";
-		case OpCode.IterUpdateState:
+		case OperationCode.IterUpdateState:
 			return "IterUpdateState";
-		case OpCode.IterNext:
+		case OperationCode.IterNext:
 			return "IterNext";
-		case OpCode.IterJumpIfDone:
+		case OperationCode.IterJumpIfDone:
 			return "IterJumpIfDone";
-		case OpCode.NewTable:
+		case OperationCode.NewTable:
 			return "NewTable";
-		case OpCode.LoadIndex:
+		case OperationCode.LoadIndex:
 			return "LoadIndex";
-		case OpCode.StoreIndex:
+		case OperationCode.StoreIndex:
 			return "StoreIndex";
-		case OpCode.Add:
+		case OperationCode.Add:
 			return "Add";
-		case OpCode.Subtract:
+		case OperationCode.Subtract:
 			return "Subtract";
-		case OpCode.Multiply:
+		case OperationCode.Multiply:
 			return "Multiply";
-		case OpCode.Divide:
+		case OperationCode.Divide:
 			return "Divide";
-		case OpCode.FloorDivide:
+		case OperationCode.FloorDivide:
 			return "FloorDivide";
-		case OpCode.Modulo:
+		case OperationCode.Modulo:
 			return "Modulo";
-		case OpCode.Exponent:
+		case OperationCode.Exponent:
 			return "Exponent";
-		case OpCode.Concat:
+		case OperationCode.Concat:
 			return "Concat";
-		case OpCode.BitAnd:
+		case OperationCode.BitAnd:
 			return "BitAnd";
-		case OpCode.BitOr:
+		case OperationCode.BitOr:
 			return "BitOr";
-		case OpCode.BitXOr:
+		case OperationCode.BitXOr:
 			return "BitXOr";
-		case OpCode.BitNot:
+		case OperationCode.BitNot:
 			return "BitNot";
-		case OpCode.BitShiftLeft:
+		case OperationCode.BitShiftLeft:
 			return "BitShiftLeft";
-		case OpCode.BitShiftRight:
+		case OperationCode.BitShiftRight:
 			return "BitShiftRight";
-		case OpCode.Equals:
+		case OperationCode.Equals:
 			return "Equals";
-		case OpCode.NotEquals:
+		case OperationCode.NotEquals:
 			return "NotEquals";
-		case OpCode.LessThan:
+		case OperationCode.LessThan:
 			return "LessThan";
-		case OpCode.LessThanEquals:
+		case OperationCode.LessThanEquals:
 			return "LessThanEquals";
-		case OpCode.GreaterThan:
+		case OperationCode.GreaterThan:
 			return "GreaterThan";
-		case OpCode.GreaterThanEquals:
+		case OperationCode.GreaterThanEquals:
 			return "GreaterThanEquals";
-		case OpCode.And:
+		case OperationCode.And:
 			return "And";
-		case OpCode.Or:
+		case OperationCode.Or:
 			return "Or";
-		case OpCode.Not:
+		case OperationCode.Not:
 			return "Not";
-		case OpCode.Negate:
+		case OperationCode.Negate:
 			return "Negate";
-		case OpCode.Length:
+		case OperationCode.Length:
 			return "Length";
-		case OpCode.IsNotNil:
+		case OperationCode.IsNotNil:
 			return "IsNotNil";
-		case OpCode.StartBlock:
+		case OperationCode.StartBlock:
 			return "StartBlock";
-		case OpCode.EndBlock:
+		case OperationCode.EndBlock:
 			return "EndBlock";
-		case OpCode.MakeLocal:
+		case OperationCode.MakeLocal:
 			return "MakeLocal";
-		case OpCode.Call:
+		case OperationCode.Call:
 			return "Call";
-		case OpCode.Return:
+		case OperationCode.Return:
 			return "Return";
-		case OpCode.Jump:
+		case OperationCode.Jump:
 			return "Jump";
-		case OpCode.JumpIfNot:
+		case OperationCode.JumpIfNot:
 			return "JumpIfNot";
-		case OpCode.JumpIf:
+		case OperationCode.JumpIf:
 			return "JumpIf";
-		case OpCode.StartStackChange:
+		case OperationCode.StartStackChange:
 			return "StartStackChange";
-		case OpCode.EndStackChange:
+		case OperationCode.EndStackChange:
 			return "EndStackChange";
-		case OpCode.ArgumentCount:
+		case OperationCode.ArgumentCount:
 			return "ArgumentCount";
-		case OpCode.Break:
+		case OperationCode.Break:
 			return "Break[Debug]";
 	}
 }

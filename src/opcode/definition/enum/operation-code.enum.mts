@@ -1,4 +1,4 @@
-const OpCode = {
+const OperationCode = {
 	Load: "load",
 	Store: "store",
 	Push: "push",
@@ -38,6 +38,7 @@ const OpCode = {
 	GreaterThanEquals: "greater-than-equals",
 
 	And: "and",
+	// eslint-disable-next-line id-length
 	Or: "or",
 	Not: "not",
 
@@ -60,6 +61,6 @@ const OpCode = {
 	Break: "break",
 } as const satisfies Record<string, string>;
 
-type OpCodeEnum = typeof OpCode[keyof typeof OpCode];
+type OperationCodeEnum = typeof OperationCode[keyof typeof OperationCode];
 
-export { OpCode, type OpCodeEnum };
+export { OperationCode, type OperationCodeEnum };
