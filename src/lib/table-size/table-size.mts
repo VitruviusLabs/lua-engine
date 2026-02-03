@@ -4,7 +4,7 @@ function table_size(value: VariableTable): number
 {
 	let size: number = 0;
 
-	for (let i: number = 1; i < value.table.size; ++i)
+	for (let i: number = 1; i <= value.table.size; ++i)
 	{
 		if (!value.table.has(i))
 		{

@@ -225,7 +225,7 @@ class Compiler
 		return ops;
 	}
 
-	protected compileUnary_operation(expression: ExpressionInterface | undefined, operation: OperationCodeEnum): Array<OperationInterface>
+	protected compileUnaryOperation(expression: ExpressionInterface | undefined, operation: OperationCodeEnum): Array<OperationInterface>
 	{
 		if (expression === undefined || expression.expression === undefined)
 		{
@@ -302,13 +302,13 @@ class Compiler
 				return this.compileOperation(expression, OperationCode.Or);
 
 			case ExpressionKind.Not:
-				return this.compileUnary_operation(expression, OperationCode.Not);
+				return this.compileUnaryOperation(expression, OperationCode.Not);
 			case ExpressionKind.Negate:
-				return this.compileUnary_operation(expression, OperationCode.Negate);
+				return this.compileUnaryOperation(expression, OperationCode.Negate);
 			case ExpressionKind.Length:
-				return this.compileUnary_operation(expression, OperationCode.Length);
+				return this.compileUnaryOperation(expression, OperationCode.Length);
 			case ExpressionKind.BitNot:
-				return this.compileUnary_operation(expression, OperationCode.BitNot);
+				return this.compileUnaryOperation(expression, OperationCode.BitNot);
 		}
 	}
 
@@ -399,7 +399,7 @@ class Compiler
 		);
 	}
 
-	protected compileInverted_conditional_jump(condition: ExpressionInterface | undefined, jump_by: number): Array<OperationInterface>
+	protected compileInvertedConditionalJump(condition: ExpressionInterface | undefined, jump_by: number): Array<OperationInterface>
 	{
 		if (condition === undefined)
 		{
@@ -414,18 +414,18 @@ class Compiler
 		{
 			case ExpressionKind.And:
 			{
-				const rhs = this.compileInverted_conditional_jump(condition.rhs, jump_by);
+				const rhs = this.compileInvertedConditionalJump(condition.rhs, jump_by);
 
-				ops.push(...this.compileConditional_jump(condition.lhs, rhs.length));
+				ops.push(...this.compileConditionalJump(condition.lhs, rhs.length));
 				ops.push(...rhs);
 				break;
 			}
 
 			case ExpressionKind.Or:
 			{
-				const rhs = this.compileInverted_conditional_jump(condition.rhs, jump_by);
+				const rhs = this.compileInvertedConditionalJump(condition.rhs, jump_by);
 
-				ops.push(...this.compileInverted_conditional_jump(condition.lhs, rhs.length + jump_by));
+				ops.push(...this.compileInvertedConditionalJump(condition.lhs, rhs.length + jump_by));
 				ops.push(...rhs);
 				break;
 			}
@@ -447,7 +447,7 @@ class Compiler
 		return ops;
 	}
 
-	protected compileConditional_jump(condition: ExpressionInterface | undefined, jump_by: number): Array<OperationInterface>
+	protected compileConditionalJump(condition: ExpressionInterface | undefined, jump_by: number): Array<OperationInterface>
 	{
 		if (condition === undefined)
 		{
@@ -462,25 +462,25 @@ class Compiler
 		{
 			case ExpressionKind.And:
 			{
-				const rhs = this.compileConditional_jump(condition.rhs, jump_by);
+				const rhs = this.compileConditionalJump(condition.rhs, jump_by);
 
-				ops.push(...this.compileConditional_jump(condition.lhs, rhs.length + jump_by));
+				ops.push(...this.compileConditionalJump(condition.lhs, rhs.length + jump_by));
 				ops.push(...rhs);
 				break;
 			}
 
 			case ExpressionKind.Or:
 			{
-				const rhs = this.compileConditional_jump(condition.rhs, jump_by);
+				const rhs = this.compileConditionalJump(condition.rhs, jump_by);
 
-				ops.push(...this.compileInverted_conditional_jump(condition.lhs, rhs.length));
+				ops.push(...this.compileInvertedConditionalJump(condition.lhs, rhs.length));
 				ops.push(...rhs);
 				break;
 			}
 
 			case ExpressionKind.Not:
 			{
-				ops.push(...this.compileInverted_conditional_jump(condition.expression, jump_by));
+				ops.push(...this.compileInvertedConditionalJump(condition.expression, jump_by));
 				break;
 			}
 
@@ -516,7 +516,7 @@ class Compiler
 			const scoped_ops: Array<OperationInterface> = [];
 			const else_if_body = this.compileBlock(else_if_block.body);
 
-			scoped_ops.push(...this.compileConditional_jump(else_if_block.condition, else_if_body.length + 1));
+			scoped_ops.push(...this.compileConditionalJump(else_if_block.condition, else_if_body.length + 1));
 			scoped_ops.push(...else_if_body);
 
 			const else_if_offset: number = else_chunk.length + if_else_chunks.reduce(
@@ -541,7 +541,7 @@ class Compiler
 		const body = this.compileBlock(if_block.body);
 
 		ops.push({ code: OperationCode.StartBlock, debug: debug });
-		ops.push(...this.compileConditional_jump(if_block.condition, body.length + 1));
+		ops.push(...this.compileConditionalJump(if_block.condition, body.length + 1));
 		ops.push(...body);
 
 		const offset = if_else_chunks.reduce(
@@ -594,7 +594,7 @@ class Compiler
 		this.replace_breaks(body, 1);
 
 		ops.push({ code: OperationCode.StartBlock, debug: debug });
-		ops.push(...this.compileConditional_jump(while_block.condition, body.length + 1));
+		ops.push(...this.compileConditionalJump(while_block.condition, body.length + 1));
 		ops.push(...body);
 		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length - 1), debug: debug });
 		ops.push({ code: OperationCode.EndBlock, debug: debug });
@@ -659,7 +659,7 @@ class Compiler
 		return this.compileExpression(step);
 	}
 
-	protected compileNumeric_for(numeric_for_block: NumericForInterface | undefined): Array<OperationInterface>
+	protected compileNumericFor(numeric_for_block: NumericForInterface | undefined): Array<OperationInterface>
 	{
 		if (numeric_for_block === undefined)
 		{
@@ -677,7 +677,7 @@ class Compiler
 		ops.push({ code: OperationCode.StartBlock, debug: debug });
 		ops.push(...this.compileExpression(numeric_for_block.start));
 
-		const after_creating_itorator = ops.length;
+		const after_creating_iterator = ops.length;
 
 		ops.push({ code: OperationCode.Dup, debug: debug });
 		ops.push(...this.compileExpression(numeric_for_block.end));
@@ -689,7 +689,7 @@ class Compiler
 		ops.push({ code: OperationCode.Load, arg: make_string(index), debug: debug });
 		ops.push(...step);
 		ops.push({ code: OperationCode.Add, debug: debug });
-		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
+		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length + after_creating_iterator - 1), debug: debug });
 
 		ops.push({ code: OperationCode.Pop, debug: debug });
 		ops.push({ code: OperationCode.EndBlock, debug: debug });
@@ -710,7 +710,7 @@ class Compiler
 		ops.push({ code: OperationCode.StartBlock, debug: debug });
 
 		ops.push(...this.compileBlock(repeat.body));
-		ops.push(...this.compileInverted_conditional_jump(repeat.condition, 1));
+		ops.push(...this.compileInvertedConditionalJump(repeat.condition, 1));
 		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length), debug: debug });
 
 		ops.push({ code: OperationCode.EndBlock, debug: debug });
@@ -827,7 +827,7 @@ class Compiler
 					ops.push(...this.compileFor(statement.for));
 					break;
 				case StatementKind.NumericFor:
-					ops.push(...this.compileNumeric_for(statement.numeric_for));
+					ops.push(...this.compileNumericFor(statement.numeric_for));
 					break;
 				case StatementKind.Repeat:
 					ops.push(...this.compileRepeat(statement.repeat));

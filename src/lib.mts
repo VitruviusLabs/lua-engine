@@ -608,15 +608,17 @@ return variable_to_string(item);
 	return [make_string(result)];
 }
 
-function table_insert(_: Engine, list: Variable, index?: Variable, value?: Variable): Array<Variable>
+function table_insert(_: Engine, list: Variable, index: Variable, value?: Variable): Array<Variable>
 {
 	assertVariableKind(list, VariableKind.Table);
 
-	const size = table_size(list);
+	const size: number = table_size(list);
 
 	if (isNil(value))
 	{
-		return table_insert(_, list, make_number(size + 1), index);
+		list.table.set(size + 1, index);
+
+		return [nil];
 	}
 
 	assertVariableKind(index, VariableKind.Number);
