@@ -3,8 +3,8 @@ import { nil } from "./variable/nil.mjs";
 import { ValueKind } from "./ast/definition/enum/value-kind.enum.mjs";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKind } from "./ast/definition/enum/statement-kind.enum.mjs";
-import { OpCode, type OpCodeEnum } from "./opcode/definition/enum/op-code.enum.mjs";
-import type { OpInterface } from "./opcode/definition/interface/op.interface.mjs";
+import { OperationCode, type OperationCodeEnum } from "./opcode/definition/enum/operation-code.enum.mjs";
+import type { OperationInterface } from "./opcode/definition/interface/op.interface.mjs";
 import type { ProgramInterface } from "./opcode/definition/interface/program.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
@@ -27,833 +27,845 @@ import { make_string } from "./runtime/make-string/make-string.mjs";
 import { getDebug } from "./lexer/utility/get-debug.mjs";
 import { isVariableKind } from "./variable/predicate/is-variable-kind.mjs";
 
-function compile_function(chunk: ChunkInterface, token: TokenInterface | TokenStream, parameters: Array<TokenInterface>, functions: Array<Array<OpInterface>>): number
+interface ChunkResult
 {
-	const ops: Array<OpInterface> = [];
-
-	ops.push({ code: OpCode.ArgumentCount, arg: make_number(parameters.length), debug: token.debug });
-
-	for (const parameter of parameters.reverse())
-	{
-		ops.push({ code: OpCode.MakeLocal, arg: make_string(parameter.data), debug: parameter.debug });
-		ops.push({ code: OpCode.Store, arg: make_string(parameter.data), debug: parameter.debug });
-	}
-
-	ops.push(...compile_block(chunk, functions));
-	ops.push({ code: OpCode.Push, arg: nil, debug: token.debug });
-	ops.push({ code: OpCode.Return, arg: make_number(0), debug: token.debug });
-
-	functions.push(ops);
-
-	return functions.length - 1;
+	code: Array<OperationInterface>;
+	has_last_expression: boolean;
 }
 
-function compile_value(value: ValueInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
+class Compiler
 {
-	if (value === undefined)
+	protected functions: Array<Array<OperationInterface>>;
+
+	protected constructor()
 	{
-		throw new Error();
+		this.functions = [];
 	}
 
-	const debug = value.token.debug;
-
-	switch (value.kind)
+	public static Compile(chunk: ChunkInterface, extend?: Array<OperationInterface>): ProgramInterface
 	{
-		case ValueKind.NilLiteral:
-			return [{ code: OpCode.Push, arg: nil, debug: debug }];
-		case ValueKind.BooleanLiteral:
-			return [{ code: OpCode.Push, arg: make_boolean(value.boolean ?? false), debug: debug }];
-		case ValueKind.NumberLiteral:
-			return [{ code: OpCode.Push, arg: make_number(value.number ?? 0), debug: debug }];
-		case ValueKind.StringLiteral:
-			return [{ code: OpCode.Push, arg: make_string(value.string ?? ""), debug: debug }];
+		const compiler = new Compiler();
 
-		case ValueKind.FunctionLike:
+		return compiler.compile(chunk, extend);
+	}
+
+	protected compile(chunk: ChunkInterface, extend?: Array<OperationInterface>): ProgramInterface
+	{
+		const ops = [...(extend ?? [])];
+		const { code, has_last_expression }: ChunkResult = this.compileChunk(chunk);
+
+		for (const [function_id, function_ops] of this.functions.entries())
 		{
-			return [{
-				code: OpCode.Push,
-				arg: {
-					data_type: VariableKind.Function,
-					function_id: compile_function(
-						value.function?.body ?? { statements: [] },
-						value.token,
-						value.function?.parameters ?? [],
-						functions
-					),
-				},
-				debug: debug,
-			}];
+			this.link(code, function_id, ops.length);
+			ops.push(...function_ops);
 		}
 
-		case ValueKind.TableLiteral:
+		const start = ops.length;
+
+		if ((extend?.length ?? 0) > 0)
 		{
-			const output: Array<OpInterface> = [];
+			ops.push({ code: OperationCode.Pop, debug: { line: 0, column: 0 } });
+		}
 
-			output.push({ code: OpCode.NewTable, debug: debug });
+		ops.push(...code);
 
-			for (const [key, expression] of [...value.table?.entries() ?? []].reverse())
+		if (!has_last_expression)
+		{
+			ops.push({ code: OperationCode.Push, arg: nil, debug: { line: 0, column: 0 } });
+		}
+
+		return {
+			code: ops,
+			start: start,
+		};
+	}
+
+	protected compileFunction(chunk: ChunkInterface, token: TokenInterface | TokenStream, parameters: Array<TokenInterface>): number
+	{
+		const ops: Array<OperationInterface> = [];
+
+		ops.push({ code: OperationCode.ArgumentCount, arg: make_number(parameters.length), debug: token.debug });
+
+		for (const parameter of parameters.reverse())
+		{
+			ops.push({ code: OperationCode.MakeLocal, arg: make_string(parameter.data), debug: parameter.debug });
+			ops.push({ code: OperationCode.Store, arg: make_string(parameter.data), debug: parameter.debug });
+		}
+
+		ops.push(...this.compileBlock(chunk));
+		ops.push({ code: OperationCode.Push, arg: nil, debug: token.debug });
+		ops.push({ code: OperationCode.Return, arg: make_number(0), debug: token.debug });
+
+		this.functions.push(ops);
+
+		return this.functions.length - 1;
+	}
+
+	protected compileValue(value: ValueInterface | undefined): Array<OperationInterface>
+	{
+		if (value === undefined)
+		{
+			throw new Error();
+		}
+
+		const debug = value.token.debug;
+
+		switch (value.kind)
+		{
+			case ValueKind.NilLiteral:
+				return [{ code: OperationCode.Push, arg: nil, debug: debug }];
+			case ValueKind.BooleanLiteral:
+				return [{ code: OperationCode.Push, arg: make_boolean(value.boolean ?? false), debug: debug }];
+			case ValueKind.NumberLiteral:
+				return [{ code: OperationCode.Push, arg: make_number(value.number ?? 0), debug: debug }];
+			case ValueKind.StringLiteral:
+				return [{ code: OperationCode.Push, arg: make_string(value.string ?? ""), debug: debug }];
+
+			case ValueKind.FunctionLike:
 			{
-				output.push(...compile_expression(expression, functions));
-				output.push(...compile_expression(key, functions));
+				return [{
+					code: OperationCode.Push,
+					arg: {
+						data_type: VariableKind.Function,
+						function_id: this.compileFunction(
+							value.function?.body ?? { statements: [] },
+							value.token,
+							value.function?.parameters ?? []
+						),
+					},
+					debug: debug,
+				}];
 			}
 
-			output.push({ code: OpCode.StoreIndex, arg: make_number(value.table?.size ?? 0), debug: debug });
+			case ValueKind.TableLiteral:
+			{
+				const output: Array<OperationInterface> = [];
 
-			return output;
+				output.push({ code: OperationCode.NewTable, debug: debug });
+
+				for (const [key, expression] of [...value.table?.entries() ?? []].reverse())
+				{
+					output.push(...this.compileExpression(expression));
+					output.push(...this.compileExpression(key));
+				}
+
+				output.push({ code: OperationCode.StoreIndex, arg: make_number(value.table?.size ?? 0), debug: debug });
+
+				return output;
+			}
+
+			case ValueKind.Variable:
+			{
+				return [{
+					code: OperationCode.Load,
+					arg: { data_type: VariableKind.String, string: value.identifier ?? "" },
+					debug: debug,
+				}];
+			}
 		}
+	}
 
-		case ValueKind.Variable:
+	protected compileOperation(expression: ExpressionInterface, operation: OperationCodeEnum): Array<OperationInterface>
+	{
+		const { lhs, rhs } = expression;
+
+		if (lhs === undefined || rhs === undefined)
 		{
-			return [{
-				code: OpCode.Load,
-				arg: { data_type: VariableKind.String, string: value.identifier ?? "" },
-				debug: debug,
-			}];
+			throw new Error();
 		}
-	}
-}
 
-function compile_operation(
-	expression: ExpressionInterface,
-	operation: OpCodeEnum,
-	functions: Array<Array<OpInterface>>
-): Array<OpInterface>
-{
-	const { lhs, rhs } = expression;
+		const ops: Array<OperationInterface> = [];
 
-	if (lhs === undefined || rhs === undefined)
-	{
-		throw new Error();
+		ops.push(...this.compileExpression(rhs));
+		ops.push(...this.compileExpression(lhs));
+
+		ops.push({
+			code: operation,
+			debug: getDebug(expression.token),
+		});
+
+		return ops;
 	}
 
-	const ops: Array<OpInterface> = [];
-
-	ops.push(...compile_expression(rhs, functions));
-	ops.push(...compile_expression(lhs, functions));
-
-	ops.push({
-		code: operation,
-		debug: getDebug(expression.token),
-	});
-
-	return ops;
-}
-
-function compile_call(
-	callable: ExpressionInterface | undefined,
-	args: Array<ExpressionInterface> | undefined,
-	functions: Array<Array<OpInterface>>
-): Array<OpInterface>
-{
-	if (callable === undefined || args === undefined)
+	protected compileCall(callable: ExpressionInterface | undefined, args: Array<ExpressionInterface> | undefined): Array<OperationInterface>
 	{
-		throw new Error();
+		if (callable === undefined || args === undefined)
+		{
+			throw new Error();
+		}
+
+		const debug: DebugInterface = getDebug(callable.token);
+		const ops: Array<OperationInterface> = [];
+
+		for (const arg of args)
+		{
+			ops.push(...this.compileExpression(arg));
+		}
+
+		ops.push(...this.compileExpression(callable));
+		ops.push({ code: OperationCode.Push, arg: make_number(args.length), debug: debug });
+		ops.push({ code: OperationCode.Call, debug: debug });
+
+		return ops;
 	}
 
-	const debug: DebugInterface = getDebug(callable.token);
-	const ops: Array<OpInterface> = [];
-
-	for (const arg of args)
+	protected compileIndex(target: ExpressionInterface | undefined, index: ExpressionInterface | undefined): Array<OperationInterface>
 	{
-		ops.push(...compile_expression(arg, functions));
+		if (target === undefined || index === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+
+		ops.push(...this.compileExpression(index));
+		ops.push(...this.compileExpression(target));
+		ops.push({ code: OperationCode.LoadIndex, debug: getDebug(target.token) });
+
+		return ops;
 	}
 
-	ops.push(...compile_expression(callable, functions));
-	ops.push({ code: OpCode.Push, arg: make_number(args.length), debug: debug });
-	ops.push({ code: OpCode.Call, debug: debug });
-
-	return ops;
-}
-
-function compile_index(
-	target: ExpressionInterface | undefined,
-	index: ExpressionInterface | undefined,
-	functions: Array<Array<OpInterface>>
-): Array<OpInterface>
-{
-	if (target === undefined || index === undefined)
+	protected compileUnary_operation(expression: ExpressionInterface | undefined, operation: OperationCodeEnum): Array<OperationInterface>
 	{
-		throw new Error();
+		if (expression === undefined || expression.expression === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+
+		ops.push(...this.compileExpression(expression.expression));
+		ops.push({ code: operation, debug: getDebug(expression.token) });
+
+		return ops;
 	}
 
-	const ops: Array<OpInterface> = [];
-
-	ops.push(...compile_expression(index, functions));
-	ops.push(...compile_expression(target, functions));
-	ops.push({ code: OpCode.LoadIndex, debug: getDebug(target.token) });
-
-	return ops;
-}
-
-function compile_unary_operation(
-	expression: ExpressionInterface | undefined,
-	operation: OpCodeEnum,
-	functions: Array<Array<OpInterface>>
-): Array<OpInterface>
-{
-	if (expression === undefined || expression.expression === undefined)
+	protected compileExpression(expression: ExpressionInterface | undefined): Array<OperationInterface>
 	{
-		throw new Error();
-	}
+		if (expression === undefined)
+		{
+			throw new Error();
+		}
 
-	const ops: Array<OpInterface> = [];
-
-	ops.push(...compile_expression(expression.expression, functions));
-	ops.push({ code: operation, debug: getDebug(expression.token) });
-
-	return ops;
-}
-
-function compile_expression(expression: ExpressionInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (expression === undefined)
-	{
-		throw new Error();
-	}
-
-	switch (expression.kind)
-	{
-		case ExpressionKind.Value:
-			return compile_value(expression.value, functions);
-		case ExpressionKind.Call:
-			return compile_call(expression.expression, expression.arguments, functions);
-		case ExpressionKind.Index:
-			return compile_index(expression.expression, expression.index, functions);
-
-		case ExpressionKind.Addition:
-			return compile_operation(expression, OpCode.Add, functions);
-		case ExpressionKind.Subtract:
-			return compile_operation(expression, OpCode.Subtract, functions);
-		case ExpressionKind.Multiplication:
-			return compile_operation(expression, OpCode.Multiply, functions);
-		case ExpressionKind.Division:
-			return compile_operation(expression, OpCode.Divide, functions);
-		case ExpressionKind.FloorDivision:
-			return compile_operation(expression, OpCode.FloorDivide, functions);
-		case ExpressionKind.Modulo:
-			return compile_operation(expression, OpCode.Modulo, functions);
-		case ExpressionKind.Exponent:
-			return compile_operation(expression, OpCode.Exponent, functions);
-		case ExpressionKind.Concat:
-			return compile_operation(expression, OpCode.Concat, functions);
-
-		case ExpressionKind.BitAnd:
-			return compile_operation(expression, OpCode.BitAnd, functions);
-		case ExpressionKind.BitOr:
-			return compile_operation(expression, OpCode.BitOr, functions);
-		case ExpressionKind.BitXOr:
-			return compile_operation(expression, OpCode.BitXOr, functions);
-		case ExpressionKind.BitShiftLeft:
-			return compile_operation(expression, OpCode.BitShiftLeft, functions);
-		case ExpressionKind.BitShiftRight:
-			return compile_operation(expression, OpCode.BitShiftRight, functions);
-
-		case ExpressionKind.Equals:
-			return compile_operation(expression, OpCode.Equals, functions);
-		case ExpressionKind.NotEquals:
-			return compile_operation(expression, OpCode.NotEquals, functions);
-		case ExpressionKind.LessThan:
-			return compile_operation(expression, OpCode.LessThan, functions);
-		case ExpressionKind.LessThanEquals:
-			return compile_operation(expression, OpCode.LessThanEquals, functions);
-		case ExpressionKind.GreaterThan:
-			return compile_operation(expression, OpCode.GreaterThan, functions);
-		case ExpressionKind.GreaterThanEquals:
-			return compile_operation(expression, OpCode.GreaterThanEquals, functions);
-		case ExpressionKind.And:
-			return compile_operation(expression, OpCode.And, functions);
-		case ExpressionKind.Or:
-			return compile_operation(expression, OpCode.Or, functions);
-
-		case ExpressionKind.Not:
-			return compile_unary_operation(expression, OpCode.Not, functions);
-		case ExpressionKind.Negate:
-			return compile_unary_operation(expression, OpCode.Negate, functions);
-		case ExpressionKind.Length:
-			return compile_unary_operation(expression, OpCode.Length, functions);
-		case ExpressionKind.BitNot:
-			return compile_unary_operation(expression, OpCode.BitNot, functions);
-	}
-}
-
-function compile_assignment(assignment: AssignmentInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (assignment === undefined)
-	{
-		throw new Error();
-	}
-
-	const ops: Array<OpInterface> = [];
-	const debug = assignment.token.debug;
-
-	ops.push({ code: OpCode.StartStackChange, debug: debug });
-
-	for (const rhs of assignment.rhs)
-	{
-		ops.push(...compile_expression(rhs, functions));
-	}
-
-	ops.push({ code: OpCode.EndStackChange, arg: make_number(assignment.lhs.length), debug: debug });
-
-	for (const lhs of assignment.lhs)
-	{
-		const debug: DebugInterface = getDebug(lhs.token);
-
-		switch (lhs.kind)
+		switch (expression.kind)
 		{
 			case ExpressionKind.Value:
+				return this.compileValue(expression.value);
+			case ExpressionKind.Call:
+				return this.compileCall(expression.expression, expression.arguments);
+			case ExpressionKind.Index:
+				return this.compileIndex(expression.expression, expression.index);
+
+			case ExpressionKind.Addition:
+				return this.compileOperation(expression, OperationCode.Add);
+			case ExpressionKind.Subtract:
+				return this.compileOperation(expression, OperationCode.Subtract);
+			case ExpressionKind.Multiplication:
+				return this.compileOperation(expression, OperationCode.Multiply);
+			case ExpressionKind.Division:
+				return this.compileOperation(expression, OperationCode.Divide);
+			case ExpressionKind.FloorDivision:
+				return this.compileOperation(expression, OperationCode.FloorDivide);
+			case ExpressionKind.Modulo:
+				return this.compileOperation(expression, OperationCode.Modulo);
+			case ExpressionKind.Exponent:
+				return this.compileOperation(expression, OperationCode.Exponent);
+			case ExpressionKind.Concat:
+				return this.compileOperation(expression, OperationCode.Concat);
+
+			case ExpressionKind.BitAnd:
+				return this.compileOperation(expression, OperationCode.BitAnd);
+			case ExpressionKind.BitOr:
+				return this.compileOperation(expression, OperationCode.BitOr);
+			case ExpressionKind.BitXOr:
+				return this.compileOperation(expression, OperationCode.BitXOr);
+			case ExpressionKind.BitShiftLeft:
+				return this.compileOperation(expression, OperationCode.BitShiftLeft);
+			case ExpressionKind.BitShiftRight:
+				return this.compileOperation(expression, OperationCode.BitShiftRight);
+
+			case ExpressionKind.Equals:
+				return this.compileOperation(expression, OperationCode.Equals);
+			case ExpressionKind.NotEquals:
+				return this.compileOperation(expression, OperationCode.NotEquals);
+			case ExpressionKind.LessThan:
+				return this.compileOperation(expression, OperationCode.LessThan);
+			case ExpressionKind.LessThanEquals:
+				return this.compileOperation(expression, OperationCode.LessThanEquals);
+			case ExpressionKind.GreaterThan:
+				return this.compileOperation(expression, OperationCode.GreaterThan);
+			case ExpressionKind.GreaterThanEquals:
+				return this.compileOperation(expression, OperationCode.GreaterThanEquals);
+			case ExpressionKind.And:
+				return this.compileOperation(expression, OperationCode.And);
+			case ExpressionKind.Or:
+				return this.compileOperation(expression, OperationCode.Or);
+
+			case ExpressionKind.Not:
+				return this.compileUnary_operation(expression, OperationCode.Not);
+			case ExpressionKind.Negate:
+				return this.compileUnary_operation(expression, OperationCode.Negate);
+			case ExpressionKind.Length:
+				return this.compileUnary_operation(expression, OperationCode.Length);
+			case ExpressionKind.BitNot:
+				return this.compileUnary_operation(expression, OperationCode.BitNot);
+		}
+	}
+
+	protected compileAssignment(assignment: AssignmentInterface | undefined): Array<OperationInterface>
+	{
+		if (assignment === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+		let debug: DebugInterface = assignment.token.debug;
+
+		ops.push({ code: OperationCode.StartStackChange, debug: debug });
+
+		for (const rhs of assignment.rhs)
+		{
+			ops.push(...this.compileExpression(rhs));
+		}
+
+		ops.push({ code: OperationCode.EndStackChange, arg: make_number(assignment.lhs.length), debug: debug });
+
+		for (const lhs of assignment.lhs)
+		{
+			debug = getDebug(lhs.token);
+
+			// eslint-disable-next-line @ts/switch-exhaustiveness-check
+			switch (lhs.kind)
 			{
-				if (lhs.value?.kind !== ValueKind.Variable)
+				case ExpressionKind.Value:
 				{
+					if (lhs.value?.kind !== ValueKind.Variable)
+					{
+						throw new Error();
+					}
+
+					const identifier = make_string(lhs.value.identifier ?? "");
+
+					if (assignment.local)
+					{
+						ops.push({ code: OperationCode.MakeLocal, arg: identifier, debug: debug });
+					}
+
+					ops.push({ code: OperationCode.Store, arg: identifier, debug: debug });
+					break;
+				}
+
+				case ExpressionKind.Index:
+				{
+					// @TODO: FIXME Throw error here if `assignment.local` is true. I think?
+
+					ops.push(...this.compileExpression(lhs.expression));
+					ops.push({ code: OperationCode.Swap, debug: debug });
+					ops.push(...this.compileExpression(lhs.index));
+					ops.push({ code: OperationCode.StoreIndex, debug: debug });
+					ops.push({ code: OperationCode.Pop, debug: debug });
+					break;
+				}
+
+				default:
 					throw new Error();
-				}
+			}
+		}
 
-				const identifier = make_string(lhs.value?.identifier ?? "");
+		return ops;
+	}
 
-				if (assignment.local)
-				{
-					ops.push({ code: OpCode.MakeLocal, arg: identifier, debug: debug });
-				}
+	// eslint-disable-next-line @ts/class-methods-use-this
+	protected compileLocal(local: LocalInterface | undefined): Array<OperationInterface>
+	{
+		if (local === undefined)
+		{
+			throw new Error();
+		}
 
-				ops.push({ code: OpCode.Store, arg: identifier, debug: debug });
+		return local.names.map(
+			(name: TokenInterface | TokenStream): OperationInterface =>
+			{
+				return {
+					code: OperationCode.MakeLocal,
+					arg: {
+						data_type: VariableKind.String,
+						string: name.data,
+					},
+					debug: name.debug,
+				};
+			}
+		);
+	}
+
+	protected compileInverted_conditional_jump(condition: ExpressionInterface | undefined, jump_by: number): Array<OperationInterface>
+	{
+		if (condition === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+		const debug: DebugInterface = getDebug(condition.token);
+
+		// eslint-disable-next-line @ts/switch-exhaustiveness-check
+		switch (condition.kind)
+		{
+			case ExpressionKind.And:
+			{
+				const rhs = this.compileInverted_conditional_jump(condition.rhs, jump_by);
+
+				ops.push(...this.compileConditional_jump(condition.lhs, rhs.length));
+				ops.push(...rhs);
 				break;
 			}
 
-			case ExpressionKind.Index:
+			case ExpressionKind.Or:
 			{
-				// FIXME: Throw error here if `assignment.local` is true. I think?
+				const rhs = this.compileInverted_conditional_jump(condition.rhs, jump_by);
 
-				ops.push(...compile_expression(lhs.expression, functions));
-				ops.push({ code: OpCode.Swap, debug: debug });
-				ops.push(...compile_expression(lhs.index, functions));
-				ops.push({ code: OpCode.StoreIndex, debug: debug });
-				ops.push({ code: OpCode.Pop, debug: debug });
+				ops.push(...this.compileInverted_conditional_jump(condition.lhs, rhs.length + jump_by));
+				ops.push(...rhs);
+				break;
+			}
+
+			case ExpressionKind.Not:
+			{
+				ops.push(...this.compileExpression(condition.expression));
 				break;
 			}
 
 			default:
-				throw new Error();
+			{
+				ops.push(...this.compileExpression(condition));
+				ops.push({ code: OperationCode.JumpIf, arg: make_number(jump_by), debug: debug });
+				break;
+			}
 		}
+
+		return ops;
 	}
 
-	return ops;
-}
-
-function compile_local(local: LocalInterface | undefined): Array<OpInterface>
-{
-	if (local === undefined)
+	protected compileConditional_jump(condition: ExpressionInterface | undefined, jump_by: number): Array<OperationInterface>
 	{
-		throw new Error();
+		if (condition === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+		const debug: DebugInterface = getDebug(condition.token);
+
+		// eslint-disable-next-line @ts/switch-exhaustiveness-check
+		switch (condition.kind)
+		{
+			case ExpressionKind.And:
+			{
+				const rhs = this.compileConditional_jump(condition.rhs, jump_by);
+
+				ops.push(...this.compileConditional_jump(condition.lhs, rhs.length + jump_by));
+				ops.push(...rhs);
+				break;
+			}
+
+			case ExpressionKind.Or:
+			{
+				const rhs = this.compileConditional_jump(condition.rhs, jump_by);
+
+				ops.push(...this.compileInverted_conditional_jump(condition.lhs, rhs.length));
+				ops.push(...rhs);
+				break;
+			}
+
+			case ExpressionKind.Not:
+			{
+				ops.push(...this.compileInverted_conditional_jump(condition.expression, jump_by));
+				break;
+			}
+
+			default:
+			{
+				ops.push(...this.compileExpression(condition));
+				ops.push({ code: OperationCode.JumpIfNot, arg: make_number(jump_by), debug: debug });
+				break;
+			}
+		}
+
+		return ops;
 	}
 
-	return local.names.map(
-		(name): OpInterface =>
+	protected compileIf(if_block: IfBlockInterface | undefined): Array<OperationInterface>
+	{
+		if (if_block === undefined)
 		{
-			return {
-				code: OpCode.MakeLocal,
-				arg: {
-					data_type: VariableKind.String,
-					string: name.data,
+			throw new Error();
+		}
+
+		const else_chunk: Array<OperationInterface> = [];
+
+		if (if_block.else_body !== undefined)
+		{
+			else_chunk.push(...this.compileBlock(if_block.else_body));
+		}
+
+		const if_else_chunks: Array<Array<OperationInterface>> = [];
+
+		for (const else_if_block of if_block.else_if_bodies.toReversed())
+		{
+			const scoped_ops: Array<OperationInterface> = [];
+			const else_if_body = this.compileBlock(else_if_block.body);
+
+			scoped_ops.push(...this.compileConditional_jump(else_if_block.condition, else_if_body.length + 1));
+			scoped_ops.push(...else_if_body);
+
+			const else_if_offset: number = else_chunk.length + if_else_chunks.reduce(
+				(acc: number, chunk: Array<OperationInterface>): number =>
+				{
+					return chunk.length + acc;
 				},
-				debug: name.debug,
-			};
-		}
-	);
-}
+				0
+			);
 
-function compile_inverted_conditional_jump(condition: ExpressionInterface | undefined, jump_by: number, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (condition === undefined)
-	{
-		throw new Error();
-	}
+			scoped_ops.push({
+				code: OperationCode.Jump,
+				arg: make_number(else_if_offset),
+				debug: else_if_block.token.debug,
+			});
 
-	const ops: Array<OpInterface> = [];
-	const debug: DebugInterface = getDebug(condition.token);
-
-	switch (condition.kind)
-	{
-		case ExpressionKind.And:
-		{
-			const rhs = compile_inverted_conditional_jump(condition.rhs, jump_by, functions);
-
-			ops.push(...compile_conditional_jump(condition.lhs, rhs.length, functions));
-			ops.push(...rhs);
-			break;
+			if_else_chunks.push(scoped_ops);
 		}
 
-		case ExpressionKind.Or:
-		{
-			const rhs = compile_inverted_conditional_jump(condition.rhs, jump_by, functions);
+		const debug = if_block.token.debug;
+		const ops: Array<OperationInterface> = [];
+		const body = this.compileBlock(if_block.body);
 
-			ops.push(...compile_inverted_conditional_jump(condition.lhs, rhs.length + jump_by, functions));
-			ops.push(...rhs);
-			break;
-		}
-
-		case ExpressionKind.Not:
-		{
-			ops.push(...compile_expression(condition.expression, functions));
-			break;
-		}
-
-		default:
-		{
-			ops.push(...compile_expression(condition, functions));
-			ops.push({ code: OpCode.JumpIf, arg: make_number(jump_by), debug: debug });
-			break;
-		}
-	}
-
-	return ops;
-}
-
-function compile_conditional_jump(condition: ExpressionInterface | undefined, jump_by: number, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (condition === undefined)
-	{
-		throw new Error();
-	}
-
-	const ops: Array<OpInterface> = [];
-	const debug: DebugInterface = getDebug(condition.token);
-
-	switch (condition.kind)
-	{
-		case ExpressionKind.And:
-		{
-			const rhs = compile_conditional_jump(condition.rhs, jump_by, functions);
-
-			ops.push(...compile_conditional_jump(condition.lhs, rhs.length + jump_by, functions));
-			ops.push(...rhs);
-			break;
-		}
-
-		case ExpressionKind.Or:
-		{
-			const rhs = compile_conditional_jump(condition.rhs, jump_by, functions);
-
-			ops.push(...compile_inverted_conditional_jump(condition.lhs, rhs.length, functions));
-			ops.push(...rhs);
-			break;
-		}
-
-		case ExpressionKind.Not:
-		{
-			ops.push(...compile_inverted_conditional_jump(condition.expression, jump_by, functions));
-			break;
-		}
-
-		default:
-		{
-			ops.push(...compile_expression(condition, functions));
-			ops.push({ code: OpCode.JumpIfNot, arg: make_number(jump_by), debug: debug });
-			break;
-		}
-	}
-
-	return ops;
-}
-
-function compile_if(if_block: IfBlockInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (if_block === undefined)
-	{
-		throw new Error();
-	}
-
-	const else_chunk: Array<OpInterface> = [];
-
-	if (if_block.else_body !== undefined)
-	{
-		else_chunk.push(...compile_block(if_block.else_body, functions));
-	}
-
-	const if_else_chunks: Array<Array<OpInterface>> = [];
-
-	for (const { body, condition, token } of if_block.else_if_bodies.reverse())
-	{
-		const ops: Array<OpInterface> = [];
-		const if_else_body = compile_block(body, functions);
-
-		ops.push(...compile_conditional_jump(condition, if_else_body.length + 1, functions));
-		ops.push(...if_else_body);
+		ops.push({ code: OperationCode.StartBlock, debug: debug });
+		ops.push(...this.compileConditional_jump(if_block.condition, body.length + 1));
+		ops.push(...body);
 
 		const offset = if_else_chunks.reduce(
-			(acc, chunk) =>
+			(acc: number, chunk): number =>
 			{
 				return chunk.length + acc;
 			},
 			0
 		) + else_chunk.length;
 
-		ops.push({ code: OpCode.Jump, arg: make_number(offset), debug: token.debug });
-		if_else_chunks.push(ops);
-	}
+		ops.push({ code: OperationCode.Jump, arg: make_number(offset), debug: debug });
 
-	const debug = if_block.token.debug;
-	const ops: Array<OpInterface> = [];
-	const body = compile_block(if_block.body, functions);
-
-	ops.push({ code: OpCode.StartBlock, debug: debug });
-	ops.push(...compile_conditional_jump(if_block.condition, body.length + 1, functions));
-	ops.push(...body);
-
-	const offset = if_else_chunks.reduce(
-		(acc, chunk) =>
+		for (const if_else_chunk of if_else_chunks)
 		{
-			return chunk.length + acc;
-		},
-		0
-	) + else_chunk.length;
-
-	ops.push({ code: OpCode.Jump, arg: make_number(offset), debug: debug });
-
-	for (const if_else_chunk of if_else_chunks)
-	{
-		ops.push(...if_else_chunk);
-	}
-
-	ops.push(...else_chunk);
-	ops.push({ code: OpCode.EndBlock, debug: debug });
-
-	return ops;
-}
-
-function replace_breaks(code: Array<OpInterface>, offset_from_end: number): void
-{
-	for (const [i, op] of code.entries())
-	{
-		if (op.code === OpCode.Break)
-		{
-			const offset = code.length - i - 1 + offset_from_end;
-
-			op.code = OpCode.Jump;
-			op.arg = make_number(offset);
-		}
-	}
-}
-
-function compile_while(while_block: WhileInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (while_block === undefined)
-	{
-		throw new Error();
-	}
-
-	const debug = while_block.token.debug;
-	const ops: Array<OpInterface> = [];
-	const body = compile_block(while_block.body, functions);
-
-	replace_breaks(body, 1);
-
-	ops.push({ code: OpCode.StartBlock, debug: debug });
-	ops.push(...compile_conditional_jump(while_block.condition, body.length + 1, functions));
-	ops.push(...body);
-	ops.push({ code: OpCode.Jump, arg: make_number(-ops.length - 1), debug: debug });
-	ops.push({ code: OpCode.EndBlock, debug: debug });
-
-	return ops;
-}
-
-function compile_for(for_block: ForInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (for_block === undefined)
-	{
-		throw new Error();
-	}
-
-	const ops: Array<OpInterface> = [];
-	const body = compile_block(for_block.body, functions);
-
-	replace_breaks(body, 1);
-
-	const debug = for_block.token.debug;
-
-	ops.push({ code: OpCode.StartBlock, debug: debug });
-	ops.push({ code: OpCode.StartStackChange, debug: debug });
-	ops.push(...compile_expression(for_block.iterator, functions));
-	ops.push({ code: OpCode.EndStackChange, arg: make_number(3), debug: debug });
-
-	const after_creating_itorator = ops.length;
-
-	ops.push({ code: OpCode.StartStackChange, debug: debug });
-	ops.push({ code: OpCode.IterNext, debug: debug });
-	ops.push({ code: OpCode.IterJumpIfDone, arg: make_number(body.length + for_block.items.length + 3), debug: debug });
-
-	ops.push({ code: OpCode.EndStackChange, arg: make_number(for_block.items.length), debug: debug });
-
-	for (const [i, item] of [...for_block.items].reverse().entries())
-	{
-		if (i === for_block.items.length - 1)
-		{
-			ops.push({ code: OpCode.IterUpdateState, debug: debug });
+			ops.push(...if_else_chunk);
 		}
 
-		ops.push({ code: OpCode.Store, arg: make_string(item.data), debug: item.debug });
+		ops.push(...else_chunk);
+		ops.push({ code: OperationCode.EndBlock, debug: debug });
+
+		return ops;
 	}
 
-	ops.push(...body);
-	ops.push({ code: OpCode.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
-
-	ops.push({ code: OpCode.EndStackChange, arg: make_number(0), debug: debug });
-	ops.push({ code: OpCode.Pop, arg: make_number(3), debug: debug });
-	ops.push({ code: OpCode.EndBlock, debug: debug });
-
-	return ops;
-}
-
-function compile_step(step: ExpressionInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (step === undefined)
+	// eslint-disable-next-line @ts/class-methods-use-this
+	protected replace_breaks(code: Array<OperationInterface>, offset_from_end: number): void
 	{
-		return [{ code: OpCode.Push, arg: make_number(1), debug: { line: 0, column: 0 } }];
-	}
-
-	return compile_expression(step, functions);
-}
-
-function compile_numeric_for(numeric_for_block: NumericForInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (numeric_for_block === undefined)
-	{
-		throw new Error();
-	}
-
-	const ops: Array<OpInterface> = [];
-	const body = compile_block(numeric_for_block.body, functions);
-	const step = compile_step(numeric_for_block.step, functions);
-	const index = numeric_for_block.index.data;
-	const debug = numeric_for_block.index.debug;
-
-	replace_breaks(body, step.length + 4);
-
-	ops.push({ code: OpCode.StartBlock, debug: debug });
-	ops.push(...compile_expression(numeric_for_block.start, functions));
-
-	const after_creating_itorator = ops.length;
-
-	ops.push({ code: OpCode.Dup, debug: debug });
-	ops.push(...compile_expression(numeric_for_block.end, functions));
-	ops.push({ code: OpCode.NotEquals, debug: debug });
-	ops.push({ code: OpCode.JumpIfNot, arg: make_number(body.length + step.length + 4), debug: debug });
-
-	ops.push({ code: OpCode.Store, arg: make_string(index), debug: debug });
-	ops.push(...body);
-	ops.push({ code: OpCode.Load, arg: make_string(index), debug: debug });
-	ops.push(...step);
-	ops.push({ code: OpCode.Add, debug: debug });
-	ops.push({ code: OpCode.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
-
-	ops.push({ code: OpCode.Pop, debug: debug });
-	ops.push({ code: OpCode.EndBlock, debug: debug });
-
-	return ops;
-}
-
-function compile_repeat(repeat: RepeatInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (repeat === undefined)
-	{
-		throw new Error();
-	}
-
-	const ops: Array<OpInterface> = [];
-	const debug = repeat.token.debug;
-
-	ops.push({ code: OpCode.StartBlock, debug: debug });
-
-	ops.push(...compile_block(repeat.body, functions));
-	ops.push(...compile_inverted_conditional_jump(repeat.condition, 1, functions));
-	ops.push({ code: OpCode.Jump, arg: make_number(-ops.length), debug: debug });
-
-	ops.push({ code: OpCode.EndBlock, debug: debug });
-
-	return ops;
-}
-
-function compile_do(do_block: DoInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (do_block === undefined)
-	{
-		throw new Error();
-	}
-
-	const ops: Array<OpInterface> = [];
-	const debug = do_block.token.debug;
-
-	ops.push({ code: OpCode.StartBlock, debug: debug });
-	ops.push(...compile_block(do_block.body, functions));
-	ops.push({ code: OpCode.EndBlock, debug: debug });
-
-	return ops;
-}
-
-function compile_return(return_block: ReturnInterface | undefined, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	if (return_block === undefined)
-	{
-		throw new Error();
-	}
-
-	const ops: Array<OpInterface> = [];
-
-	for (const value of return_block.values)
-	{
-		ops.push(...compile_expression(value, functions));
-	}
-
-	const debug = return_block.token.debug;
-	const return_count = return_block.values.length;
-
-	ops.push({ code: OpCode.Return, arg: make_number(return_count), debug: debug });
-
-	return ops;
-}
-
-interface ChunkResult
-{
-	code: Array<OpInterface>;
-	has_last_expression: boolean;
-}
-
-function compile_block(chunk: ChunkInterface, functions: Array<Array<OpInterface>>): Array<OpInterface>
-{
-	const { code, has_last_expression } = compile_chunk(chunk, functions);
-
-	if (has_last_expression)
-	{
-		code.push({ code: OpCode.Pop, debug: { line: 0, column: 0 } });
-	}
-
-	return code;
-}
-
-function compile_chunk(chunk: ChunkInterface, functions: Array<Array<OpInterface>>): ChunkResult
-{
-	const ops = [];
-	let has_last_expression = false;
-
-	for (const [index, statement] of chunk.statements.entries())
-	{
-		// eslint-disable-next-line @ts/switch-exhaustiveness-check
-		switch (statement.kind)
+		for (const [i, op] of code.entries())
 		{
-			case StatementKind.Empty:
-				break;
-			case StatementKind.Expression:
+			if (op.code === OperationCode.Break)
 			{
-				ops.push(...compile_expression(statement.expression, functions));
+				const offset = code.length - i - 1 + offset_from_end;
 
-				if (statement.expression === undefined)
-				{
-					break;
-				}
-
-				const is_last_statement: boolean = index === chunk.statements.length - 1;
-
-				if (is_last_statement)
-				{
-					has_last_expression = true;
-					break;
-				}
-
-				ops.push({
-					code: OpCode.Pop,
-					debug: getDebug(statement.expression.token),
-				});
-
-				break;
+				op.code = OperationCode.Jump;
+				op.arg = make_number(offset);
 			}
-			case StatementKind.Assignment:
-				ops.push(...compile_assignment(statement.assignment, functions));
-				break;
-			case StatementKind.Local:
-				ops.push(...compile_local(statement.local));
-				break;
-			case StatementKind.If:
-				ops.push(...compile_if(statement.if, functions));
-				break;
-			case StatementKind.While:
-				ops.push(...compile_while(statement.while, functions));
-				break;
-			case StatementKind.For:
-				ops.push(...compile_for(statement.for, functions));
-				break;
-			case StatementKind.NumericFor:
-				ops.push(...compile_numeric_for(statement.numeric_for, functions));
-				break;
-			case StatementKind.Repeat:
-				ops.push(...compile_repeat(statement.repeat, functions));
-				break;
-			case StatementKind.Do:
-				ops.push(...compile_do(statement.do, functions));
-				break;
-			case StatementKind.Return:
-				ops.push(...compile_return(statement.return, functions));
-				break;
-			case StatementKind.Break:
-				ops.push({
-					code: OpCode.Break,
-					debug: { line: 0, column: 0 },
-				});
-
-				break;
 		}
 	}
 
-	return {
-		code: ops,
-		has_last_expression: has_last_expression,
-	};
-}
-
-function link(code: Array<OpInterface>, function_id: number, location: number): void
-{
-	for (const op of code)
+	protected compileWhile(while_block: WhileInterface | undefined): Array<OperationInterface>
 	{
-		if (isVariableKind(op.arg, VariableKind.Function) && op.arg.function_id === function_id)
+		if (while_block === undefined)
 		{
-			op.arg.function_id = location;
+			throw new Error();
+		}
+
+		const debug = while_block.token.debug;
+		const ops: Array<OperationInterface> = [];
+		const body = this.compileBlock(while_block.body);
+
+		this.replace_breaks(body, 1);
+
+		ops.push({ code: OperationCode.StartBlock, debug: debug });
+		ops.push(...this.compileConditional_jump(while_block.condition, body.length + 1));
+		ops.push(...body);
+		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length - 1), debug: debug });
+		ops.push({ code: OperationCode.EndBlock, debug: debug });
+
+		return ops;
+	}
+
+	protected compileFor(for_block: ForInterface | undefined): Array<OperationInterface>
+	{
+		if (for_block === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+		const body = this.compileBlock(for_block.body);
+
+		this.replace_breaks(body, 1);
+
+		const debug = for_block.token.debug;
+
+		ops.push({ code: OperationCode.StartBlock, debug: debug });
+		ops.push({ code: OperationCode.StartStackChange, debug: debug });
+		ops.push(...this.compileExpression(for_block.iterator));
+		ops.push({ code: OperationCode.EndStackChange, arg: make_number(3), debug: debug });
+
+		const after_creating_itorator = ops.length;
+
+		ops.push({ code: OperationCode.StartStackChange, debug: debug });
+		ops.push({ code: OperationCode.IterNext, debug: debug });
+		ops.push({ code: OperationCode.IterJumpIfDone, arg: make_number(body.length + for_block.items.length + 3), debug: debug });
+
+		ops.push({ code: OperationCode.EndStackChange, arg: make_number(for_block.items.length), debug: debug });
+
+		for (const [i, item] of [...for_block.items].reverse().entries())
+		{
+			if (i === for_block.items.length - 1)
+			{
+				ops.push({ code: OperationCode.IterUpdateState, debug: debug });
+			}
+
+			ops.push({ code: OperationCode.Store, arg: make_string(item.data), debug: item.debug });
+		}
+
+		ops.push(...body);
+		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
+
+		ops.push({ code: OperationCode.EndStackChange, arg: make_number(0), debug: debug });
+		ops.push({ code: OperationCode.Pop, arg: make_number(3), debug: debug });
+		ops.push({ code: OperationCode.EndBlock, debug: debug });
+
+		return ops;
+	}
+
+	protected compileStep(step: ExpressionInterface | undefined): Array<OperationInterface>
+	{
+		if (step === undefined)
+		{
+			return [{ code: OperationCode.Push, arg: make_number(1), debug: { line: 0, column: 0 } }];
+		}
+
+		return this.compileExpression(step);
+	}
+
+	protected compileNumeric_for(numeric_for_block: NumericForInterface | undefined): Array<OperationInterface>
+	{
+		if (numeric_for_block === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+		const body = this.compileBlock(numeric_for_block.body);
+		const step = this.compileStep(numeric_for_block.step);
+		const index = numeric_for_block.index.data;
+		const debug = numeric_for_block.index.debug;
+
+		this.replace_breaks(body, step.length + 4);
+
+		ops.push({ code: OperationCode.StartBlock, debug: debug });
+		ops.push(...this.compileExpression(numeric_for_block.start));
+
+		const after_creating_itorator = ops.length;
+
+		ops.push({ code: OperationCode.Dup, debug: debug });
+		ops.push(...this.compileExpression(numeric_for_block.end));
+		ops.push({ code: OperationCode.NotEquals, debug: debug });
+		ops.push({ code: OperationCode.JumpIfNot, arg: make_number(body.length + step.length + 4), debug: debug });
+
+		ops.push({ code: OperationCode.Store, arg: make_string(index), debug: debug });
+		ops.push(...body);
+		ops.push({ code: OperationCode.Load, arg: make_string(index), debug: debug });
+		ops.push(...step);
+		ops.push({ code: OperationCode.Add, debug: debug });
+		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
+
+		ops.push({ code: OperationCode.Pop, debug: debug });
+		ops.push({ code: OperationCode.EndBlock, debug: debug });
+
+		return ops;
+	}
+
+	protected compileRepeat(repeat: RepeatInterface | undefined): Array<OperationInterface>
+	{
+		if (repeat === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+		const debug = repeat.token.debug;
+
+		ops.push({ code: OperationCode.StartBlock, debug: debug });
+
+		ops.push(...this.compileBlock(repeat.body));
+		ops.push(...this.compileInverted_conditional_jump(repeat.condition, 1));
+		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length), debug: debug });
+
+		ops.push({ code: OperationCode.EndBlock, debug: debug });
+
+		return ops;
+	}
+
+	protected compileDo(do_block: DoInterface | undefined): Array<OperationInterface>
+	{
+		if (do_block === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+		const debug = do_block.token.debug;
+
+		ops.push({ code: OperationCode.StartBlock, debug: debug });
+		ops.push(...this.compileBlock(do_block.body));
+		ops.push({ code: OperationCode.EndBlock, debug: debug });
+
+		return ops;
+	}
+
+	protected compileReturn(return_block: ReturnInterface | undefined): Array<OperationInterface>
+	{
+		if (return_block === undefined)
+		{
+			throw new Error();
+		}
+
+		const ops: Array<OperationInterface> = [];
+
+		for (const value of return_block.values)
+		{
+			ops.push(...this.compileExpression(value));
+		}
+
+		const debug = return_block.token.debug;
+		const return_count = return_block.values.length;
+
+		ops.push({ code: OperationCode.Return, arg: make_number(return_count), debug: debug });
+
+		return ops;
+	}
+
+	protected compileBlock(chunk: ChunkInterface): Array<OperationInterface>
+	{
+		const { code, has_last_expression }: ChunkResult = this.compileChunk(chunk);
+
+		if (has_last_expression)
+		{
+			code.push({
+				code: OperationCode.Pop,
+				debug: {
+					line: 0,
+					column: 0,
+				},
+			});
+		}
+
+		return code;
+	}
+
+	protected compileChunk(chunk: ChunkInterface): ChunkResult
+	{
+		const ops = [];
+		let has_last_expression = false;
+
+		for (const [index, statement] of chunk.statements.entries())
+		{
+			// eslint-disable-next-line @ts/switch-exhaustiveness-check
+			switch (statement.kind)
+			{
+				case StatementKind.Empty:
+					break;
+				case StatementKind.Expression:
+				{
+					ops.push(...this.compileExpression(statement.expression));
+
+					if (statement.expression === undefined)
+					{
+						break;
+					}
+
+					const is_last_statement: boolean = index === chunk.statements.length - 1;
+
+					if (is_last_statement)
+					{
+						has_last_expression = true;
+						break;
+					}
+
+					ops.push({
+						code: OperationCode.Pop,
+						debug: getDebug(statement.expression.token),
+					});
+
+					break;
+				}
+				case StatementKind.Assignment:
+					ops.push(...this.compileAssignment(statement.assignment));
+					break;
+				case StatementKind.Local:
+					ops.push(...this.compileLocal(statement.local));
+					break;
+				case StatementKind.If:
+					ops.push(...this.compileIf(statement.if));
+					break;
+				case StatementKind.While:
+					ops.push(...this.compileWhile(statement.while));
+					break;
+				case StatementKind.For:
+					ops.push(...this.compileFor(statement.for));
+					break;
+				case StatementKind.NumericFor:
+					ops.push(...this.compileNumeric_for(statement.numeric_for));
+					break;
+				case StatementKind.Repeat:
+					ops.push(...this.compileRepeat(statement.repeat));
+					break;
+				case StatementKind.Do:
+					ops.push(...this.compileDo(statement.do));
+					break;
+				case StatementKind.Return:
+					ops.push(...this.compileReturn(statement.return));
+					break;
+				case StatementKind.Break:
+					ops.push({
+						code: OperationCode.Break,
+						debug: { line: 0, column: 0 },
+					});
+
+					break;
+			}
+		}
+
+		return {
+			code: ops,
+			has_last_expression: has_last_expression,
+		};
+	}
+
+	// @TODO: Clarify what this does
+	// eslint-disable-next-line @ts/class-methods-use-this
+	protected link(code: Array<OperationInterface>, function_id: number, location: number): void
+	{
+		for (const op of code)
+		{
+			if (isVariableKind(op.arg, VariableKind.Function) && op.arg.function_id === function_id)
+			{
+				op.arg.function_id = location;
+			}
 		}
 	}
 }
 
-export function compile(chunk: ChunkInterface, extend?: Array<OpInterface>): ProgramInterface
-{
-	const ops = [...(extend ?? [])];
-	const functions: Array<Array<OpInterface>> = [];
-	const { code, has_last_expression } = compile_chunk(chunk, functions);
-
-	const function_locations: Array<number> = [];
-
-	for (const func of functions)
-	{
-		function_locations.push(ops.length);
-		ops.push(...func);
-	}
-
-	for (const [id, location] of function_locations.entries())
-	{
-		link(code, id, location);
-	}
-
-	const start = ops.length;
-
-	if (extend?.length ?? 0 > 0)
-	{
-		ops.push({ code: OpCode.Pop, debug: { line: 0, column: 0 } });
-	}
-
-	ops.push(...code);
-
-	if (!has_last_expression)
-	{
-		ops.push({ code: OpCode.Push, arg: nil, debug: { line: 0, column: 0 } });
-	}
-
-	return {
-		code: ops,
-		start: start,
-	};
-}
+export { Compiler };

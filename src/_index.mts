@@ -3,7 +3,7 @@ import { make_table, make_variable } from "./runtime.mjs";
 import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 import { make_number } from "./runtime/make-number/make-number.mjs";
 import { make_string } from "./runtime/make-string/make-string.mjs";
-import { compile } from "./compiler.mjs";
+import { Compiler } from "./compiler.mjs";
 import { std_lib } from "./lib.mjs";
 import { variable_to_string } from "./lib/variable-to-string/variable-to-string.mjs";
 
@@ -24,7 +24,7 @@ export * from "./variable/unwrap-variable.mjs";
 
 export {
 	Engine,
-	compile,
+	Compiler,
 	std_lib as std_global,
 	make_boolean,
 	make_number,
