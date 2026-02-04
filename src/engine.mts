@@ -682,10 +682,10 @@ export class Engine
 
 	private runInstructionDup(arg: Variable | undefined): void
 	{
-		const count = isVariableKind(arg, VariableKind.Number) ? arg.number : 1;
-		const items = this.stack.splice(this.stack.length - count, count);
+		const count: number = isVariableKind(arg, VariableKind.Number) ? arg.number : 1;
+		const items: Array<Variable> = this.stack.slice(-count);
 
-		this.stack.push(...items, ...items);
+		this.stack.push(...items);
 	}
 
 	private runInstructionSwap(): void
