@@ -568,14 +568,14 @@ class Compiler
 	// eslint-disable-next-line @ts/class-methods-use-this
 	protected replace_breaks(code: Array<OperationInterface>, offset_from_end: number): void
 	{
-		for (const [i, op] of code.entries())
+		for (const [index, operation] of code.entries())
 		{
-			if (op.code === OperationCode.Break)
+			if (operation.code === OperationCode.Break)
 			{
-				const offset = code.length - i - 1 + offset_from_end;
+				const offset = code.length - index - 1 + offset_from_end;
 
-				op.code = OperationCode.Jump;
-				op.arg = make_number(offset);
+				operation.code = OperationCode.Jump;
+				operation.arg = make_number(offset);
 			}
 		}
 	}
@@ -666,8 +666,12 @@ class Compiler
 			throw new Error();
 		}
 
+		// @TODO: The step expression should only be evaluated once, not every iteration
+
 		const ops: Array<OperationInterface> = [];
 		const body = this.compileBlock(numeric_for_block.body);
+		const start = this.compileExpression(numeric_for_block.start);
+		const end = this.compileExpression(numeric_for_block.end);
 		const step = this.compileStep(numeric_for_block.step);
 		const index = numeric_for_block.index.data;
 		const debug = numeric_for_block.index.debug;
@@ -675,12 +679,14 @@ class Compiler
 		this.replace_breaks(body, step.length + 4);
 
 		ops.push({ code: OperationCode.StartBlock, debug: debug });
-		ops.push(...this.compileExpression(numeric_for_block.start));
+		ops.push(...start);
 
-		const after_creating_iterator = ops.length;
+		const after_creating_iterator: number = ops.length;
 
 		ops.push({ code: OperationCode.Dup, debug: debug });
-		ops.push(...this.compileExpression(numeric_for_block.end));
+		ops.push(...end);
+		ops.push(...step);
+		ops.push({ code: OperationCode.Add, debug: debug });
 		ops.push({ code: OperationCode.NotEquals, debug: debug });
 		ops.push({ code: OperationCode.JumpIfNot, arg: make_number(body.length + step.length + 4), debug: debug });
 
@@ -858,11 +864,11 @@ class Compiler
 	// eslint-disable-next-line @ts/class-methods-use-this
 	protected link(code: Array<OperationInterface>, function_id: number, location: number): void
 	{
-		for (const op of code)
+		for (const operation of code)
 		{
-			if (isVariableKind(op.arg, VariableKind.Function) && op.arg.function_id === function_id)
+			if (isVariableKind(operation.arg, VariableKind.Function) && operation.arg.function_id === function_id)
 			{
-				op.arg.function_id = location;
+				operation.arg.function_id = location;
 			}
 		}
 	}

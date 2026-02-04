@@ -1,6 +1,7 @@
 import type { OperationInterface } from "./op.interface.mjs";
 
-interface ProgramInterface {
+interface ProgramInterface
+{
 	code: Array<OperationInterface>;
 	start: number;
 }

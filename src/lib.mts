@@ -599,10 +599,12 @@ function table_concat(_: Engine, list: Variable, sep?: Variable, i?: Variable, j
 
 	const result = [...list.table.values()]
 		.slice(start - 1, end)
-		.map((item) =>
-{
-return variable_to_string(item);
-})
+		.map(
+			(item) =>
+			{
+				return variable_to_string(item);
+			}
+		)
 		.join(separator);
 
 	return [make_string(result)];
@@ -849,8 +851,8 @@ function math_random(_: Engine, m?: Variable, n?: Variable): Array<Variable>
 	assertVariableKind(m, VariableKind.Number);
 	assertVariableKind(n, VariableKind.Number);
 
-	const min = m.number;
-	const max = n.number;
+	const min: number = m.number;
+	const max: number = n.number;
 
 	if (max === 0)
 	{
@@ -890,25 +892,29 @@ function math_tan(_: Engine, x: Variable): Array<Variable>
 
 function math_tointeger(_: Engine, x: Variable): Array<Variable>
 {
-	assertVariable(x);
-
-	switch (x.data_type)
+	if (isVariableKind(x, VariableKind.Number))
 	{
-		case VariableKind.Number:
+		if (isInteger(x.number))
+		{
 			return [x];
-		case VariableKind.String:
-			const text: string = x.string.trim();
+		}
 
-			if (!/^-?\d+$/.test(text))
-			{
-				return [nil];
-			}
-
-			return [make_number(parseInt(text))];
-
-		default:
-			return [nil];
+		return [nil];
 	}
+
+	if (isVariableKind(x, VariableKind.String))
+	{
+		const text: string = x.string.trim();
+
+		if (!/^-?\d+$/.test(text))
+		{
+			return [nil];
+		}
+
+		return [make_number(parseInt(text, 10))];
+	}
+
+	return [nil];
 }
 
 function math_type(_: Engine, x: Variable): Array<Variable>
@@ -979,7 +985,7 @@ export function std_lib(): VariableTableMapType
 	]);
 
 	const table_mapping: VariableTable = twrap([
-		["concat", { data_type: VariableKind.NativeFunction, native_function: table_concat }],
+		["concat", fwrap(table_concat)],
 		// foreach
 		// foreachi
 		// getn
