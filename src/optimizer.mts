@@ -571,6 +571,7 @@ export function optimize_chunk(chunk: ChunkInterface, parent_constants?: Map<str
 
 	for (const statement of chunk.statements)
 	{
+		// eslint-disable-next-line @ts/switch-exhaustiveness-check
 		switch (statement.kind)
 		{
 			case StatementKind.Assignment:

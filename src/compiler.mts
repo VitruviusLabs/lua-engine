@@ -19,7 +19,7 @@ import type { DoInterface } from "./ast/definition/interface/do.interface.mjs";
 import type { ReturnInterface } from "./ast/definition/interface/return.interface.mjs";
 import type { ChunkInterface } from "./ast/definition/interface/chunk.interface.mjs";
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
-import type { TokenStream } from "./lexer.mjs";
+import { TokenStream } from "./lexer.mjs";
 import type { DebugInterface } from "./lexer/definition/interface/debug.interface.mjs";
 import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 import { make_number } from "./runtime/make-number/make-number.mjs";
@@ -387,11 +387,13 @@ class Compiler
 		return local.names.map(
 			(name: TokenInterface | TokenStream): OperationInterface =>
 			{
+				const token: TokenInterface = (name instanceof TokenStream) ? name.peek() : name;
+
 				return {
 					code: OperationCode.MakeLocal,
 					arg: {
 						data_type: VariableKind.String,
-						string: name.data,
+						string: token.data,
 					},
 					debug: name.debug,
 				};

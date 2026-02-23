@@ -14,7 +14,6 @@ export class TokenStream
 	private readonly peek_queue: Array<TokenInterface>;
 
 	private state: StateEnum;
-	private end_of_stream: boolean = false;
 	private buffer: string;
 	private token_start_debug: DebugInterface;
 
@@ -50,40 +49,59 @@ export class TokenStream
 		return token;
 	}
 
-	private current(): string | undefined
+	public feed(stream: string): void
 	{
-		if (this.processing_stream.length > 0)
+		this.processing_stream.push(...stream.split(""));
+	}
+
+	public next(): TokenInterface
+	{
+		if (this.peek_queue.length === 0)
 		{
-			return this.processing_stream[0];
+			this.peek();
 		}
 
-		if (this.end_of_stream)
+		return this.peek_queue.shift() as TokenInterface;
+	}
+
+	private getCurrent(): string
+	{
+		return this.processing_stream[0] ?? "\0";
+	}
+
+	private peekDouble(): string | undefined
+	{
+		if (this.processing_stream.length < 2)
 		{
 			return undefined;
 		}
 
-		this.end_of_stream = true;
-
-		return "\0";
+		return this.processing_stream.slice(0, 2).join("");
 	}
 
-	private consume()
+	private consume(): void
 	{
-		if (this.processing_stream.length <= 0)
+		if (this.processing_stream.length === 0)
 		{
 			return;
 		}
 
-		this.column = this.column + 1;
+		const current: string | undefined = this.processing_stream[0];
 
-		if (this.processing_stream.shift() === "\n")
+		this.processing_stream.shift();
+
+		if (current === "\n")
 		{
-			this.line = this.line + 1;
+			++this.line;
 			this.column = 1;
+
+			return;
 		}
+
+		++this.column;
 	}
 
-	private start_token()
+	private start_token(): void
 	{
 		this.token_start_debug = {
 			line: this.line,
@@ -93,7 +111,7 @@ export class TokenStream
 		this.buffer = "";
 	}
 
-	private initial()
+	private initial(): void
 	{
 		if (this.processing_stream.length === 0)
 		{
@@ -109,19 +127,19 @@ export class TokenStream
 			return;
 		}
 
-		const c = this.current() ?? "\0";
+		const current: string = this.getCurrent();
 
-		if (/\s/.test(c))
+		if (/\s/.test(current))
 		{
 			this.consume();
 
 			return;
 		}
 
-		if (this.processing_stream.length > 1)
-		{
-			const double = c + this.processing_stream[1];
+		const double: string | undefined = this.peekDouble();
 
+		if (double !== undefined)
+		{
 			if (double === "--")
 			{
 				this.state = State.Comment;
@@ -139,13 +157,13 @@ export class TokenStream
 				return;
 			}
 
-			const dobule_token_type = get_double_token(double);
+			const double_token_type = get_double_token(double);
 
-			if (dobule_token_type !== undefined)
+			if (double_token_type !== undefined)
 			{
 				this.peek_queue.push({
 					data: double,
-					kind: dobule_token_type,
+					kind: double_token_type,
 					debug: {
 						line: this.line,
 						column: this.column,
@@ -159,12 +177,12 @@ export class TokenStream
 			}
 		}
 
-		const single_token_type = get_single_token(c);
+		const single_token_type = get_single_token(current);
 
 		if (single_token_type !== undefined)
 		{
 			this.peek_queue.push({
-				data: c,
+				data: current,
 				kind: single_token_type,
 				debug: {
 					line: this.line,
@@ -177,7 +195,7 @@ export class TokenStream
 			return;
 		}
 
-		if (c === '"')
+		if (current === '"')
 		{
 			this.start_token();
 			this.consume();
@@ -186,7 +204,7 @@ export class TokenStream
 			return;
 		}
 
-		if (/[a-zA-Z_]/.test(c))
+		if (/[a-zA-Z_]/.test(current))
 		{
 			this.start_token();
 			this.state = State.Identifier;
@@ -194,20 +212,25 @@ export class TokenStream
 			return;
 		}
 
-		if (/[0-9]/.test(c))
+		if (/[0-9]/.test(current))
 		{
 			this.start_token();
 			this.state = State.NumberLiteral;
 		}
 	}
 
-	private read_string()
+	private read_string(): void
 	{
-		const c = this.current();
+		const current = this.getCurrent();
+
+		if (current === "\0")
+		{
+			return;
+		}
 
 		this.consume();
 
-		if (c === '"')
+		if (current === '"')
 		{
 			this.peek_queue.push({
 				data: this.buffer,
@@ -220,43 +243,55 @@ export class TokenStream
 			return;
 		}
 
-		if (c === "\\")
+		if (current === "\\")
 		{
 			this.state = State.StringLiteralEscape;
 
 			return;
 		}
 
-		this.buffer = this.buffer + c;
+		this.buffer = this.buffer + current;
 	}
 
-	private read_string_escape()
+	private read_string_escape(): void
 	{
-		const c = this.current();
+		const current: string = this.getCurrent();
 
 		this.consume();
 		this.state = State.StringLiteral;
 
-		switch (c)
+		switch (current)
 		{
-			case "n": this.buffer = `${this.buffer}\n`; break;
-			case "0": this.buffer = `${this.buffer}\0`; break;
-			case "r": this.buffer = `${this.buffer}\r`; break;
-			case "t": this.buffer = `${this.buffer}\t`; break;
+			case "n":
+				this.buffer = `${this.buffer}\n`;
+				break;
+
+			case "0":
+				this.buffer = `${this.buffer}\0`;
+				break;
+
+			case "r":
+				this.buffer = `${this.buffer}\r`;
+				break;
+
+			case "t":
+				this.buffer = `${this.buffer}\t`;
+				break;
 
 			default:
-				this.buffer = this.buffer + c;
+				this.buffer = this.buffer + current;
 				break;
 		}
 	}
 
-	private read_multi_line_string()
+	private read_multi_line_string(): void
 	{
-		const c = this.current() ?? "\0";
+		const current: string = this.getCurrent();
+		const double: string | undefined = this.peekDouble();
 
 		this.consume();
 
-		if (c + this.current() === "]]")
+		if (double === "]]")
 		{
 			this.peek_queue.push({
 				data: this.buffer,
@@ -270,14 +305,14 @@ export class TokenStream
 			return;
 		}
 
-		this.buffer = this.buffer + c;
+		this.buffer = this.buffer + current;
 	}
 
-	private read_identifier()
+	private read_identifier(): void
 	{
-		const c = this.current() ?? "\0";
+		const current: string = this.getCurrent();
 
-		if (!/[a-zA-Z0-9_]/.test(c))
+		if (!/[a-zA-Z0-9_]/.test(current))
 		{
 			const kind = get_keyword(this.buffer);
 
@@ -292,41 +327,41 @@ export class TokenStream
 			return;
 		}
 
-		this.buffer = this.buffer + c;
+		this.buffer = this.buffer + current;
 		this.consume();
 	}
 
-	private number()
+	private number(): void
 	{
-		const c = this.current() ?? "\0";
+		const current: string = this.getCurrent();
 
-		if (/[0-9]/.test(c))
+		if (/[0-9]/.test(current))
 		{
-			this.buffer = this.buffer + c;
+			this.buffer = this.buffer + current;
 			this.consume();
 
 			return;
 		}
 
-		if (c === ".")
+		if (current === ".")
 		{
-			this.buffer = this.buffer + c;
+			this.buffer = this.buffer + current;
 			this.consume();
 			this.state = State.NumberLiteralDot;
 
 			return;
 		}
 
-		if (c === "e" || c === "E")
+		if (current === "e" || current === "E")
 		{
-			this.buffer = this.buffer + c;
+			this.buffer = this.buffer + current;
 			this.consume();
 			this.state = State.NumberLiteralExp;
 
 			return;
 		}
 
-		if (c === "x")
+		if (current === "x")
 		{
 			if (this.buffer !== "0")
 			{
@@ -341,7 +376,7 @@ export class TokenStream
 				return;
 			}
 
-			this.buffer = this.buffer + c;
+			this.buffer = this.buffer + current;
 			this.state = State.NumberHex;
 			this.consume();
 
@@ -357,21 +392,21 @@ export class TokenStream
 		this.state = State.Initial;
 	}
 
-	private number_dot()
+	private number_dot(): void
 	{
-		const c = this.current() ?? "\0";
+		const current: string = this.getCurrent();
 
-		if (/[0-9]/.test(c))
+		if (/[0-9]/.test(current))
 		{
-			this.buffer = this.buffer + c;
+			this.buffer = this.buffer + current;
 			this.consume();
 
 			return;
 		}
 
-		if (c === "e" || c === "E")
+		if (current === "e" || current === "E")
 		{
-			this.buffer = this.buffer + c;
+			this.buffer = this.buffer + current;
 			this.state = State.NumberLiteralExpSign;
 			this.consume();
 
@@ -387,13 +422,13 @@ export class TokenStream
 		this.state = State.Initial;
 	}
 
-	private number_exp_sign()
+	private number_exp_sign(): void
 	{
-		const c = this.current() ?? "\0";
+		const current: string = this.getCurrent();
 
-		if (/[0-9+-]/.test(c))
+		if (/[0-9+-]/.test(current))
 		{
-			this.buffer = this.buffer + c;
+			this.buffer = this.buffer + current;
 			this.consume();
 			this.state = State.NumberLiteralExp;
 
@@ -409,13 +444,13 @@ export class TokenStream
 		this.state = State.Initial;
 	}
 
-	private number_exp()
+	private number_exp(): void
 	{
-		const c = this.current() ?? "\0";
+		const current: string = this.getCurrent();
 
-		if (/[0-9]/.test(c))
+		if (/[0-9]/.test(current))
 		{
-			this.buffer = this.buffer + c;
+			this.buffer = this.buffer + current;
 			this.consume();
 
 			return;
@@ -430,20 +465,22 @@ export class TokenStream
 		this.state = State.Initial;
 	}
 
-	private number_hex()
+	private number_hex(): void
 	{
-		const c = this.current() ?? "\0";
+		const current: string = this.getCurrent();
 
-		if (/[0-9a-fA-F]/.test(c))
+		if (/[0-9a-fA-F]/.test(current))
 		{
-			this.buffer = this.buffer + c;
+			this.buffer = this.buffer + current;
 			this.consume();
 
 			return;
 		}
 
+		const hex_without_prefix: string = this.buffer.slice(2);
+
 		this.peek_queue.push({
-			data: parseInt(this.buffer.slice(2), 16).toString(),
+			data: parseInt(hex_without_prefix, 16).toString(),
 			kind: TokenKind.NumberLiteral,
 			debug: this.token_start_debug,
 		});
@@ -451,21 +488,23 @@ export class TokenStream
 		this.state = State.Initial;
 	}
 
-	private comment()
+	private comment(): void
 	{
-		const c = this.current();
+		const current: string = this.getCurrent();
 
 		this.consume();
 
-		if (c === "\n")
+		if (current === "\n")
 		{
 			this.state = State.Initial;
 		}
 	}
 
-	private on_char()
+	private on_char(): void
 	{
-		if (this.current() === undefined)
+		const current: string = this.getCurrent();
+
+		if (current === "\0")
 		{
 			this.peek_queue.push({
 				data: "",
@@ -517,21 +556,5 @@ export class TokenStream
 				this.comment();
 				break;
 		}
-	}
-
-	feed(stream: string)
-	{
-		this.processing_stream.push(...stream.split(""));
-		this.end_of_stream = false;
-	}
-
-	next(): TokenInterface
-	{
-		if (this.peek_queue.length === 0)
-		{
-			this.peek();
-		}
-
-		return this.peek_queue.shift() as TokenInterface;
 	}
 }

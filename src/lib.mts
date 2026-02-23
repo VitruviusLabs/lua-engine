@@ -132,6 +132,7 @@ function next(_: Engine, variable: Variable, start_index?: Variable): Array<Vari
 
 	for (const [key, value] of variable.table.entries())
 	{
+		// eslint-disable-next-line @ts/no-unnecessary-condition -- Bug in eslint
 		if (previous_key_found)
 		{
 			return [key_variable(key), value];
@@ -165,11 +166,11 @@ function range(_: Engine, count: Variable): Array<Variable>
 
 	return [{
 		data_type: VariableKind.NativeFunction,
-		native_function: () =>
+		native_function: (): Array<Variable> =>
 		{
 			index = index + 1;
 
-			if (index >= (count.number ?? 0))
+			if (index >= count.number)
 			{
 				return [nil];
 			}
@@ -201,7 +202,7 @@ function key_variable(key: unknown): Variable
 }
 
 // @ts-expect-error: unimplemented
-function table_sort(engine: Engine, table: Variable, by: Variable): Array<Variable>
+function table_sort(engine: Engine, table: Variable, sort_callable: Variable): Array<Variable>
 {
 	assertVariableKind(table, VariableKind.Table);
 
@@ -214,7 +215,7 @@ function table_sort(engine: Engine, table: Variable, by: Variable): Array<Variab
 	entries.sort(
 		([_, a], [__, b]) =>
 		{
-			const result = engine.call(by, a, b)
+			const result = engine.call(sort_callable, a, b)
 
 			const comparison = result.at(0)
 			assertVariableKind(comparison, VariableKind.Number);
@@ -271,46 +272,50 @@ function first(_: Engine, table: Variable): Array<Variable>
 function keys(_: Engine, table: Variable): Array<Variable>
 {
 	assertVariableKind(table, VariableKind.Table);
-	const keys = [...table.table.keys()];
-	const entries = keys.map(
-		(key, i) =>
-		{
-			return [i + 1, key_variable(key)] as const;
-		}
-	);
+	const table_keys = [...table.table.keys()];
 
-	return [{ data_type: VariableKind.Table, table: new Map(entries) }];
+	const elements: VariableTableMapType = new Map();
+
+	for (const key of table_keys)
+	{
+		elements.set(elements.size + 1, key_variable(key));
+	}
+
+	return [{ data_type: VariableKind.Table, table: elements }];
 }
 
 function values(_: Engine, table: Variable): Array<Variable>
 {
 	assertVariableKind(table, VariableKind.Table);
-	const values = [...table.table.values()];
-	const entries = values.map(
-		(value, i) =>
-		{
-			return [i + 1, value] as const;
-		}
-	);
 
-	return [{ data_type: VariableKind.Table, table: new Map(entries) }];
+	const elements: VariableTableMapType = new Map();
+
+	for (const value of table.table.values())
+	{
+		elements.set(elements.size + 1, value);
+	}
+
+	return [{ data_type: VariableKind.Table, table: elements }];
 }
 
 function to_number(_: Engine, arg: Variable): Array<Variable>
 {
+	// eslint-disable-next-line @ts/switch-exhaustiveness-check
 	switch (arg.data_type)
 	{
 		case VariableKind.Number:
 			return [arg];
 		case VariableKind.String:
+		{
 			const text: string = arg.string.trim();
 
-			if (!/^-?\d+(\.\d+)?$/.test(text))
+			if (!/^-?\d+(?:\.\d+)?$/.test(text))
 			{
 				return [nil];
 			}
 
 			return [make_number(parseFloat(text))];
+		}
 
 		default:
 			return [nil];
@@ -326,7 +331,7 @@ function assert(engine: Engine, condition: Variable, message?: Variable): Array<
 {
 	if (isVariableKind(condition, VariableKind.Nil) || isVariableKind(condition, VariableKind.Boolean) && !condition.boolean)
 	{
-		to_error(engine, message ?? make_string("assertion failed!"));
+		engine.raise_error(isVariableKind(message, VariableKind.String) ? message.string : "assertion failed!");
 	}
 
 	return [nil];
@@ -335,12 +340,11 @@ function assert(engine: Engine, condition: Variable, message?: Variable): Array<
 function error(engine: Engine, message: Variable): Array<Variable>
 {
 	assertVariableKind(message, VariableKind.String);
-	engine.raise_error(message.string);
 
-	return [nil];
+	engine.raise_error(message.string);
 }
 
-let warnings_on = true;
+let warnings_on: boolean = true;
 
 function warn(_: Engine, ...messages: Array<Variable>): Array<Variable>
 {
@@ -353,6 +357,7 @@ function warn(_: Engine, ...messages: Array<Variable>): Array<Variable>
 			case "@on":
 				warnings_on = true;
 				break;
+
 			case "@off":
 				warnings_on = false;
 				break;
@@ -364,7 +369,7 @@ function warn(_: Engine, ...messages: Array<Variable>): Array<Variable>
 		console.error(
 			"WARNING",
 			messages.map(
-				(x) =>
+				(x: Variable): string =>
 				{
 					return variable_to_string(x);
 				}
@@ -395,31 +400,32 @@ function select(_: Engine, index: Variable, ...args: Array<Variable>): Array<Var
 	return [nil];
 }
 
-function string_byte(_: Engine, s: Variable, i?: Variable, j?: Variable): Array<Variable>
+// eslint-disable-next-line @ts/max-params
+function string_byte(_: Engine, value: Variable, start_index?: Variable, end_index?: Variable): Array<Variable>
 {
-	assertVariableKind(s, VariableKind.String);
+	assertVariableKind(value, VariableKind.String);
 
 	let start: number = 1;
 
-	if (!isNil(i))
+	if (!isNil(start_index))
 	{
-		assertVariableKind(i, VariableKind.Number);
-		start = i.number;
+		assertVariableKind(start_index, VariableKind.Number);
+		start = start_index.number;
 	}
 
 	let end: number = start;
 
-	if (!isNil(j))
+	if (!isNil(end_index))
 	{
-		assertVariableKind(j, VariableKind.Number);
-		end = j.number;
+		assertVariableKind(end_index, VariableKind.Number);
+		end = end_index.number;
 	}
 
 	const bytes: Array<Variable> = [];
 
 	for (let index = start - 1; index <= end - 1; index++)
 	{
-		bytes.push(make_number(s.string.charCodeAt(index)));
+		bytes.push(make_number(value.string.charCodeAt(index)));
 	}
 
 	return bytes;
@@ -429,14 +435,14 @@ function string_char(_: Engine, ...chars: Array<Variable>): Array<Variable>
 {
 	assertArray<VariableNumber>(chars, unary(assertVariableKind, VariableKind.Number));
 
-	const s = String.fromCharCode(...chars.map(
-		(c) =>
+	const result: string = String.fromCharCode(...chars.map(
+		(code): number =>
 		{
-			return c.number;
+			return code.number;
 		}
 	));
 
-	return [make_string(s)];
+	return [make_string(result)];
 }
 
 function string_format_helper(char: string, args_iterator: IterableIterator<Variable>): string
@@ -512,13 +518,14 @@ function string_format(_: Engine, format: Variable, ...args: Array<Variable>): A
 	return [make_string(result)];
 }
 
-function string_find(_: Engine, s: Variable, pattern: Variable, init?: Variable, plain?: Variable): Array<Variable>
+// eslint-disable-next-line @ts/max-params
+function string_find(_: Engine, value: Variable, pattern: Variable, init?: Variable, plain?: Variable): Array<Variable>
 {
-	assertVariableKind(s, VariableKind.String);
+	assertVariableKind(value, VariableKind.String);
 	assertVariableKind(pattern, VariableKind.String);
 
 	const offset: number = optional_parameter(VariableKind.Number, init) ?? 1;
-	const str = s.string.slice(offset - 1);
+	const str = value.string.slice(offset - 1);
 
 	const plain_param = optional_parameter(VariableKind.Boolean, plain) ?? false;
 
@@ -534,59 +541,59 @@ function string_find(_: Engine, s: Variable, pattern: Variable, init?: Variable,
 		return [nil];
 	}
 
-	const index = s.string.indexOf(results[0]);
+	const index = value.string.indexOf(results[0]);
 
 	return [make_number(index + 1)];
 }
 
-function string_len(_: Engine, s: Variable): Array<Variable>
+function string_len(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(s, VariableKind.String);
+	assertVariableKind(value, VariableKind.String);
 
-	return [make_number(s.string.length)];
+	return [make_number(value.string.length)];
 }
 
-function string_lower(_: Engine, s: Variable): Array<Variable>
+function string_lower(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(s, VariableKind.String);
+	assertVariableKind(value, VariableKind.String);
 
-	return [make_string(s.string.toLowerCase())];
+	return [make_string(value.string.toLowerCase())];
 }
 
-function string_rep(_: Engine, s: Variable, n: Variable, sep?: Variable): Array<Variable>
+function string_rep(_: Engine, value: Variable, start_index: Variable, separator?: Variable): Array<Variable>
 {
-	assertVariableKind(s, VariableKind.String);
-	assertVariableKind(n, VariableKind.Number);
+	assertVariableKind(value, VariableKind.String);
+	assertVariableKind(start_index, VariableKind.Number);
 
-	const separator: string = optional_parameter(VariableKind.String, sep) ?? "";
+	const sep: string = optional_parameter(VariableKind.String, separator) ?? "";
 
-	return [make_string(new Array(n.number).fill(s.string).join(separator))];
+	return [make_string(new Array(start_index.number).fill(value.string).join(sep))];
 }
 
-function string_sub(_: Engine, s: Variable, i: Variable, j?: Variable): Array<Variable>
+// eslint-disable-next-line @ts/max-params
+function string_sub(_: Engine, value: Variable, start_index?: Variable, end_index?: Variable): Array<Variable>
 {
-	assertVariableKind(s, VariableKind.String);
-	assertVariableKind(i, VariableKind.Number);
+	assertVariableKind(value, VariableKind.String);
+	assertVariableKind(start_index, VariableKind.Number);
 
-	const end: number | undefined = optional_parameter(VariableKind.Number, j);
+	const start: number = optional_parameter(VariableKind.Number, start_index) ?? 1;
+	const end: number | undefined = optional_parameter(VariableKind.Number, end_index);
 
-	const start = i.number ?? 1;
-
-	return [make_string(s.string.slice(start - 1, end))];
+	return [make_string(value.string.slice(start - 1, end))];
 }
 
-function string_upper(_: Engine, s: Variable): Array<Variable>
+function string_upper(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(s, VariableKind.String);
+	assertVariableKind(value, VariableKind.String);
 
-	return [make_string(s.string.toUpperCase())];
+	return [make_string(value.string.toUpperCase())];
 }
 
-function string_reverse(_: Engine, s: Variable): Array<Variable>
+function string_reverse(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(s, VariableKind.String);
+	assertVariableKind(value, VariableKind.String);
 
-	return [make_string(s.string.split("").reverse().join(""))];
+	return [make_string(value.string.split("").reverse().join(""))];
 }
 
 function table_concat(_: Engine, list: Variable, sep?: Variable, i?: Variable, j?: Variable): Array<Variable>
@@ -637,53 +644,56 @@ function table_insert(_: Engine, list: Variable, index: Variable, value?: Variab
 	return [nil];
 }
 
-function table_move(_: Engine, a1: Variable, f: Variable, e: Variable, t: Variable, a2?: Variable): Array<Variable>
+// eslint-disable-next-line @ts/max-params -- Part of the standard library
+function table_move(_: Engine, source_table: Variable, start_index: Variable, end_index: Variable, to_index: Variable, target_table?: Variable): Array<Variable>
 {
-	if (isNil(a2))
+	if (isNil(target_table))
 	{
-		return table_move(_, a1, f, e, t, a1);
+		return table_move(_, source_table, start_index, end_index, to_index, source_table);
 	}
 
-	assertVariableKind(a1, VariableKind.Table);
-	assertVariableKind(f, VariableKind.Number);
-	assertVariableKind(e, VariableKind.Number);
-	assertVariableKind(t, VariableKind.Number);
-	assertVariableKind(a2, VariableKind.Table);
+	assertVariableKind(source_table, VariableKind.Table);
+	assertVariableKind(start_index, VariableKind.Number);
+	assertVariableKind(end_index, VariableKind.Number);
+	assertVariableKind(to_index, VariableKind.Number);
+	assertVariableKind(target_table, VariableKind.Table);
 
-	const src_start = f.number;
-	const src_end = e.number;
-	const dest_start = t.number;
+	const src_start = start_index.number;
+	const src_end = end_index.number;
+	const dest_start = to_index.number;
 	const count = src_end - src_start;
 
-	for (let index = 0; index <= count; index++)
+	for (let index = 0; index <= count; ++index)
 	{
-		a2.table.set(dest_start + index, a1.table.get(src_start + index) ?? nil);
+		target_table.table.set(dest_start + index, source_table.table.get(src_start + index) ?? nil);
 	}
 
-	return [a2];
+	return [target_table];
 }
 
 function table_pack(_: Engine, ...args: Array<Variable>): Array<Variable>
 {
-	const elements = args.map(
-		(item, i) =>
-		{
-			return [i + 1, item] as [number | string, Variable];
-		}
-	);
+	const elements: VariableTableMapType = new Map();
+
+	for (const arg of args)
+	{
+		elements.set(elements.size + 1, arg);
+	}
+
+	elements.set("n", make_number(args.length));
 
 	return [{
 		data_type: VariableKind.Table,
-		table: new Map([...elements, ["n", make_number(args.length)]]),
+		table: elements,
 	}];
 }
 
-function table_remove(_: Engine, list: Variable, pos?: Variable): Array<Variable>
+function table_remove(_: Engine, list: Variable, position?: Variable): Array<Variable>
 {
 	assertVariableKind(list, VariableKind.Table);
 
 	const size = table_size(list);
-	const remove_index = optional_parameter(VariableKind.Number, pos) ?? (size + 1);
+	const remove_index = optional_parameter(VariableKind.Number, position) ?? (size + 1);
 	const deleted_value = list.table.get(remove_index) ?? nil;
 
 	for (let index = remove_index; index < size; ++index)
@@ -696,163 +706,164 @@ function table_remove(_: Engine, list: Variable, pos?: Variable): Array<Variable
 	return [deleted_value];
 }
 
-function table_unpack(_: Engine, list: Variable, i?: Variable, j?: Variable): Array<Variable>
+function table_unpack(_: Engine, list: Variable, start_index?: Variable, end_index?: Variable): Array<Variable>
 {
 	assertVariableKind(list, VariableKind.Table);
 
-	const size = table_size(list) ?? 0;
-	const start = optional_parameter(VariableKind.Number, i) ?? 1;
-	const end = optional_parameter(VariableKind.Number, j) ?? size;
+	const size = table_size(list);
+
+	const start = optional_parameter(VariableKind.Number, start_index) ?? 1;
+	const end = optional_parameter(VariableKind.Number, end_index) ?? size;
 
 	return [...list.table.values()].splice(start - 1, end);
 }
 
-function math_abs(_: Engine, x: Variable): Array<Variable>
+function math_abs(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(Math.abs(x.number))];
+	return [make_number(Math.abs(value.number))];
 }
 
-function math_acos(_: Engine, x: Variable): Array<Variable>
+function math_acos(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(Math.acos(x.number))];
+	return [make_number(Math.acos(value.number))];
 }
 
-function math_asin(_: Engine, x: Variable): Array<Variable>
+function math_asin(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(Math.asin(x.number))];
+	return [make_number(Math.asin(value.number))];
 }
 
-function math_atan(_: Engine, x: Variable): Array<Variable>
+function math_atan(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(Math.atan(x.number))];
+	return [make_number(Math.atan(value.number))];
 }
 
-function math_ceil(_: Engine, x: Variable): Array<Variable>
+function math_ceil(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(Math.ceil(x.number))];
+	return [make_number(Math.ceil(value.number))];
 }
 
-function math_cos(_: Engine, x: Variable): Array<Variable>
+function math_cos(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(Math.cos(x.number))];
+	return [make_number(Math.cos(value.number))];
 }
 
-function math_deg(_: Engine, x: Variable): Array<Variable>
+function math_deg(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(x.number * (180 / Math.PI))];
+	return [make_number(value.number * (180 / Math.PI))];
 }
 
-function math_exp(_: Engine, x: Variable): Array<Variable>
+function math_exp(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(Math.exp(x.number))];
+	return [make_number(Math.exp(value.number))];
 }
 
-function math_floor(_: Engine, x: Variable): Array<Variable>
+function math_floor(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(Math.floor(x.number))];
+	return [make_number(Math.floor(value.number))];
 }
 
-function math_fmod(_: Engine, x: Variable, y: Variable): Array<Variable>
+function math_fmod(_: Engine, value: Variable, mod_value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
-	assertVariableKind(y, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
+	assertVariableKind(mod_value, VariableKind.Number);
 
-	return [make_number(x.number % y.number)];
+	return [make_number(value.number % mod_value.number)];
 }
 
-function math_log(_: Engine, x: Variable, base: Variable): Array<Variable>
+function math_log(_: Engine, value: Variable, base: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 	assertVariableKind(base, VariableKind.Number);
 
-	return [make_number(Math.log(x.number) / Math.log(base.number))];
+	return [make_number(Math.log(value.number) / Math.log(base.number))];
 }
 
 function math_max(_: Engine, ...args: Array<Variable>): Array<Variable>
 {
 	assertPopulatedArray<VariableNumber>(args, unary(assertVariableKind, VariableKind.Number));
 
-	const max = args.reduce(
-		(acc, x) =>
+	const maximum = args.reduce(
+		(current_maximum, arg): number =>
 		{
-			return Math.max(acc, x.number);
+			return Math.max(current_maximum, arg.number);
 		},
 		Number.NEGATIVE_INFINITY
 	);
 
-	return [make_number(max)];
+	return [make_number(maximum)];
 }
 
 function math_min(_: Engine, ...args: Array<Variable>): Array<Variable>
 {
 	assertPopulatedArray<VariableNumber>(args, unary(assertVariableKind, VariableKind.Number));
-	const min = args.reduce(
-		(acc, x) =>
+
+	const mininimum = args.reduce(
+		(current_minimum, arg): number =>
 		{
-			return Math.min(acc, x.number);
+			return Math.min(current_minimum, arg.number);
 		},
 		Number.POSITIVE_INFINITY
 	);
 
-	return [make_number(min)];
+	return [make_number(mininimum)];
 }
 
-function math_modf(_: Engine, x: Variable): Array<Variable>
+function math_modf(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
-	const n = x.number;
-	const integral = Math.trunc(n);
+	assertVariableKind(value, VariableKind.Number);
+	const integral = Math.trunc(value.number);
 
-	return [make_number(integral), make_number(n - integral)];
+	return [make_number(integral), make_number(value.number - integral)];
 }
 
-function math_rad(_: Engine, x: Variable): Array<Variable>
+function math_rad(_: Engine, value: Variable): Array<Variable>
 {
-	assertVariableKind(x, VariableKind.Number);
+	assertVariableKind(value, VariableKind.Number);
 
-	return [make_number(x.number * Math.PI / 180)];
+	return [make_number(value.number * Math.PI / 180)];
 }
 
 /**
  * no args: [0;1)
- * 1 arg : [1; m]
- * 2 args: [m; n]
+ * 1 arg : [1; max]
+ * 2 args: [max; min]
 */
-function math_random(_: Engine, m?: Variable, n?: Variable): Array<Variable>
+function math_random(_: Engine, min_or_max_value?: Variable, max_value?: Variable): Array<Variable>
 {
-	if (isNil(m))
+	if (isNil(min_or_max_value))
 	{
 		return [make_number(Math.random())];
 	}
 
-	if (isNil(n))
+	if (isNil(max_value))
 	{
-		return math_random(_, make_number(1), m);
+		return math_random(_, make_number(1), min_or_max_value);
 	}
 
-	assertVariableKind(m, VariableKind.Number);
-	assertVariableKind(n, VariableKind.Number);
+	assertVariableKind(min_or_max_value, VariableKind.Number);
+	assertVariableKind(max_value, VariableKind.Number);
 
-	const min: number = m.number;
-	const max: number = n.number;
+	const min: number = min_or_max_value.number;
+	const max: number = max_value.number;
 
 	if (max === 0)
 	{
@@ -934,20 +945,20 @@ function math_type(_: Engine, x: Variable): Array<Variable>
 	return [make_string("float")];
 }
 
-function math_ult(_: Engine, m: Variable, n: Variable): Array<Variable>
+function math_ult(_: Engine, first_value: Variable, second_value: Variable): Array<Variable>
 {
-	assertVariableKind(m, VariableKind.Number);
-	assertVariableKind(n, VariableKind.Number);
+	assertVariableKind(first_value, VariableKind.Number);
+	assertVariableKind(second_value, VariableKind.Number);
 
-	assertInteger(m.number);
-	assertInteger(n.number);
+	assertInteger(first_value.number);
+	assertInteger(second_value.number);
 
-	if ((m.number < 0) !== (n.number < 0))
+	if ((first_value.number < 0) !== (second_value.number < 0))
 	{
-		return [make_boolean(n.number < 0)];
+		return [make_boolean(second_value.number < 0)];
 	}
 
-	return [make_boolean(m.number < n.number)];
+	return [make_boolean(first_value.number < second_value.number)];
 }
 
 function fwrap(callable: NativeFunction): VariableNativeFunction

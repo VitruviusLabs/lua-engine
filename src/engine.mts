@@ -219,7 +219,7 @@ export class Engine
 		return result;
 	}
 
-	public raise_error(message: string): void
+	public raise_error(message: string): never
 	{
 		const operation = this.program.at(this.instruction_pointer - 1);
 
