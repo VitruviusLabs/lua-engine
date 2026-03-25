@@ -6,3 +6,4 @@ export type * from "./table-map-key.type.mjs";
 export type * from "./table-map.type.mjs";
 export type * from "./table.type.mjs";
 export type * from "./value.type.mjs";
+export type * from "./variable-input.type.mjs";

@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { ValidationError, assertUnion, unary } from "@vitruvius-labs/ts-predicate";
-import { make_table } from "./runtime.mjs";
+import { make_table, make_variable } from "./runtime.mjs";
 import { TokenStream } from "./lexer.mjs";
 import { parse } from "./parser.mjs";
 import { Compiler } from "./compiler.mjs";
@@ -29,6 +29,8 @@ import { variable_to_string } from "./lib/variable-to-string/variable-to-string.
 import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 import { make_number } from "./runtime/make-number/make-number.mjs";
 import { make_string } from "./runtime/make-string/make-string.mjs";
+import { VariableUnwrapUtility } from "./variable/unwrap-variable.mjs";
+import type { VariableInputType } from "./boundary/definition/type/variable-input.type.mjs";
 
 function is_true(value: Variable | undefined): boolean
 {
@@ -112,6 +114,20 @@ export class Engine
 		return output;
 	}
 
+	public getGlobalValue(name: string): unknown
+	{
+		const variable: Variable | undefined = this.globals.get(name);
+
+		if (variable === undefined)
+		{
+			return undefined;
+		}
+
+		const result: unknown = VariableUnwrapUtility.unwrap(variable);
+
+		return result;
+	}
+
 	public getGlobal(name: string): Variable | undefined
 	{
 		return this.globals.get(name);
@@ -120,6 +136,11 @@ export class Engine
 	public setGlobal(name: string, variable: Variable): void
 	{
 		this.globals.set(name, variable);
+	}
+
+	public setGlobalValue(name: string, value: VariableInputType): void
+	{
+		this.globals.set(name, make_variable(value));
 	}
 
 	public setGlobalFunction(name: string, callable: NativeFunction): void

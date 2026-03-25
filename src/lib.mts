@@ -23,7 +23,6 @@ import { type } from "./lib/type/type.mjs";
 import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 import { make_number } from "./runtime/make-number/make-number.mjs";
 import { make_string } from "./runtime/make-string/make-string.mjs";
-import { to_error } from "./parser/error/to-error.mjs";
 
 function optional_parameter<K extends VariableKindEnum>(
 	expected_kind: K,

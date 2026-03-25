@@ -18,39 +18,19 @@ function equals(a: Variable | undefined, b: Variable | undefined): boolean
 	switch (a.data_type)
 	{
 		case VariableKind.Nil:
-			return true;
+			return isVariableKind(b, VariableKind.Nil);
 		case VariableKind.Boolean:
 			return isVariableKind(b, VariableKind.Boolean) && a.boolean === b.boolean;
 		case VariableKind.Number:
 			return isVariableKind(b, VariableKind.Number) && a.number === b.number;
 		case VariableKind.String:
 			return isVariableKind(b, VariableKind.String) && a.string === b.string;
+		case VariableKind.Table:
+			return isVariableKind(b, VariableKind.Table) && a.table === b.table;
 		case VariableKind.Function:
 			return isVariableKind(b, VariableKind.Function) && a.function_id === b.function_id;
 		case VariableKind.NativeFunction:
 			return isVariableKind(b, VariableKind.NativeFunction) && a.native_function === b.native_function;
-		case VariableKind.Table:
-		{
-			if (!isVariableKind(b, VariableKind.Table))
-			{
-				return false;
-			}
-
-			if (a.table.size !== b.table.size)
-			{
-				return false;
-			}
-
-			for (const key of a.table.keys())
-			{
-				if (!equals(a.table.get(key), b.table.get(key)))
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
 	}
 }
 

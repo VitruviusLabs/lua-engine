@@ -1,4 +1,4 @@
-import { isEnumValue } from "@vitruvius-labs/ts-predicate";
+import { NoValue, isEnumValue } from "@vitruvius-labs/ts-predicate";
 import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKind } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKind } from "./ast/definition/enum/value-kind.enum.mjs";
@@ -41,25 +41,136 @@ function compute_arithmetic_operation(
 	};
 }
 
-function compute_comparison_operation(
+function extract_equality_operand(input: ValueInterface): boolean | number | string | undefined | typeof NoValue
+{
+	// eslint-disable-next-line @ts/switch-exhaustiveness-check
+	switch (input.kind)
+	{
+		case ValueKind.NilLiteral:
+			return undefined;
+
+		case ValueKind.BooleanLiteral:
+			return input.boolean ?? false;
+
+		case ValueKind.NumberLiteral:
+			return input.number ?? 0;
+
+		case ValueKind.StringLiteral:
+			return input.string ?? "";
+
+		default:
+			return NoValue;
+	}
+}
+
+function compute_equality_operation(
 	expression: ExpressionInterface,
-	operation: (a: number | string, b: number | string) => boolean,
+	operation: typeof ExpressionKind.Equals | typeof ExpressionKind.NotEquals,
 	constants: Map<string, ValueInterface>
 ): ValueInterface | undefined
 {
-	const lhs = compute_constant_expression(expression.lhs, constants);
-	const rhs = compute_constant_expression(expression.rhs, constants);
+	const lhs: ValueInterface | undefined = compute_constant_expression(expression.lhs, constants);
+	const rhs: ValueInterface | undefined = compute_constant_expression(expression.rhs, constants);
 
 	if (lhs === undefined || rhs === undefined)
 	{
 		return undefined;
 	}
 
-	return {
-		kind: ValueKind.BooleanLiteral,
-		boolean: operation(lhs.number ?? 0, rhs.number ?? 0),
-		token: expression.token,
-	};
+	const lhs_value: boolean | number | string | undefined | typeof NoValue = extract_equality_operand(lhs);
+	const rhs_value: boolean | number | string | undefined | typeof NoValue = extract_equality_operand(rhs);
+
+	if (lhs_value === NoValue || rhs_value === NoValue)
+	{
+		return undefined;
+	}
+
+	switch (operation)
+	{
+		case ExpressionKind.Equals:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value === rhs_value,
+				token: expression.token,
+			};
+
+		case ExpressionKind.NotEquals:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value !== rhs_value,
+				token: expression.token,
+			};
+	}
+}
+
+function extract_compared_operand(input: ValueInterface): number | string | typeof NoValue
+{
+	// eslint-disable-next-line @ts/switch-exhaustiveness-check
+	switch (input.kind)
+	{
+		case ValueKind.NumberLiteral:
+			return input.number ?? 0;
+
+		case ValueKind.StringLiteral:
+			return input.string ?? "";
+
+		default:
+			return NoValue;
+	}
+}
+
+function compute_comparison_operation(
+	expression: ExpressionInterface,
+	operation: typeof ExpressionKind.LessThan | typeof ExpressionKind.LessThanEquals | typeof ExpressionKind.GreaterThan | typeof ExpressionKind.GreaterThanEquals,
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
+{
+	const lhs: ValueInterface | undefined = compute_constant_expression(expression.lhs, constants);
+	const rhs: ValueInterface | undefined = compute_constant_expression(expression.rhs, constants);
+
+	if (lhs === undefined || rhs === undefined)
+	{
+		return undefined;
+	}
+
+	const lhs_value: number | string | typeof NoValue = extract_compared_operand(lhs);
+	const rhs_value: number | string | typeof NoValue = extract_compared_operand(rhs);
+
+	if (lhs_value === NoValue || rhs_value === NoValue)
+	{
+		return undefined;
+	}
+
+	switch (operation)
+	{
+		case ExpressionKind.LessThan:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value < rhs_value,
+				token: expression.token,
+			};
+
+		case ExpressionKind.LessThanEquals:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value <= rhs_value,
+				token: expression.token,
+			};
+
+		case ExpressionKind.GreaterThan:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value > rhs_value,
+				token: expression.token,
+			};
+
+		case ExpressionKind.GreaterThanEquals:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value >= rhs_value,
+				token: expression.token,
+			};
+	}
 }
 
 function compute_logical_operation(
@@ -237,69 +348,26 @@ function compute_constant_expression(
 			return undefined;
 
 		case ExpressionKind.Equals:
-			return compute_comparison_operation(
-				expression,
-				(a: unknown, b: unknown): boolean =>
-				{
-					return a === b;
-				},
-				constants
-			);
 		case ExpressionKind.NotEquals:
-			return compute_comparison_operation(
+			return compute_equality_operation(
 				expression,
-				(a: unknown, b: unknown): boolean =>
-				{
-					return a !== b;
-				},
+				expression.kind,
 				constants
 			);
 		case ExpressionKind.LessThan:
-			return compute_comparison_operation(
-				expression,
-				(a: number | string, b: number | string): boolean =>
-				{
-					return a < b;
-				},
-				constants
-			);
 		case ExpressionKind.LessThanEquals:
-			return compute_comparison_operation(
-				expression,
-				(a: number | string, b: number | string): boolean =>
-				{
-					return a <= b;
-				},
-				constants
-			);
 		case ExpressionKind.GreaterThan:
-			return compute_comparison_operation(
-				expression,
-				(a: number | string, b: number | string): boolean =>
-				{
-					return a > b;
-				},
-				constants
-			);
 		case ExpressionKind.GreaterThanEquals:
 			return compute_comparison_operation(
 				expression,
-				(a: number | string, b: number | string): boolean =>
-				{
-					return a >= b;
-				},
+				expression.kind,
 				constants
 			);
 		case ExpressionKind.And:
-			return compute_logical_operation(
-				expression,
-				ExpressionKind.And,
-				constants
-			);
 		case ExpressionKind.Or:
 			return compute_logical_operation(
 				expression,
-				ExpressionKind.Or,
+				expression.kind,
 				constants
 			);
 
