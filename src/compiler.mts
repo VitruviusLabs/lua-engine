@@ -623,7 +623,7 @@ class Compiler
 		ops.push(...this.compileExpression(for_block.iterator));
 		ops.push({ code: OperationCode.EndStackChange, arg: make_number(3), debug: debug });
 
-		const after_creating_itorator = ops.length;
+		const after_creating_iterator = ops.length;
 
 		ops.push({ code: OperationCode.StartStackChange, debug: debug });
 		ops.push({ code: OperationCode.IterNext, debug: debug });
@@ -642,7 +642,7 @@ class Compiler
 		}
 
 		ops.push(...body);
-		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length + after_creating_itorator - 1), debug: debug });
+		ops.push({ code: OperationCode.Jump, arg: make_number(-ops.length + after_creating_iterator - 1), debug: debug });
 
 		ops.push({ code: OperationCode.EndStackChange, arg: make_number(0), debug: debug });
 		ops.push({ code: OperationCode.Pop, arg: make_number(3), debug: debug });

@@ -57,7 +57,7 @@ function parse_statement(stream: TokenStream, end_tokens: Array<TokenKindEnum>):
 				throw new Error();
 			}
 
-			return to_error(
+			to_error(
 				token,
 				`Missing '${token_kind_to_string(first_end_token)}', got '${token_kind_to_string(token.kind)}' instead`
 			);

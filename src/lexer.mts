@@ -14,6 +14,7 @@ export class TokenStream
 	private readonly peek_queue: Array<TokenInterface>;
 
 	private state: StateEnum;
+	private string_delimiter: '"' | "'" | undefined;
 	private buffer: string;
 	private token_start_debug: DebugInterface;
 
@@ -23,6 +24,7 @@ export class TokenStream
 	public constructor()
 	{
 		this.state = State.Initial;
+		this.string_delimiter = undefined;
 		this.processing_stream = [];
 		this.buffer = "";
 		this.token_start_debug = { line: 0, column: 0 };
@@ -81,14 +83,14 @@ export class TokenStream
 
 	private consume(): void
 	{
-		if (this.processing_stream.length === 0)
+		const current: string | undefined = this.processing_stream.shift();
+
+		if (current === undefined)
 		{
-			return;
+			throw new Error("Empty processing stream");
+
+			// return;
 		}
-
-		const current: string | undefined = this.processing_stream[0];
-
-		this.processing_stream.shift();
 
 		if (current === "\n")
 		{
@@ -195,11 +197,12 @@ export class TokenStream
 			return;
 		}
 
-		if (current === '"')
+		if (current === '"' || current === "'")
 		{
 			this.start_token();
 			this.consume();
 			this.state = State.StringLiteral;
+			this.string_delimiter = current;
 
 			return;
 		}
@@ -216,7 +219,11 @@ export class TokenStream
 		{
 			this.start_token();
 			this.state = State.NumberLiteral;
+
+			return;
 		}
+
+		throw new Error(`Invalid character ${JSON.stringify(current)} at ${this.line.toFixed(0)}:${this.column.toFixed(0)}`);
 	}
 
 	private read_string(): void
@@ -230,7 +237,7 @@ export class TokenStream
 
 		this.consume();
 
-		if (current === '"')
+		if (current === this.string_delimiter)
 		{
 			this.peek_queue.push({
 				data: this.buffer,
@@ -239,6 +246,7 @@ export class TokenStream
 			});
 
 			this.state = State.Initial;
+			this.string_delimiter = undefined;
 
 			return;
 		}

@@ -1,5 +1,5 @@
 import { isEnumValue } from "@vitruvius-labs/ts-predicate";
-import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
+import { ExpressionKind, type ExpressionKindEnum } from "./ast/definition/enum/expression-kind.enum.mjs";
 import { StatementKind } from "./ast/definition/enum/statement-kind.enum.mjs";
 import { ValueKind } from "./ast/definition/enum/value-kind.enum.mjs";
 import type { ChunkInterface } from "./ast/definition/interface/chunk.interface.mjs";
@@ -8,8 +8,8 @@ import type { ExpressionInterface } from "./ast/definition/interface/expression.
 import type { StatementInterface } from "./ast/definition/interface/statement.interface.mjs";
 import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
 import type { TokenStream } from "./lexer.mjs";
-import { TokenKind } from "./lexer/definition/enum/token-kind.enum.mjs";
 import type { TokenInterface } from "./lexer/definition/interface/token.interface.mjs";
+import { TokenKind, type TokenKindEnum } from "./lexer/definition/enum/token-kind.enum.mjs";
 import { token_kind_to_string } from "./lexer/token-kind-to-string/token-kind-to-string.mjs";
 import { consume } from "./parser/consume/consume.mjs";
 import { to_error } from "./parser/error/to-error.mjs";
@@ -21,7 +21,7 @@ import { parse } from "./parser/parse/parse.mjs";
 import { unary_type_to_expression_kind } from "./parser/unary-type-to-expression-kind/unary-type-to-expression-kind.mjs";
 import { getDebug } from "./lexer/utility/get-debug.mjs";
 import { isUnaryOperatorToken } from "./parser/is-unary-operator/is-unary-operator.mjs";
-import { get_orders } from "./parser/get-orders/get-orders.mjs";
+import { operators_grouped_by_priority } from "./parser/operators-grouped-by-priority/operators-grouped-by-priority.mjs";
 
 function parse_table_key(stream: TokenStream): ExpressionInterface
 {
@@ -276,31 +276,27 @@ function parse_access_expression(expression: ExpressionInterface, stream: TokenS
 	return expression;
 }
 
-function parse_operation(
+function parse_operation_by_priority(
 	stream: TokenStream,
-	order: number
+	operator_priority: number
 ): ExpressionInterface
 {
-	if (order >= get_orders().length)
+	const operators: Array<TokenKindEnum> | undefined = operators_grouped_by_priority[operator_priority];
+
+	if (operators === undefined)
 	{
 		return parse_value_expression(stream);
 	}
 
-	let lhs = parse_operation(stream, order + 1);
+	let lhs: ExpressionInterface = parse_operation_by_priority(stream, operator_priority + 1);
 
-	const orders_order = get_orders()[order];
-
-	if (orders_order === undefined)
+	while (isEnumValue(stream.peek().kind, operators))
 	{
-		throw new Error();
-	}
+		const operation_type: TokenInterface = stream.next();
 
-	while (isEnumValue(stream.peek().kind, orders_order))
-	{
-		const operation_type = stream.next();
-		const rhs = parse_operation(stream, order + 1);
+		const rhs: ExpressionInterface = parse_operation_by_priority(stream, operator_priority + 1);
 
-		const expression_kind = operation_type_to_expression_kind(operation_type.kind);
+		const expression_kind: ExpressionKindEnum = operation_type_to_expression_kind(operation_type.kind);
 
 		lhs = {
 			kind: expression_kind,
@@ -313,6 +309,11 @@ function parse_operation(
 	return lhs;
 }
 
+function parse_operation(stream: TokenStream): ExpressionInterface
+{
+	return parse_operation_by_priority(stream, 0);
+}
+
 function parse_expression(stream: TokenStream): ExpressionInterface
 {
 	if (stream.peek().kind === TokenKind.BitXOrNot)
@@ -320,11 +321,13 @@ function parse_expression(stream: TokenStream): ExpressionInterface
 		return parse_unary_operator(stream);
 	}
 
-	return parse_operation(stream, 0);
+	return parse_operation(stream);
 }
 
 function parse_assign_or_expression(stream: TokenStream): StatementInterface
 {
+	const is_local: boolean = consume(stream, TokenKind.Local);
+
 	const lhs: Array<ExpressionInterface> = [];
 
 	while (lhs.length === 0 || consume(stream, TokenKind.Comma))
@@ -336,7 +339,8 @@ function parse_assign_or_expression(stream: TokenStream): StatementInterface
 
 	try
 	{
-		const assign = expect(stream, TokenKind.Assign);
+		const assign: TokenInterface = expect(stream, TokenKind.Assign);
+
 		const rhs: Array<ExpressionInterface> = [];
 
 		while (rhs.length === 0 || consume(stream, TokenKind.Comma))
@@ -344,19 +348,6 @@ function parse_assign_or_expression(stream: TokenStream): StatementInterface
 			const rvalue = parse_expression(stream);
 
 			rhs.push(rvalue);
-		}
-
-		let is_local: boolean = false;
-
-		try
-		{
-			expect(stream, TokenKind.Local);
-
-			is_local = true;
-		}
-		catch
-		{
-			// Do Nothing
 		}
 
 		return {
@@ -379,7 +370,6 @@ function parse_assign_or_expression(stream: TokenStream): StatementInterface
 		}
 		catch
 		{
-			// @TODO: Investigate as lhs[0] seems to always be undefined
 			return { kind: StatementKind.Expression, expression: lhs[0] };
 		}
 	}

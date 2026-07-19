@@ -13,6 +13,7 @@ import type { FunctionReferenceType } from "../boundary/definition/type/function
 import type { ValueType } from "../boundary/definition/type/value.type.mjs";
 import { VariableKind } from "./definition/enum/variable-kind.enum.mjs";
 import { isTableMapKeyType } from "../boundary/predicate/is-table-map-key-type.mjs";
+import { isString } from "@vitruvius-labs/ts-predicate";
 
 class VariableUnwrapUtility
 {
@@ -38,7 +39,7 @@ class VariableUnwrapUtility
 			case VariableKind.String:
 				return input.string;
 			case VariableKind.Table:
-				return VariableUnwrapUtility.unwrapTable(input);
+				return VariableUnwrapUtility.unwrapTableSmart(input);
 			case VariableKind.Function:
 				return { function_id: input.function_id };
 			case VariableKind.NativeFunction:
@@ -46,7 +47,28 @@ class VariableUnwrapUtility
 		}
 	}
 
-	public static unwrapTable(this: void, input: VariableTable): TableType
+	/**
+	 * Record made by ignoring entries with a number key
+	*/
+	public static unwrapRecord(this: void, input: VariableTable): Record<string, unknown>
+	{
+		const output: Record<string, unknown> = {};
+
+		for (const [key, value] of input.table)
+		{
+			if (isString(key))
+			{
+				output[key] = VariableUnwrapUtility.unwrap(value);
+			}
+		}
+
+		return output;
+	}
+
+	/**
+	 * Array made by ignoring entries with a string key or gaps
+	*/
+	public static unwrapArray(this: void, input: VariableTable): Array<unknown>
 	{
 		const output: Array<unknown> = [];
 
@@ -56,8 +78,7 @@ class VariableUnwrapUtility
 
 			if (item === undefined)
 			{
-				// Not a table that can be unwrapped as an array
-				return VariableUnwrapUtility.unwrapTableGeneric(input);
+				break;
 			}
 
 			output.push(VariableUnwrapUtility.unwrap(item));
@@ -66,7 +87,10 @@ class VariableUnwrapUtility
 		return output;
 	}
 
-	protected static unwrapTableGeneric(this: void, input: VariableTable): TableMapType
+	/**
+	 * Map of all entries, preserve each key's type
+	*/
+	public static unwrapTable(this: void, input: VariableTable): TableMapType
 	{
 		const output: TableMapType = new Map();
 
@@ -78,6 +102,26 @@ class VariableUnwrapUtility
 			}
 
 			output.set(key, VariableUnwrapUtility.unwrap(value));
+		}
+
+		return output;
+	}
+
+	private static unwrapTableSmart(this: void, input: VariableTable): TableType
+	{
+		const output: Array<unknown> = [];
+
+		for (let i = 1; i <= input.table.size; ++i)
+		{
+			const item: Variable | undefined = input.table.get(i);
+
+			if (item === undefined)
+			{
+				// Not a table that can be unwrapped as an array
+				return VariableUnwrapUtility.unwrapTable(input);
+			}
+
+			output.push(VariableUnwrapUtility.unwrap(item));
 		}
 
 		return output;

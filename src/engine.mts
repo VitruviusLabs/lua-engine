@@ -87,8 +87,6 @@ export class Engine
 		this.program = program.code;
 		this.instruction_pointer = program.start;
 		this.start_ip = program.start;
-
-		return undefined;
 	}
 
 	public bytecode(): Array<string>

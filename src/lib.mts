@@ -15,7 +15,6 @@ import { isNil } from "./variable/predicate/is-nil.mjs";
 import type { VariableNativeFunction } from "./variable/definition/interface/variable-native-function.interface.mjs";
 import type { NativeFunction } from "./boundary/definition/type/native-function.type.mjs";
 import type { VariableTableMapType } from "./variable/definition/type/variable-table-map.type.mjs";
-import { RuntimeError } from "./runtime-error.mjs";
 import { table_size } from "./lib/table-size/table-size.mjs";
 import { variable_to_string } from "./lib/variable-to-string/variable-to-string.mjs";
 import { print } from "./lib/print/print.mjs";
@@ -23,6 +22,9 @@ import { type } from "./lib/type/type.mjs";
 import { make_boolean } from "./runtime/make-boolean/make-boolean.mjs";
 import { make_number } from "./runtime/make-number/make-number.mjs";
 import { make_string } from "./runtime/make-string/make-string.mjs";
+import { build_regexp } from "./lib/regexp/build-regexp.mjs";
+import { build_replacement } from "./lib/regexp/build-replacement.mjs";
+import { selection_sort } from "./lib/table-sort/selection-sort.mjs";
 
 function optional_parameter<K extends VariableKindEnum>(
 	expected_kind: K,
@@ -129,9 +131,8 @@ function next(_: Engine, variable: Variable, start_index?: Variable): Array<Vari
 
 	let previous_key_found: boolean = false;
 
-	for (const [key, value] of variable.table.entries())
+	for (const [key, value] of variable.table)
 	{
-		// eslint-disable-next-line @ts/no-unnecessary-condition -- Bug in eslint
 		if (previous_key_found)
 		{
 			return [key_variable(key), value];
@@ -140,7 +141,6 @@ function next(_: Engine, variable: Variable, start_index?: Variable): Array<Vari
 		if (compare_keys(key, start_index))
 		{
 			previous_key_found = true;
-			break;
 		}
 	}
 
@@ -200,42 +200,59 @@ function key_variable(key: unknown): Variable
 	return make_variable(key);
 }
 
-// @ts-expect-error: unimplemented
-function table_sort(engine: Engine, table: Variable, sort_callable: Variable): Array<Variable>
+async function table_sort(engine: Engine, table: Variable, sort_callable: Variable): Promise<Array<Variable>>
 {
 	assertVariableKind(table, VariableKind.Table);
 
-	throw new RuntimeError("Unimplemented: table.sort");
+	const unordered_items: Array<Variable> = [];
 
-	/*
+	for (let i = 1; i <= table.table.size; ++i)
+	{
+		const item: Variable | undefined = table.table.get(i);
 
-	const entries: Array<[unknown, Variable]> = [...table.table.entries()]
-
-	entries.sort(
-		([_, a], [__, b]) =>
+		if (item === undefined)
 		{
-			const result = engine.call(sort_callable, a, b)
-
-			const comparison = result.at(0)
-			assertVariableKind(comparison, VariableKind.Number);
-			return comparison.number
+			break;
 		}
-	)
 
-	const numbered_entries = entries.map(([key, _], i) => [i + 1, key_variable(key)] as const)
-	return [{ data_type: VariableKind.Table, table: new Map(numbered_entries) }]
+		unordered_items.push(item);
+	}
 
-	*/
+	const sorted_items: Array<Variable> = await selection_sort(
+		unordered_items,
+		async (a: Variable, z: Variable): Promise<boolean> =>
+		{
+			const results: Array<Variable> = await engine.call(sort_callable, a, z);
+
+			const result: Variable | undefined = results.at(0);
+
+			assertVariableKind(result, VariableKind.Boolean);
+
+			return result.boolean;
+		}
+	);
+
+	for (let i = 0; i < sorted_items.length; ++i)
+	{
+		// @ts-expect-error -- It is a variable
+		const item: Variable = sorted_items[i];
+
+		table.table.set(i + 1, item);
+	}
+
+	return [table];
 }
 
-async function find(engine: Engine, table: Variable, matches: Variable): Promise<Array<Variable>>
+async function find(engine: Engine, table: Variable, test_callable: Variable): Promise<Array<Variable>>
 {
 	assertVariableKind(table, VariableKind.Table);
+
+	// Ignore mutation of the table by the callable
 	const entries: Array<[unknown, Variable]> = [...table.table.entries()];
 
 	for (const [key, value] of entries)
 	{
-		const result: Array<Variable> = await engine.call(matches, value);
+		const result: Array<Variable> = await engine.call(test_callable, value);
 
 		const matching: Variable | undefined = result.at(0);
 
@@ -524,25 +541,89 @@ function string_find(_: Engine, value: Variable, pattern: Variable, init?: Varia
 	assertVariableKind(pattern, VariableKind.String);
 
 	const offset: number = optional_parameter(VariableKind.Number, init) ?? 1;
-	const str = value.string.slice(offset - 1);
+	const searched_string: string = value.string.slice(offset - 1);
 
-	const plain_param = optional_parameter(VariableKind.Boolean, plain) ?? false;
+	const plain_param: boolean | undefined = optional_parameter(VariableKind.Boolean, plain) ?? false;
 
 	if (plain_param)
 	{
-		return [make_number(str.indexOf(pattern.string) + 1)];
+		return [make_number(searched_string.indexOf(pattern.string) + 1)];
 	}
 
-	const results = RegExp(pattern.string).exec(str);
+	const js_regexp: RegExp = build_regexp(pattern.string);
+
+	const results: RegExpExecArray | null = js_regexp.exec(searched_string);
 
 	if (results === null || results.length === 0)
 	{
 		return [nil];
 	}
 
-	const index = value.string.indexOf(results[0]);
+	return [make_number(results.index + 1)];
+}
 
-	return [make_number(index + 1)];
+function string_gmatch(_: Engine, value: Variable, pattern: Variable): Array<Variable>
+{
+	assertVariableKind(value, VariableKind.String);
+	assertVariableKind(pattern, VariableKind.String);
+
+	const plain_value: string = value.string;
+
+	const js_regexp: RegExp = build_regexp(pattern.string);
+
+	const next_func: VariableNativeFunction = {
+		data_type: VariableKind.NativeFunction,
+		native_function: (): Array<Variable> =>
+		{
+			const result: RegExpExecArray | null = js_regexp.exec(plain_value);
+
+			if (result === null)
+			{
+				return [nil];
+			}
+
+			return [make_string(result[0])];
+		},
+	};
+
+	return [next_func];
+}
+
+// eslint-disable-next-line @ts/max-params
+function string_gsub(_: Engine, value: Variable, pattern: Variable, replacement: Variable, max_replacement?: Variable): Array<Variable>
+{
+	assertVariableKind(value, VariableKind.String);
+	assertVariableKind(pattern, VariableKind.String);
+	assertVariableKind(replacement, VariableKind.String);
+
+	const js_regexp: RegExp = build_regexp(pattern.string);
+
+	const js_global_regexp: RegExp = new RegExp(js_regexp, "g");
+
+	const js_replacement: string = build_replacement(replacement.string);
+
+	const max: number = optional_parameter(VariableKind.Number, max_replacement) ?? Number.POSITIVE_INFINITY;
+
+	let count: number = 0;
+
+	const result: string = value.string.replaceAll(
+		js_global_regexp,
+		(match: string): string =>
+		{
+			if (count >= max)
+			{
+				return match;
+			}
+
+			++count;
+
+			const replaced: string = match.replace(js_regexp, js_replacement);
+
+			return replaced;
+		}
+	);
+
+	return [make_string(result), make_number(count)];
 }
 
 function string_len(_: Engine, value: Variable): Array<Variable>
@@ -982,20 +1063,25 @@ export function std_lib(): VariableTableMapType
 		["byte", fwrap(string_byte)],
 		["char", fwrap(string_char)],
 		// dump
-		["format", fwrap(string_format)],
 		["find", fwrap(string_find)],
-		// gfind
-		// gsub
+		["format", fwrap(string_format)],
+		["gmatch", fwrap(string_gmatch)],
+		["gsub", fwrap(string_gsub)],
 		["len", fwrap(string_len)],
 		["lower", fwrap(string_lower)],
+		// match
+		// pack
+		// packsize
 		["rep", fwrap(string_rep)],
 		["reverse", fwrap(string_reverse)],
 		["sub", fwrap(string_sub)],
+		// unpack
 		["upper", fwrap(string_upper)],
 	]);
 
 	const table_mapping: VariableTable = twrap([
 		["concat", fwrap(table_concat)],
+		// create
 		// foreach
 		// foreachi
 		// getn
@@ -1013,27 +1099,24 @@ export function std_lib(): VariableTableMapType
 		["acos", fwrap(math_acos)],
 		["asin", fwrap(math_asin)],
 		["atan", fwrap(math_atan)],
-		// atan2
 		["ceil", fwrap(math_ceil)],
 		["cos", fwrap(math_cos)],
 		["deg", fwrap(math_deg)],
 		["exp", fwrap(math_exp)],
 		["floor", fwrap(math_floor)],
 		["fmod", fwrap(math_fmod)],
+		// frexp
 		["log", fwrap(math_log)],
-		// log10
+		// ldexp
 		["max", fwrap(math_max)],
 		["min", fwrap(math_min)],
-		// mod
 		["modf", fwrap(math_modf)],
-		// pow
 		["rad", fwrap(math_rad)],
 		["random", fwrap(math_random)],
+		// randomseed
 		["sin", fwrap(math_sin)],
 		["sqrt", fwrap(math_sqrt)],
 		["tan", fwrap(math_tan)],
-		// frexp
-		// ldexp
 		["tointeger", fwrap(math_tointeger)],
 		["type", fwrap(math_type)],
 		["ult", fwrap(math_ult)],
@@ -1047,8 +1130,8 @@ export function std_lib(): VariableTableMapType
 	const global: VariableTable = twrap([
 		["assert", fwrap(assert)],
 		["error", fwrap(error)],
-		["find", fwrap(find)],
-		["first", fwrap(first)],
+		["find", fwrap(find)], // not standard
+		["first", fwrap(first)], // not standard
 		// getmetatable
 		["ipairs", fwrap(ipairs)],
 		["isempty", fwrap(is_empty)],
