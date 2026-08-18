@@ -189,7 +189,7 @@ function is_empty(_: Engine, table: Variable): Array<Variable>
 
 function key_variable(key: unknown): Variable
 {
-	if (isCallable(key))
+	if (isCallable<NativeFunction>(key))
 	{
 		return {
 			data_type: VariableKind.NativeFunction,

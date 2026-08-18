@@ -1,4 +1,4 @@
-import { assertArray, assertDefined, isNullish } from "@vitruvius-labs/ts-predicate";
+import { type Callable, assertArray, assertDefined, isNullish } from "@vitruvius-labs/ts-predicate";
 import type { Engine } from "./engine.mjs";
 import { make_variable } from "./runtime.mjs";
 import { VariableKind } from "./variable/definition/enum/variable-kind.enum.mjs";
@@ -68,7 +68,7 @@ function sanitize_parameters(input: Array<unknown>, descriptors: Array<Parameter
 	return output;
 }
 
-export function make_function(callable: (...args: Array<unknown>) => unknown, parameters_descriptor: Array<ParameterDescriptorInterface>): VariableNativeFunction
+export function make_function(callable: Callable, parameters_descriptor: Array<ParameterDescriptorInterface>): VariableNativeFunction
 {
 	// @ts-expect-error: engine is unused for now.
 	const proxy_function: NativeFunction = async (engine: Engine, ...args: Array<Variable>): Promise<Array<Variable>> =>
@@ -77,7 +77,10 @@ export function make_function(callable: (...args: Array<unknown>) => unknown, pa
 		{
 			const unwrapped_args: Array<unknown> = args.map(VariableUnwrapUtility.unwrap);
 			const sanitized_args: Array<unknown> = sanitize_parameters(unwrapped_args, parameters_descriptor);
+
+			// @ts-expect-error -- Magic call
 			const result: unknown = await callable(...sanitized_args);
+
 			const variable: Variable = make_variable(result);
 
 			return [variable];
