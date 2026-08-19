@@ -1,0 +1,707 @@
+import { NoValue, isEnumValue } from "@vitruvius-labs/ts-predicate";
+import { ExpressionKind } from "./ast/definition/enum/expression-kind.enum.mjs";
+import { StatementKind } from "./ast/definition/enum/statement-kind.enum.mjs";
+import { ValueKind } from "./ast/definition/enum/value-kind.enum.mjs";
+import type { AssignmentInterface } from "./ast/definition/interface/assignment.interface.mjs";
+import type { ChunkInterface } from "./ast/definition/interface/chunk.interface.mjs";
+import type { ExpressionInterface } from "./ast/definition/interface/expression.interface.mjs";
+import type { ForInterface } from "./ast/definition/interface/for.interface.mjs";
+import type { IfBlockInterface } from "./ast/definition/interface/if-block.interface.mjs";
+import type { NumericForInterface } from "./ast/definition/interface/numeric-for.interface.mjs";
+import type { RepeatInterface } from "./ast/definition/interface/repeat.interface.mjs";
+import type { StatementInterface } from "./ast/definition/interface/statement.interface.mjs";
+import type { ValueInterface } from "./ast/definition/interface/value.interface.mjs";
+import type { WhileInterface } from "./ast/definition/interface/while.interface.mjs";
+
+const CONSTANT_VALUES = [
+	ValueKind.NilLiteral,
+	ValueKind.NumberLiteral,
+	ValueKind.BooleanLiteral,
+	ValueKind.StringLiteral,
+];
+
+function compute_arithmetic_operation(
+	expression: ExpressionInterface,
+	operation: (a: number, b: number) => number,
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
+{
+	const lhs = compute_constant_expression(expression.lhs, constants);
+	const rhs = compute_constant_expression(expression.rhs, constants);
+
+	if (lhs === undefined || rhs === undefined)
+	{
+		return undefined;
+	}
+
+	return {
+		kind: ValueKind.NumberLiteral,
+		number: operation(lhs.number ?? 0, rhs.number ?? 0),
+		token: expression.token,
+	};
+}
+
+function extract_equality_operand(input: ValueInterface): boolean | number | string | undefined | typeof NoValue
+{
+	// eslint-disable-next-line @ts/switch-exhaustiveness-check
+	switch (input.kind)
+	{
+		case ValueKind.NilLiteral:
+			return undefined;
+
+		case ValueKind.BooleanLiteral:
+			return input.boolean ?? false;
+
+		case ValueKind.NumberLiteral:
+			return input.number ?? 0;
+
+		case ValueKind.StringLiteral:
+			return input.string ?? "";
+
+		default:
+			return NoValue;
+	}
+}
+
+function compute_equality_operation(
+	expression: ExpressionInterface,
+	operation: typeof ExpressionKind.Equals | typeof ExpressionKind.NotEquals,
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
+{
+	const lhs: ValueInterface | undefined = compute_constant_expression(expression.lhs, constants);
+	const rhs: ValueInterface | undefined = compute_constant_expression(expression.rhs, constants);
+
+	if (lhs === undefined || rhs === undefined)
+	{
+		return undefined;
+	}
+
+	const lhs_value: boolean | number | string | undefined | typeof NoValue = extract_equality_operand(lhs);
+	const rhs_value: boolean | number | string | undefined | typeof NoValue = extract_equality_operand(rhs);
+
+	if (lhs_value === NoValue || rhs_value === NoValue)
+	{
+		return undefined;
+	}
+
+	switch (operation)
+	{
+		case ExpressionKind.Equals:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value === rhs_value,
+				token: expression.token,
+			};
+
+		case ExpressionKind.NotEquals:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value !== rhs_value,
+				token: expression.token,
+			};
+	}
+}
+
+function extract_compared_operand(input: ValueInterface): number | string | typeof NoValue
+{
+	// eslint-disable-next-line @ts/switch-exhaustiveness-check
+	switch (input.kind)
+	{
+		case ValueKind.NumberLiteral:
+			return input.number ?? 0;
+
+		case ValueKind.StringLiteral:
+			return input.string ?? "";
+
+		default:
+			return NoValue;
+	}
+}
+
+function compute_comparison_operation(
+	expression: ExpressionInterface,
+	operation: typeof ExpressionKind.LessThan | typeof ExpressionKind.LessThanEquals | typeof ExpressionKind.GreaterThan | typeof ExpressionKind.GreaterThanEquals,
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
+{
+	const lhs: ValueInterface | undefined = compute_constant_expression(expression.lhs, constants);
+	const rhs: ValueInterface | undefined = compute_constant_expression(expression.rhs, constants);
+
+	if (lhs === undefined || rhs === undefined)
+	{
+		return undefined;
+	}
+
+	const lhs_value: number | string | typeof NoValue = extract_compared_operand(lhs);
+	const rhs_value: number | string | typeof NoValue = extract_compared_operand(rhs);
+
+	if (lhs_value === NoValue || rhs_value === NoValue)
+	{
+		return undefined;
+	}
+
+	switch (operation)
+	{
+		case ExpressionKind.LessThan:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value < rhs_value,
+				token: expression.token,
+			};
+
+		case ExpressionKind.LessThanEquals:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value <= rhs_value,
+				token: expression.token,
+			};
+
+		case ExpressionKind.GreaterThan:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value > rhs_value,
+				token: expression.token,
+			};
+
+		case ExpressionKind.GreaterThanEquals:
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: lhs_value >= rhs_value,
+				token: expression.token,
+			};
+	}
+}
+
+function compute_logical_operation(
+	expression: ExpressionInterface,
+	operation: typeof ExpressionKind.And | typeof ExpressionKind.Or,
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
+{
+	const lhs = compute_constant_expression(expression.lhs, constants);
+	const rhs = compute_constant_expression(expression.rhs, constants);
+
+	if (lhs === undefined || rhs === undefined)
+	{
+		return undefined;
+	}
+
+	const lhs_falsy: boolean = lhs.kind === ValueKind.NilLiteral || lhs.kind === ValueKind.BooleanLiteral && !(lhs.boolean ?? true);
+
+	if (operation === ExpressionKind.And)
+	{
+		return lhs_falsy ? lhs : rhs;
+	}
+
+	return lhs_falsy ? rhs : lhs;
+}
+
+// @TODO: Fix complexity warning
+// eslint-disable-next-line max-lines-per-function, complexity
+function compute_constant_expression(
+	expression: ExpressionInterface | undefined,
+	constants: Map<string, ValueInterface>
+): ValueInterface | undefined
+{
+	if (expression === undefined)
+	{
+		return undefined;
+	}
+
+	switch (expression.kind)
+	{
+		case ExpressionKind.Value:
+		{
+			if (expression.value === undefined)
+			{
+				return undefined;
+			}
+
+			const value = expression.value;
+
+			if (isEnumValue(value.kind, CONSTANT_VALUES))
+			{
+				return value;
+			}
+
+			if (value.kind === ValueKind.Variable && constants.has(value.identifier ?? ""))
+			{
+				return constants.get(value.identifier ?? "");
+			}
+
+			return undefined;
+		}
+
+		case ExpressionKind.Addition:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a + b;
+				},
+				constants
+			);
+		case ExpressionKind.Subtract:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a - b;
+				},
+				constants
+			);
+		case ExpressionKind.Multiplication:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a * b;
+				},
+				constants
+			);
+		case ExpressionKind.Division:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a / b;
+				},
+				constants
+			);
+		case ExpressionKind.FloorDivision:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return Math.floor(a / b);
+				},
+				constants
+			);
+		case ExpressionKind.Modulo:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a % b;
+				},
+				constants
+			);
+		case ExpressionKind.Exponent:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return Math.pow(a, b);
+				},
+				constants
+			);
+		case ExpressionKind.Concat:
+			return undefined;
+
+		case ExpressionKind.BitAnd:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a & b;
+				},
+				constants
+			);
+		case ExpressionKind.BitOr:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a | b;
+				},
+				constants
+			);
+		case ExpressionKind.BitXOr:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a ^ b;
+				},
+				constants
+			);
+		case ExpressionKind.BitShiftLeft:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a << b;
+				},
+				constants
+			);
+		case ExpressionKind.BitShiftRight:
+			return compute_arithmetic_operation(
+				expression,
+				(a: number, b: number): number =>
+				{
+					return a >> b;
+				},
+				constants
+			);
+		case ExpressionKind.BitNot:
+			return undefined;
+
+		case ExpressionKind.Equals:
+		case ExpressionKind.NotEquals:
+			return compute_equality_operation(
+				expression,
+				expression.kind,
+				constants
+			);
+		case ExpressionKind.LessThan:
+		case ExpressionKind.LessThanEquals:
+		case ExpressionKind.GreaterThan:
+		case ExpressionKind.GreaterThanEquals:
+			return compute_comparison_operation(
+				expression,
+				expression.kind,
+				constants
+			);
+		case ExpressionKind.And:
+		case ExpressionKind.Or:
+			return compute_logical_operation(
+				expression,
+				expression.kind,
+				constants
+			);
+
+		case ExpressionKind.Not:
+		{
+			const lhs = compute_constant_expression(expression.lhs, constants);
+
+			if (lhs === undefined)
+			{
+				return undefined;
+			}
+
+			return {
+				kind: ValueKind.BooleanLiteral,
+				boolean: !(lhs.boolean ?? false),
+				token: expression.token,
+			};
+		}
+
+		case ExpressionKind.Negate:
+		{
+			const lhs = compute_constant_expression(expression.lhs, constants);
+
+			if (lhs === undefined)
+			{
+				return undefined;
+			}
+
+			return {
+				kind: ValueKind.NumberLiteral,
+				number: -(lhs.number ?? 0),
+				token: expression.token,
+			};
+		}
+
+		case ExpressionKind.Length:
+			return undefined;
+
+		case ExpressionKind.Call:
+			return undefined;
+
+		case ExpressionKind.Index:
+			return undefined;
+	}
+}
+
+function optimize_expression(
+	expression: ExpressionInterface | undefined,
+	constants: Map<string, ValueInterface>
+): void
+{
+	if (expression === undefined)
+	{
+		return;
+	}
+
+	if (expression.value?.function !== undefined)
+	{
+		optimize_chunk(expression.value.function.body, constants);
+
+		return;
+	}
+
+	const value = compute_constant_expression(expression, constants);
+
+	if (value !== undefined)
+	{
+		expression.kind = ExpressionKind.Value;
+		expression.value = value;
+
+		return;
+	}
+
+	optimize_expression(expression.lhs, constants);
+	optimize_expression(expression.rhs, constants);
+	optimize_expression(expression.expression, constants);
+	optimize_expression(expression.index, constants);
+
+	for (const argument of expression.arguments ?? [])
+	{
+		optimize_expression(argument, constants);
+	}
+}
+
+function mark_local_constants(assignment: AssignmentInterface, constants: Map<string, ValueInterface>): void
+{
+	for (const [index, rhs] of assignment.rhs.entries())
+	{
+		if (index >= assignment.lhs.length)
+		{
+			continue;
+		}
+
+		const lhs = assignment.lhs[index];
+
+		if (lhs === undefined)
+		{
+			throw new Error();
+		}
+
+		if (lhs.kind !== ExpressionKind.Value)
+		{
+			continue;
+		}
+
+		if (lhs.value?.identifier === undefined)
+		{
+			continue;
+		}
+
+		const name = lhs.value.identifier;
+		const value = compute_constant_expression(rhs, constants);
+
+		if (value === undefined)
+		{
+			continue;
+		}
+
+		constants.set(name, value);
+	}
+}
+
+function unmark_constants_if_reassigned(assignment: AssignmentInterface, constants: Map<string, ValueInterface>): void
+{
+	for (const lhs of assignment.lhs)
+	{
+		if (lhs.kind !== ExpressionKind.Value)
+		{
+			continue;
+		}
+
+		if (lhs.value?.identifier === undefined)
+		{
+			continue;
+		}
+
+		const name = lhs.value.identifier;
+
+		constants.delete(name);
+	}
+}
+
+function optimize_assignment(
+	assignment: AssignmentInterface | undefined,
+	constants: Map<string, ValueInterface>
+): void
+{
+	if (assignment === undefined)
+	{
+		return;
+	}
+
+	if (assignment.local)
+	{
+		mark_local_constants(assignment, constants);
+	}
+	else
+	{
+		unmark_constants_if_reassigned(assignment, constants);
+	}
+
+	for (const rhs of assignment.rhs)
+	{
+		optimize_expression(rhs, constants);
+	}
+}
+
+function remove_constant_local_assignments(
+	chunk: ChunkInterface,
+	constants: Map<string, ValueInterface>
+): void
+{
+	for (const statement of chunk.statements)
+	{
+		if (statement.assignment === undefined || !statement.assignment.local)
+		{
+			continue;
+		}
+
+		const assignment = statement.assignment;
+
+		for (const name of constants.keys())
+		{
+			const index = assignment.lhs.findIndex(
+				(x: ExpressionInterface): boolean =>
+				{
+					return x.value?.identifier === name;
+				}
+			);
+
+			if (index < 0)
+			{
+				continue;
+			}
+
+			assignment.lhs.splice(index, 1);
+			assignment.rhs.splice(index, 1);
+		}
+	}
+
+	chunk.statements = chunk.statements.filter(
+		(x: StatementInterface): boolean =>
+		{
+			return x.assignment === undefined || x.assignment.lhs.length > 0;
+		}
+	);
+}
+
+function optimize_if(if_block: IfBlockInterface | undefined, constants: Map<string, ValueInterface>): void
+{
+	if (if_block === undefined)
+	{
+		return;
+	}
+
+	optimize_expression(if_block.condition, constants);
+	optimize_chunk(if_block.body, constants);
+}
+
+function optimize_while(while_block: WhileInterface | undefined, constants: Map<string, ValueInterface>): void
+{
+	if (while_block === undefined)
+	{
+		return;
+	}
+
+	optimize_expression(while_block.condition, constants);
+	optimize_chunk(while_block.body, constants);
+}
+
+function optimize_for(for_block: ForInterface | undefined, constants: Map<string, ValueInterface>): void
+{
+	if (for_block === undefined)
+	{
+		return;
+	}
+
+	optimize_expression(for_block.iterator, constants);
+	optimize_chunk(for_block.body, constants);
+}
+
+function optimize_numeric_for(numeric_for_block: NumericForInterface | undefined, constants: Map<string, ValueInterface>): void
+{
+	if (numeric_for_block === undefined)
+	{
+		return;
+	}
+
+	optimize_expression(numeric_for_block.start, constants);
+	optimize_expression(numeric_for_block.end, constants);
+	optimize_expression(numeric_for_block.step, constants);
+	optimize_chunk(numeric_for_block.body, constants);
+}
+
+function optimize_repeat(repeat_block: RepeatInterface | undefined, constants: Map<string, ValueInterface>): void
+{
+	if (repeat_block === undefined)
+	{
+		return;
+	}
+
+	optimize_expression(repeat_block.condition, constants);
+	optimize_chunk(repeat_block.body, constants);
+}
+
+export function optimize_chunk(chunk: ChunkInterface, parent_constants?: Map<string, ValueInterface>): void
+{
+	const constants = new Map(parent_constants);
+
+	for (const statement of chunk.statements)
+	{
+		// eslint-disable-next-line @ts/switch-exhaustiveness-check
+		switch (statement.kind)
+		{
+			case StatementKind.Assignment:
+				optimize_assignment(statement.assignment, constants);
+				break;
+
+			case StatementKind.Expression:
+				optimize_expression(statement.expression, constants);
+				break;
+
+			case StatementKind.If:
+				optimize_if(statement.if, constants);
+				break;
+
+			case StatementKind.While:
+				optimize_while(statement.if, constants);
+				break;
+
+			case StatementKind.For:
+				optimize_for(statement.for, constants);
+				break;
+
+			case StatementKind.NumericFor:
+				optimize_numeric_for(statement.numeric_for, constants);
+				break;
+
+			case StatementKind.Repeat:
+				optimize_repeat(statement.repeat, constants);
+				break;
+
+			case StatementKind.Do:
+				if (statement.do !== undefined)
+				{
+					optimize_chunk(statement.do.body, constants);
+				}
+
+				break;
+
+			case StatementKind.Return:
+				for (const expression of statement.return?.values ?? [])
+				{
+					optimize_expression(expression, constants);
+				}
+
+				break;
+
+			case StatementKind.Local:
+			case StatementKind.Break:
+				break;
+		}
+	}
+
+	if (parent_constants !== undefined)
+	{
+		for (const name of [...parent_constants.keys()])
+		{
+			if (!constants.has(name))
+			{
+				parent_constants.delete(name);
+			}
+		}
+	}
+
+	remove_constant_local_assignments(chunk, constants);
+}

@@ -1,26 +1,52 @@
 {
-    "compilerOptions":
-    {
-        "module": "commonjs",
-        "esModuleInterop": true,
-        "moduleResolution": "node",
-        "target": "es2017",
-
-        "noImplicitAny": true,
-        "removeComments": true,
-        "allowUnreachableCode": false,
-        "strictNullChecks": true,
-        "incremental": true
-    },
-    
-    "lib":
-    [
-        "es2017"
-    ],
-
-    "files":
-    [
-        "index.ts"
-    ]
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"compileOnSave": false,
+	"compilerOptions": {
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
+		"pretty": true,
+		"declaration": false,
+		"importHelpers": true,
+		"newLine": "LF",
+		"preserveConstEnums": true,
+		"sourceMap": false,
+		"allowJs": false,
+		"checkJs": false,
+		"noStrictGenericChecks": false,
+		"forceConsistentCasingInFileNames": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"noErrorTruncation": true,
+		"target": "ESNext",
+		"lib": [
+			"ESNext"
+		],
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"alwaysStrict": true,
+		"exactOptionalPropertyTypes": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitAny": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noImplicitThis": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"strict": true,
+		"strictBindCallApply": true,
+		"strictFunctionTypes": true,
+		"strictNullChecks": true,
+		"strictPropertyInitialization": true,
+		"useUnknownInCatchVariables": true
+	},
+	"include": [
+		"./src"
+	],
+	"exclude": [
+		"./node_modules"
+	]
 }
-

@@ -1,0 +1,64 @@
+{
+	"folders": [
+		{
+			"name": "pnpm-workspace",
+			"path": "."
+		},
+	],
+	"settings": {
+		// Formatting
+		"files.trimTrailingWhitespace": true,
+		"files.insertFinalNewline": true,
+		"editor.detectIndentation": false,
+		"editor.indentSize": "tabSize",
+		"editor.insertSpaces": false,
+		// Formatting overrides
+		"[yaml]": {
+			"editor.insertSpaces": true
+		},
+		"[shellscript]": {
+			"editor.insertSpaces": true
+		},
+		// Linters & prettier extensions settings
+		"eslint.validate": [
+			"javascript",
+			"typescript"
+		],
+		"eslint.useFlatConfig": true,
+		"eslint.options": {
+			"overrideConfigFile": "./eslint.config.mjs"
+		},
+		"eslint.workingDirectories": [
+			"./packages/architectura",
+			"./packages/aws-s3",
+			"./packages/aws-signature-v4",
+			"./packages/aws-sqs",
+			"./packages/functional",
+			"./packages/mockingbird",
+			"./packages/testing-ground",
+			"./packages/toolbox",
+			"./packages/ts-predicate"
+		],
+		"editor.formatOnSave": true,
+		"editor.codeActionsOnSave": {
+			"source.fixAll.eslint": "explicit",
+			"source.fixAll.tslint": "never"
+		},
+		"eslint.format.enable": true,
+		// Code spell checker extension settings
+		"cSpell.enabled": true,
+		// UX
+		"explorer.fileNesting.enabled": true,
+		"search.exclude": {
+			"**/dist": true,
+			"**/lib": true,
+			"**/.yarn": true
+		},
+		// TypeScript
+		"js/ts.implicitProjectConfig.target": "ESNext",
+		"typescript.tsdk": "./node_modules/typescript/bin",
+		"typescript.tsserver.maxTsServerMemory": 4096,
+		"typescript.preferences.quoteStyle": "double",
+		"prettier.enable": false,
+	}
+}
