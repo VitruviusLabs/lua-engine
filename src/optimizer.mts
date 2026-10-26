@@ -585,6 +585,11 @@ function optimize_if(if_block: IfBlockInterface | undefined, constants: Map<stri
 
 	optimize_expression(if_block.condition, constants);
 	optimize_chunk(if_block.body, constants);
+
+	if (if_block.else_body !== undefined)
+	{
+		optimize_chunk(if_block.else_body, constants);
+	}
 }
 
 function optimize_while(while_block: WhileInterface | undefined, constants: Map<string, ValueInterface>): void

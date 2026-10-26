@@ -1082,14 +1082,10 @@ export function std_lib(): VariableTableMapType
 	const table_mapping: VariableTable = twrap([
 		["concat", fwrap(table_concat)],
 		// create
-		// foreach
-		// foreachi
-		// getn
 		["insert", fwrap(table_insert)],
 		["move", fwrap(table_move)],
 		["pack", fwrap(table_pack)],
 		["remove", fwrap(table_remove)],
-		// setn
 		["sort", fwrap(table_sort)],
 		["unpack", fwrap(table_unpack)],
 	]);

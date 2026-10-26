@@ -13,6 +13,8 @@ export * as ast from "./ast/_index.mjs";
 export * as opcode from "./opcode/_index.mjs";
 export * as runtime from "./runtime.mjs";
 
+export * from "./runtime-error.mjs";
+
 export type * from "./boundary/definition/_index.mjs";
 export * from "./create-binding.mjs";
 

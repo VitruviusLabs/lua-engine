@@ -36,7 +36,7 @@ function parse_table_key(stream: TokenStream): ExpressionInterface
 
 	const value = parse_value(stream);
 
-	if (value.kind === ValueKind.Variable)
+	if (value.kind === ValueKind.Variable && stream.peek().kind === TokenKind.Assign)
 	{
 		value.kind = ValueKind.StringLiteral;
 		value.string = value.identifier;
