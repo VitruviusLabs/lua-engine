@@ -1,0 +1,188 @@
+name: Continuous Integration and Deployment
+
+run-name: Running CI/CD for event ${{github.event_name}} (Triggered by user ${{ github.triggering_actor }})
+
+on:
+  push:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      ts-files-changed: ${{ steps.parse-changed-files.outputs.ts-files-changed }}
+      require-spell-check: ${{ steps.parse-changed-files.outputs.require-spell-check }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: PNPM installation
+        uses: pnpm/action-setup@v4
+        id: pnpm-install
+        with:
+          version: 10
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: PNPM cache configuration
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: Dependencies caching
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+  spell-check-global:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: PNPM installation
+        uses: pnpm/action-setup@v4
+        id: pnpm-install
+        with:
+          version: 10
+          run_install: false
+
+      - name: Dependencies cache unpacking
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Check spelling with CSpell
+        run: pnpm ci:spell:check
+
+  ## Lua Engine
+
+  lint-lua-engine:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: PNPM installation
+        uses: pnpm/action-setup@v4
+        id: pnpm-install
+        with:
+          version: 10
+          run_install: false
+
+      - name: Dependencies cache unpacking
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Lint with ESlint
+        run: pnpm ci:lint
+
+  typescript-syntax-check-lua-engine:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: PNPM installation
+        uses: pnpm/action-setup@v4
+        id: pnpm-install
+        with:
+          version: 10
+          run_install: false
+
+      - name: Dependencies cache unpacking
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Check TypeScript syntax
+        run: pnpm ci:ts:check
+
+  test-lua-engine:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: PNPM installation
+        uses: pnpm/action-setup@v4
+        id: pnpm-install
+        with:
+          version: 10
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Dependencies cache unpacking
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Test with Node Test runner
+        run: pnpm ci:test:unit
+
+  publish-lua-engine:
+    # if: ${{ github.ref == 'refs/heads/main' && ! failure() && ! cancelled() && github.event_name == 'push' }}
+    # needs:
+    #   [
+    #     spell-check-global,
+    #     lint-lua-engine,
+    #     typescript-syntax-check-lua-engine,
+    #   ]
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: PNPM installation
+        uses: pnpm/action-setup@v4
+        id: pnpm-install
+        with:
+          version: 10
+          run_install: false
+
+      - name: Dependencies cache unpacking
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Package build
+        run: pnpm ci:build
+
+      - name: Publish package
+        id: package-version
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm ci:publish

@@ -1,7 +1,7 @@
 
 # TSLua
 
-A pure TypeScript reimplementation of the Lua programming language.
+A pure TypeScript implementation of a Lua programming language interpreter.
 
 This implementation is designed to be as close as possible to the original C implementation, while providing seamless TypeScript/JavaScript interoperability. All 'native' functions are implemented in TypeScript and objects are represented using standard JavaScript objects. Meaning garbage collection is left as the responsibility of the JavaScript engine.
 
@@ -10,10 +10,10 @@ To create a Lua runtime environment, simply instantiate the `Engine` object with
 Global state is maintained for the whole lifetime of the `Engine` object. Lua variables can be queried by name using the `global` method. `define` and `define_table` can also be used to interact with the global object. An example is shown below:
 
 ```ts
-    const engine = lua.Engine('a = 1 + 2')
+    const engine = lua.Engine("a = 1 + 2")
     engine.run()
 
-    const a = engine.global('a')?.number
+    const a = engine.global("a")?.number
     console.log(a) // --> 3
 ```
 
@@ -86,10 +86,10 @@ The following *keywords* are reserved and cannot be used as names:
 
 ```lua
     and     break   do      else        elseif
-    end     false   for     function    goto
-    if      in      local   nil         not 
-    or      repeat  return  then        true 
-    until   while
+    end     false   for     function    global
+    goto    if      in      local       nil
+    not     or      repeat  return      then
+    true    until   while
 ```
 
 Lua is a case-sensitive language: `and` is a reserved word, but `And`and `AND` are two different, valid names. As a convention, programs should avoid creating names that start with an underscore followed by one or more uppercase letters (such as `_VERSION`).
@@ -132,7 +132,7 @@ Examples of valid integer constants are
 
 ```lua
     3
-    345 
+    345
     0xff
     0xBEBADA
 ```
@@ -140,7 +140,7 @@ Examples of valid integer constants are
 Examples of valid float constants are
 
 ```lua
-    3.0 
+    3.0
     3.1416
     314.16e-2
     0.31416E1
@@ -589,9 +589,9 @@ As usual, you can use parentheses to change the precedences of an expression. Th
 Table constructors are expressions that create tables. Every time a constructor is evaluated, a new table is created. A constructor can be used to create an empty table or to create a table and initialize some of its fields. The general syntax for constructors is
 
 ```lua
-    tableconstructor ::= ‘{’ [fieldlist] ‘}’        
-    fieldlist ::= field {fieldsep field} [fieldsep]        
-    field ::= ‘[’ exp ‘]’ ‘=’ exp | Name ‘=’ exp | exp        
+    tableconstructor ::= ‘{’ [fieldlist] ‘}’
+    fieldlist ::= field {fieldsep field} [fieldsep]
+    field ::= ‘[’ exp ‘]’ ‘=’ exp | Name ‘=’ exp | exp
     fieldsep ::= ‘,’ | ‘;’
 ```
 
@@ -1131,11 +1131,11 @@ A *character class* is used to represent a set of characters. The following comb
  - **`%x`:** represents all hexadecimal digits.
  - **`%x`:** (where *x* is any non-alphanumeric character) represents    the character *x*. This is the standard way to escape the magic    characters. Any non-alphanumeric character (including all    punctuation characters, even the non-magical) can be preceded by a    '`%`' to represent itself in a pattern.
  - **`[set]`:** represents the class which is the union of all    characters in *set*. A range of characters can be specified by    separating the end characters of the range, in ascending order, with    a '`-`'. All classes `%`*x* described above can also be used as    components in *set*. All other characters in *set* represent    themselves. For example, `[%w_]` (or `[_%w]`) represents all    alphanumeric characters plus the underscore, `[0-7]` represents the    octal digits, and `[0-7%l%-]` represents the octal digits plus the    lowercase letters plus the '`-`' character.
- 
+
    You can put a closing square bracket in a set by positioning it as    the first character in the set. You can put a hyphen in a set by    positioning it as the first or the last character in the set. (You    can also use an escape for both cases.)
- 
+
    The interaction between ranges and classes is not defined.    Therefore, patterns like `[%a-z]` or `[a-%%]` have no meaning.
- 
+
  - **`[^set]`:** represents the complement of *set*, where *set* is    interpreted as above.
 
 For all classes represented by single letters (`%a`, `%c`, etc.), the corresponding uppercase letter represents the complement of the class. For instance, `%S` represents all non-space characters.

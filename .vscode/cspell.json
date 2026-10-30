@@ -1,0 +1,45 @@
+{
+	"$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+	"version": "0.2",
+	"language": "en-GB",
+	"allowCompoundWords": true,
+	"dictionaries": [
+		"softwareTerms",
+		"typescript",
+		"node",
+		"html",
+		"css",
+		"bash",
+		"npm"
+	],
+	"words": [
+		"Vitruvius",
+		"architectura",
+	],
+	"ignoreWords": [
+		"Lebacq",
+		"Zamralik"
+	],
+	"flagWords": [
+		"hte"
+	],
+	"ignorePaths": [
+		".eslintrc.json",
+		".git/**",
+		".github/CODEOWNERS",
+		".gitignore",
+		".mocharc.json",
+		"**/*.log",
+		"**/node_modules/**",
+		"build/",
+		"CHANGELOG.md",
+		"package.json",
+		"pipeline.yml",
+		"pnpm-lock.yaml",
+		"reports/",
+		"tmp/",
+		"tsconfig.json",
+		"**/test.mts",
+		"**/coverage/**"
+	]
+}

@@ -1,0 +1,111 @@
+import { OperationCode, type OperationCodeEnum } from "../definition/enum/operation-code.enum.mjs";
+
+// eslint-disable-next-line complexity, max-lines-per-function
+function op_code_name(op_code: OperationCodeEnum): string
+{
+	switch (op_code)
+	{
+		case OperationCode.Load:
+			return "Load";
+		case OperationCode.Store:
+			return "Store";
+		case OperationCode.Push:
+			return "Push";
+		case OperationCode.Pop:
+			return "Pop";
+		case OperationCode.Dup:
+			return "Dup";
+		case OperationCode.Swap:
+			return "Swap";
+		case OperationCode.IterUpdateState:
+			return "IterUpdateState";
+		case OperationCode.IterNext:
+			return "IterNext";
+		case OperationCode.IterJumpIfDone:
+			return "IterJumpIfDone";
+		case OperationCode.NewTable:
+			return "NewTable";
+		case OperationCode.LoadIndex:
+			return "LoadIndex";
+		case OperationCode.StoreIndex:
+			return "StoreIndex";
+		case OperationCode.Add:
+			return "Add";
+		case OperationCode.Subtract:
+			return "Subtract";
+		case OperationCode.Multiply:
+			return "Multiply";
+		case OperationCode.Divide:
+			return "Divide";
+		case OperationCode.FloorDivide:
+			return "FloorDivide";
+		case OperationCode.Modulo:
+			return "Modulo";
+		case OperationCode.Exponent:
+			return "Exponent";
+		case OperationCode.Concat:
+			return "Concat";
+		case OperationCode.BitAnd:
+			return "BitAnd";
+		case OperationCode.BitOr:
+			return "BitOr";
+		case OperationCode.BitXOr:
+			return "BitXOr";
+		case OperationCode.BitNot:
+			return "BitNot";
+		case OperationCode.BitShiftLeft:
+			return "BitShiftLeft";
+		case OperationCode.BitShiftRight:
+			return "BitShiftRight";
+		case OperationCode.Equals:
+			return "Equals";
+		case OperationCode.NotEquals:
+			return "NotEquals";
+		case OperationCode.LessThan:
+			return "LessThan";
+		case OperationCode.LessThanEquals:
+			return "LessThanEquals";
+		case OperationCode.GreaterThan:
+			return "GreaterThan";
+		case OperationCode.GreaterThanEquals:
+			return "GreaterThanEquals";
+		case OperationCode.And:
+			return "And";
+		case OperationCode.Or:
+			return "Or";
+		case OperationCode.Not:
+			return "Not";
+		case OperationCode.Negate:
+			return "Negate";
+		case OperationCode.Length:
+			return "Length";
+		case OperationCode.IsNotNil:
+			return "IsNotNil";
+		case OperationCode.StartBlock:
+			return "StartBlock";
+		case OperationCode.EndBlock:
+			return "EndBlock";
+		case OperationCode.MakeLocal:
+			return "MakeLocal";
+		case OperationCode.Call:
+			return "Call";
+		case OperationCode.Return:
+			return "Return";
+		case OperationCode.Jump:
+			return "Jump";
+		case OperationCode.JumpIfNot:
+			return "JumpIfNot";
+		case OperationCode.JumpIf:
+			return "JumpIf";
+		case OperationCode.StartStackChange:
+			return "StartStackChange";
+		case OperationCode.EndStackChange:
+			return "EndStackChange";
+		case OperationCode.ArgumentCount:
+			return "ArgumentCount";
+		case OperationCode.Break:
+			return "Break[Debug]";
+	}
+}
+
+export { op_code_name };
