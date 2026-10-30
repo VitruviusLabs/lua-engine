@@ -1,4 +1,5 @@
 import type { VariableTable } from "../../_index.mjs";
+import { isNil } from "../../variable/predicate/is-nil.mjs";
 
 function table_size(value: VariableTable): number
 {
@@ -6,7 +7,7 @@ function table_size(value: VariableTable): number
 
 	for (let i: number = 1; i <= value.table.size; ++i)
 	{
-		if (!value.table.has(i))
+		if (isNil(value.table.get(i)))
 		{
 			return size;
 		}

@@ -1068,21 +1068,14 @@ export class Engine
 
 		assertVariableKind(table, VariableKind.Table);
 
-		const i_var = this.stack_pop_maybe();
+		const key = getTableKey(this.stack_pop_maybe());
 
-		if (isNil(i_var))
+		if (key === undefined)
 		{
 			this.runtime_error(operation, "Attempt to index with a nil value");
 		}
 
-		const i = getTableKey(i_var);
-
-		if (i === undefined)
-		{
-			this.runtime_error(operation, "Invalid index, must be a number or string");
-		}
-
-		this.stack.push(table.table.get(i) ?? nil);
+		this.stack.push(table.table.get(key) ?? nil);
 	}
 
 	private runInstructionStoreIndex(operation: OperationInterface, arg: Variable | undefined): void
@@ -1099,7 +1092,7 @@ export class Engine
 
 			if (key === undefined)
 			{
-				this.runtime_error(operation, "Invalid key, must be a number or string");
+				this.runtime_error(operation, "Attempt to index with a nil value");
 			}
 
 			table.table.set(key, value);

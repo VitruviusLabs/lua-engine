@@ -1,23 +1,29 @@
 import { type Variable, VariableKind } from "../../_index.mjs";
 
-function getTableKey(value: Variable | undefined): string | number | undefined
+function getTableKey(value: Variable | undefined): unknown
 {
 	if (value === undefined)
 	{
 		return undefined;
 	}
 
-	if (value.data_type === VariableKind.String)
+	switch (value.data_type)
 	{
-		return value.string;
+		case VariableKind.Nil:
+			return undefined;
+		case VariableKind.Boolean:
+			return value.boolean;
+		case VariableKind.Number:
+			return value.number;
+		case VariableKind.String:
+			return value.string;
+		case VariableKind.Table:
+			return value.table;
+		case VariableKind.Function:
+			return BigInt(value.function_id);
+		case VariableKind.NativeFunction:
+			return value.native_function;
 	}
-
-	if (value.data_type === VariableKind.Number)
-	{
-		return value.number;
-	}
-
-	return undefined;
 }
 
 export { getTableKey };

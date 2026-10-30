@@ -1,3 +1,4 @@
+import { ValidationError, assertArray, assertInteger, assertPopulatedArray, isBigInt, isCallable, isInstanceOf, isInteger, unary } from "@vitruvius-labs/ts-predicate";
 import type { Variable } from "./variable/definition/type/variable.type.mjs";
 import type { VariableValueType } from "./variable/definition/type/variable-value.type.mjs";
 import { VariableKind, type VariableKindEnum } from "./variable/definition/enum/variable-kind.enum.mjs";
@@ -6,7 +7,6 @@ import { assertVariableKind } from "./variable/predicate/assert-variable-kind.mj
 import { nil } from "./variable/nil.mjs";
 import type { Engine } from "./engine.mjs";
 import { make_variable } from "./runtime.mjs";
-import { ValidationError, assertArray, assertInteger, assertPopulatedArray, isCallable, isInteger, unary } from "@vitruvius-labs/ts-predicate";
 import type { VariableNumber } from "./variable/definition/interface/variable-number.interface.mjs";
 import { assertVariable } from "./variable/predicate/assert-variable.mjs";
 import { VariableUnwrapUtility } from "./variable/unwrap-variable.mjs";
@@ -43,40 +43,6 @@ function optional_parameter<K extends VariableKindEnum>(
 	return value as VariableValueType<K>;
 }
 
-function inext(_: Engine, table: Variable, previous_index: Variable): Array<Variable>
-{
-	assertVariableKind(table, VariableKind.Table);
-	assertVariableKind(previous_index, VariableKind.Number);
-
-	const table_map = table.table;
-	const next_index: number = previous_index.number + 1;
-
-	const next_value: Variable | undefined = table_map.get(next_index);
-
-	if (next_value === undefined)
-	{
-		return [nil];
-	}
-
-	return [make_number(next_index), next_value];
-}
-
-const inext_binding: VariableNativeFunction = {
-	data_type: VariableKind.NativeFunction,
-	native_function: inext,
-};
-
-function ipairs(_: Engine, table: Variable): Array<Variable>
-{
-	assertVariableKind(table, VariableKind.Table);
-
-	return [
-		inext_binding,
-		table,
-		make_number(0),
-	];
-}
-
 function compare_keys(next_key: unknown, index: Variable): boolean
 {
 	if (isVariableKind(index, VariableKind.Boolean))
@@ -101,7 +67,7 @@ function compare_keys(next_key: unknown, index: Variable): boolean
 
 	if (isVariableKind(index, VariableKind.Function))
 	{
-		return next_key === index.function_id;
+		return next_key === BigInt(index.function_id);
 	}
 
 	if (isVariableKind(index, VariableKind.NativeFunction))
@@ -112,27 +78,82 @@ function compare_keys(next_key: unknown, index: Variable): boolean
 	return false;
 }
 
-function next(_: Engine, variable: Variable, start_index?: Variable): Array<Variable>
+function key_variable(key: unknown): Variable
+{
+	if (isCallable<NativeFunction>(key))
+	{
+		return {
+			data_type: VariableKind.NativeFunction,
+			native_function: key,
+		};
+	}
+
+	if (isBigInt(key))
+	{
+		return {
+			data_type: VariableKind.Function,
+			function_id: Number(key),
+		};
+	}
+
+	if (isInstanceOf<VariableTableMapType>(key, Map))
+	{
+		return {
+			data_type: VariableKind.Table,
+			table: key,
+		};
+	}
+
+	return make_variable(key);
+}
+
+function inext(_: Engine, table: Variable, previous_index: Variable): Array<Variable>
+{
+	assertVariableKind(table, VariableKind.Table);
+	assertVariableKind(previous_index, VariableKind.Number);
+
+	const table_map = table.table;
+	const next_index: number = previous_index.number + 1;
+
+	const next_value: Variable | undefined = table_map.get(next_index);
+
+	if (isNil(next_value))
+	{
+		return [nil];
+	}
+
+	return [make_number(next_index), next_value];
+}
+
+const inext_binding: VariableNativeFunction = {
+	data_type: VariableKind.NativeFunction,
+	native_function: inext,
+};
+
+function ipairs(_: Engine, table: Variable): Array<Variable>
+{
+	assertVariableKind(table, VariableKind.Table);
+
+	return [
+		inext_binding,
+		table,
+		make_number(0),
+	];
+}
+
+function next(_: Engine, variable: Variable, start_index: Variable = nil): Array<Variable>
 {
 	assertVariableKind(variable, VariableKind.Table);
 
-	if (isNil(start_index))
-	{
-		const first_key: unknown = variable.table.keys().next().value;
-		const first_value: Variable | undefined = variable.table.get(first_key);
-
-		if (isNil(first_value))
-		{
-			return [nil];
-		}
-
-		return [make_variable(first_key), first_value];
-	}
-
-	let previous_key_found: boolean = false;
+	let previous_key_found: boolean = isNil(start_index);
 
 	for (const [key, value] of variable.table)
 	{
+		if (isNil(value))
+		{
+			continue;
+		}
+
 		if (previous_key_found)
 		{
 			return [key_variable(key), value];
@@ -147,14 +168,14 @@ function next(_: Engine, variable: Variable, start_index?: Variable): Array<Vari
 	return [nil];
 }
 
+const next_binding: VariableNativeFunction = {
+	data_type: VariableKind.NativeFunction,
+	native_function: next,
+};
+
 function pairs(_: Engine, table: Variable): Array<Variable>
 {
-	const next_func: VariableNativeFunction = {
-		data_type: VariableKind.NativeFunction,
-		native_function: next,
-	};
-
-	return [next_func, table, nil];
+	return [next_binding, table, nil];
 }
 
 function range(_: Engine, count: Variable): Array<Variable>
@@ -187,19 +208,6 @@ function is_empty(_: Engine, table: Variable): Array<Variable>
 	return [make_boolean(empty)];
 }
 
-function key_variable(key: unknown): Variable
-{
-	if (isCallable<NativeFunction>(key))
-	{
-		return {
-			data_type: VariableKind.NativeFunction,
-			native_function: key,
-		};
-	}
-
-	return make_variable(key);
-}
-
 async function table_sort(engine: Engine, table: Variable, sort_callable: Variable): Promise<Array<Variable>>
 {
 	assertVariableKind(table, VariableKind.Table);
@@ -210,7 +218,7 @@ async function table_sort(engine: Engine, table: Variable, sort_callable: Variab
 	{
 		const item: Variable | undefined = table.table.get(i);
 
-		if (item === undefined)
+		if (isNil(item))
 		{
 			break;
 		}
@@ -260,7 +268,7 @@ async function find(engine: Engine, table: Variable, test_callable: Variable): P
 
 		if (matching.boolean)
 		{
-			return [make_variable(key)];
+			return [key_variable(key)];
 		}
 	}
 
@@ -270,19 +278,10 @@ async function find(engine: Engine, table: Variable, test_callable: Variable): P
 function first(_: Engine, table: Variable): Array<Variable>
 {
 	assertVariableKind(table, VariableKind.Table);
-	const key = table.table.keys().next().value;
 
-	if (typeof key === "string")
-	{
-		return [make_string(key)];
-	}
+	const key: unknown = table.table.keys().next().value;
 
-	if (typeof key === "number")
-	{
-		return [make_number(key)];
-	}
-
-	return [nil];
+	return [key_variable(key)];
 }
 
 function keys(_: Engine, table: Variable): Array<Variable>
@@ -321,6 +320,7 @@ function to_number(_: Engine, arg: Variable): Array<Variable>
 	{
 		case VariableKind.Number:
 			return [arg];
+
 		case VariableKind.String:
 		{
 			const text: string = arg.string.trim();
